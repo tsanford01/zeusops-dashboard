@@ -12,11 +12,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
+html{height:100%;width:100%;}
 :root{
   --bg:#000810; --grid-dot:#0a1628; --border:#0d2040;
   --text:#4a8090; --text-bright:#7bd4e8; --orange:#FF6600;
 }
-body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono',monospace;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono',monospace;height:100%;min-height:100vh;overflow:hidden;display:flex;flex-direction:column;}
 
 /* ── HEADER ── */
 #hdr{display:flex;align-items:center;gap:12px;padding:0 14px;height:36px;background:#000c1a;border-bottom:1px solid #0d2a40;flex-shrink:0;}
