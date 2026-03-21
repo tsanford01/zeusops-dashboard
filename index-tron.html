@@ -392,6 +392,8 @@ function updateTimers(){
     if(!isActive || jobs.length===0){
       el.timer1.setAttribute('opacity','0');
       el.timer2.setAttribute('opacity','0');
+      if(el.timerBg1) el.timerBg1.setAttribute('opacity','0');
+      if(el.timerBg2) el.timerBg2.setAttribute('opacity','0');
       continue;
     }
 
@@ -401,23 +403,28 @@ function updateTimers(){
     if(jobs.length===1){
       el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','9');
-      el.timer1.setAttribute('opacity','0.85');
+      el.timer1.setAttribute('opacity','1');
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','36'); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.setAttribute('opacity','0');
+      if(el.timerBg2) el.timerBg2.setAttribute('opacity','0');
     } else if(jobs.length===2){
       el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','8');
-      el.timer1.setAttribute('opacity','0.85');
+      el.timer1.setAttribute('opacity','1');
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','34'); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.textContent = fmtElapsed(now - jobs[1].dispatchedAt);
       el.timer2.setAttribute('font-size','7');
-      el.timer2.setAttribute('opacity','0.55');
+      el.timer2.setAttribute('opacity','0.85');
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','30'); el.timerBg2.setAttribute('opacity','0.88'); }
     } else {
-      // 3+: show longest + count
       el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','8');
-      el.timer1.setAttribute('opacity','0.85');
+      el.timer1.setAttribute('opacity','1');
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','34'); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.textContent = `+${jobs.length-1} more`;
       el.timer2.setAttribute('font-size','6.5');
-      el.timer2.setAttribute('opacity','0.4');
+      el.timer2.setAttribute('opacity','0.6');
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','28'); el.timerBg2.setAttribute('opacity','0.85'); }
     }
   }
 }
@@ -826,12 +833,20 @@ function buildNodes(){
     const taskLabel=svgEl('text',{x:'0',y:(labelY+13).toFixed(1),'text-anchor':'middle','font-family':'Share Tech Mono,monospace','font-size':'6.5',fill:col,opacity:'0','letter-spacing':'0.3'});
 
     // ── Timer display (center of triangle, below inner hex) ──
-    // Two rows: primary timer + overflow indicator
-    const timerY1 = (r * 0.38).toFixed(1);  // below inner hex bottom
-    const timerY2 = (r * 0.58).toFixed(1);  // second timer row
+    // Dark pill background keeps text crisp against node glow
+    const timerY1 = (r * 0.38).toFixed(1);
+    const timerY2 = (r * 0.60).toFixed(1);
+    // Pill bg for timer1 (sized for "00:00:00" = ~36px wide at font-size 9)
+    const timerBg1 = svgEl('rect',{x:'-18',y:(r*0.38-9).toFixed(1),
+      width:'36',height:'12',rx:'2',
+      fill:'#000810',stroke:col,'stroke-width':'0.5',opacity:'0'});
     const timer1 = svgEl('text',{x:'0',y:timerY1,'text-anchor':'middle',
       'font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'9',
       fill:col,opacity:'0','letter-spacing':'1'});
+    // Pill bg for timer2
+    const timerBg2 = svgEl('rect',{x:'-16',y:(r*0.60-8).toFixed(1),
+      width:'32',height:'10',rx:'2',
+      fill:'#000810',stroke:col,'stroke-width':'0.4',opacity:'0'});
     const timer2 = svgEl('text',{x:'0',y:timerY2,'text-anchor':'middle',
       'font-family':'Orbitron,sans-serif','font-weight':'400','font-size':'7',
       fill:col,opacity:'0','letter-spacing':'0.5'});
@@ -840,7 +855,9 @@ function buildNodes(){
     lg_g.appendChild(toolIconEl);
     lg_g.appendChild(hoverPctBg);
     lg_g.appendChild(hoverPct);
+    lg_g.appendChild(timerBg1);
     lg_g.appendChild(timer1);
+    lg_g.appendChild(timerBg2);
     lg_g.appendChild(timer2);
     lg_g.appendChild(pill);
     lg_g.appendChild(label);
@@ -855,7 +872,7 @@ function buildNodes(){
       ctxArc, ctxArcGlow, ctxBarBg, r,
       dot, toolIcon:toolIconEl, toolBadgeBg, hoverPct, hoverPctBg,
       label, taskLabel, taskPill, pill, col,
-      timer1, timer2
+      timer1, timer2, timerBg1, timerBg2
     };
 
     // Hover ctx% show/hide
