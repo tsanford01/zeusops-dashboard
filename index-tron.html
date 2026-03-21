@@ -400,40 +400,32 @@ function updateTimers(){
     // Sort by dispatched time (oldest first = longest running first)
     jobs.sort((a,b)=>a.dispatchedAt-b.dispatchedAt);
 
-    // Pill width: H:MM:SS = 7 chars needs more room than MM:SS = 5 chars
-    function timerPillW(ms, fontSize){ const over1h = ms>=3600000; return over1h ? fontSize*4.8 : fontSize*3.8; }
+    // Pills are fixed-wide (56/48px) — always fit H:MM:SS without clipping
     if(jobs.length===1){
-      const t1ms = now - jobs[0].dispatchedAt;
-      el.timer1.textContent = fmtElapsed(t1ms);
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','11');
       el.timer1.setAttribute('opacity','1');
-      const w1 = timerPillW(t1ms,11).toFixed(0);
-      if(el.timerBg1){ el.timerBg1.setAttribute('width',w1); el.timerBg1.setAttribute('x',(-(w1/2)).toFixed(0)); el.timerBg1.setAttribute('opacity','0.92'); }
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','56'); el.timerBg1.setAttribute('x','-28'); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.setAttribute('opacity','0');
       if(el.timerBg2) el.timerBg2.setAttribute('opacity','0');
     } else if(jobs.length===2){
-      const t1ms = now - jobs[0].dispatchedAt, t2ms = now - jobs[1].dispatchedAt;
-      el.timer1.textContent = fmtElapsed(t1ms);
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','10');
       el.timer1.setAttribute('opacity','1');
-      const w1 = timerPillW(t1ms,10).toFixed(0);
-      if(el.timerBg1){ el.timerBg1.setAttribute('width',w1); el.timerBg1.setAttribute('x',(-(w1/2)).toFixed(0)); el.timerBg1.setAttribute('opacity','0.92'); }
-      el.timer2.textContent = fmtElapsed(t2ms);
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','52'); el.timerBg1.setAttribute('x','-26'); el.timerBg1.setAttribute('opacity','0.92'); }
+      el.timer2.textContent = fmtElapsed(now - jobs[1].dispatchedAt);
       el.timer2.setAttribute('font-size','9');
       el.timer2.setAttribute('opacity','0.75');
-      const w2 = timerPillW(t2ms,9).toFixed(0);
-      if(el.timerBg2){ el.timerBg2.setAttribute('width',w2); el.timerBg2.setAttribute('x',(-(w2/2)).toFixed(0)); el.timerBg2.setAttribute('opacity','0.85'); }
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','48'); el.timerBg2.setAttribute('x','-24'); el.timerBg2.setAttribute('opacity','0.85'); }
     } else {
-      const t1ms = now - jobs[0].dispatchedAt;
-      el.timer1.textContent = fmtElapsed(t1ms);
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','10');
       el.timer1.setAttribute('opacity','1');
-      const w1 = timerPillW(t1ms,10).toFixed(0);
-      if(el.timerBg1){ el.timerBg1.setAttribute('width',w1); el.timerBg1.setAttribute('x',(-(w1/2)).toFixed(0)); el.timerBg1.setAttribute('opacity','0.92'); }
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','52'); el.timerBg1.setAttribute('x','-26'); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.textContent = `+${jobs.length-1} more`;
       el.timer2.setAttribute('font-size','8');
       el.timer2.setAttribute('opacity','0.55');
-      if(el.timerBg2){ el.timerBg2.setAttribute('width','32'); el.timerBg2.setAttribute('x','-16'); el.timerBg2.setAttribute('opacity','0.85'); }
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','34'); el.timerBg2.setAttribute('x','-17'); el.timerBg2.setAttribute('opacity','0.85'); }
     }
   }
 }
@@ -446,10 +438,9 @@ function pushToolDot(agentId, icon){
   const col = toolDotColor(icon);
   const stack = agentToolStack[agentId] || (agentToolStack[agentId] = []);
 
-  // Right side of triangle: x = r + expand_buffer + offset from edge
-  // Triangle right vertex is at (r, -r*0.58) top-right corner
-  // Stack dots vertically along the right edge, newest at top
-  const dotX = r + 10;
+  // Right side of triangle: anchor just outside right vertex
+  // Triangle right vertex is at (r, -r*0.58); sit 6px outside
+  const dotX = r + 6;
   const dotY = -r * 0.25; // center of right side vertically
 
   // Shift existing dots down
@@ -842,23 +833,24 @@ function buildNodes(){
     const taskLabel=svgEl('text',{x:'0',y:(labelY+13).toFixed(1),'text-anchor':'middle','font-family':'Share Tech Mono,monospace','font-size':'6.5',fill:col,opacity:'0','letter-spacing':'0.3'});
 
     // ── Timer display (center of triangle, below inner hex) ──
-    // Spaced further apart, slightly larger font, generous pill padding
-    const timerY1 = (r * 0.32).toFixed(1);   // primary — higher up, more air above
-    const timerY2 = (r * 0.62).toFixed(1);   // secondary — more gap between rows
-    // Pill bg for timer1: font-size 11, ~44px wide, 15px tall
-    const timerBg1 = svgEl('rect',{x:'-22',y:(r*0.32-11).toFixed(1),
-      width:'44',height:'15',rx:'3',
-      fill:'#000810',stroke:col,'stroke-width':'0.6',opacity:'0'});
+    // Single job: one large timer centered; two jobs: stacked with more gap
+    const timerY1 = (r * 0.28).toFixed(1);   // primary — sits above midline
+    const timerY2 = (r * 0.64).toFixed(1);   // secondary — well below, more separation
+    // Pill: extra horizontal padding (6px each side) so text never clips
+    // H:MM:SS at font-size 11 ≈ 52px; MM:SS ≈ 38px — use 56 as safe max
+    const timerBg1 = svgEl('rect',{x:'-28',y:(r*0.28-12).toFixed(1),
+      width:'56',height:'16',rx:'3',
+      fill:'#000810',stroke:col,'stroke-width':'0.7',opacity:'0'});
     const timer1 = svgEl('text',{x:'0',y:timerY1,'text-anchor':'middle',
       'font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'11',
-      fill:col,opacity:'0','letter-spacing':'1.5'});
-    // Pill bg for timer2: font-size 9, ~36px wide, 13px tall
-    const timerBg2 = svgEl('rect',{x:'-18',y:(r*0.62-10).toFixed(1),
-      width:'36',height:'13',rx:'3',
+      fill:col,opacity:'0','letter-spacing':'1'});
+    // Secondary pill: slightly smaller
+    const timerBg2 = svgEl('rect',{x:'-24',y:(r*0.64-10).toFixed(1),
+      width:'48',height:'13',rx:'3',
       fill:'#000810',stroke:col,'stroke-width':'0.5',opacity:'0'});
     const timer2 = svgEl('text',{x:'0',y:timerY2,'text-anchor':'middle',
       'font-family':'Orbitron,sans-serif','font-weight':'400','font-size':'9',
-      fill:col,opacity:'0','letter-spacing':'1'});
+      fill:col,opacity:'0','letter-spacing':'0.8'});
 
     lg_g.appendChild(toolBadgeBg);
     lg_g.appendChild(toolIconEl);
