@@ -348,7 +348,75 @@ function toolIcon(toolName){
   return 'RUN';
 }
 
-const agentLastTool = {};
+const agentLastTool = {}; // kept for inspect panel compat (last tool)
+// Tool dot stacks: agentToolStack[id] = [{icon, color, ts, svgDot, svgLabel}]
+const agentToolStack = {};
+const MAX_TOOL_DOTS = 5;
+const TOOL_DOT_LIFE = 15000; // ms before fully gone
+const TOOL_DOT_FADE_START = 8000; // ms before fade begins
+
+// Tool category → dot color
+const TOOL_DOT_COLOR = {
+  EXC:'#FF6B35', SH:'#FF6B35',          // exec/shell → orange
+  RD:'#4a8090',  WR:'#00CED1', ED:'#00CED1', // file ops → teal/dim
+  SRC:'#9B6BFF', GET:'#9B6BFF', WEB:'#9B6BFF', // web → purple
+  MSG:'#FFD700', SPN:'#FFD700', SND:'#FFD700', // comms/spawn → gold
+  MEM:'#7B68EE',                          // memory → indigo
+  GIT:'#00FF88', TRL:'#00BFFF',           // git/trello → green/blue
+  DEP:'#00FF88', CI:'#00F0FF',            // deploy/ci → green/cyan
+  AI:'#FF69B4',                           // AI calls → pink
+  TOOL:'#98FF98', RUN:'#4a8090',          // generic
+};
+function toolDotColor(icon){ return TOOL_DOT_COLOR[icon]||'#4a8090'; }
+
+function pushToolDot(agentId, icon){
+  const el = nodeEls[agentId];
+  if(!el) return;
+  const r = nodeR(agentId);
+  const col = toolDotColor(icon);
+  const stack = agentToolStack[agentId] || (agentToolStack[agentId] = []);
+
+  // Right side of triangle: x = r + expand_buffer + offset from edge
+  // Triangle right vertex is at (r, -r*0.58) top-right corner
+  // Stack dots vertically along the right edge, newest at top
+  const dotX = r + 10;
+  const dotY = -r * 0.25; // center of right side vertically
+
+  // Shift existing dots down
+  for(const d of stack){
+    const cy = parseFloat(d.svgDot.getAttribute('cy'));
+    d.svgDot.setAttribute('cy', (cy + 8).toFixed(1));
+    if(d.svgLabel) d.svgLabel.setAttribute('y', (cy + 8 + 3).toFixed(1));
+  }
+
+  // Create new dot (in label layer group for this agent)
+  const lg = document.getElementById('labels');
+  const lg_g = lg.children[Object.keys(NODE_POS).indexOf(agentId)];
+
+  const dot = svgEl('circle',{
+    cx: dotX.toFixed(1), cy: dotY.toFixed(1),
+    r:'4', fill:col, opacity:'0.95',
+    filter:'url(#glow-arc)'
+  });
+  const lbl = svgEl('text',{
+    x:(dotX+7).toFixed(1), y:(dotY+3).toFixed(1),
+    'font-family':'Orbitron,sans-serif','font-weight':'700',
+    'font-size':'5.5', fill:col, opacity:'0.9',
+    'letter-spacing':'0.5'
+  });
+  lbl.textContent = icon;
+
+  if(lg_g){ lg_g.appendChild(dot); lg_g.appendChild(lbl); }
+
+  stack.unshift({icon, color:col, ts:Date.now(), svgDot:dot, svgLabel:lbl});
+
+  // Cap stack size
+  while(stack.length > MAX_TOOL_DOTS){
+    const old = stack.pop();
+    if(old.svgDot && old.svgDot.parentNode) old.svgDot.parentNode.removeChild(old.svgDot);
+    if(old.svgLabel && old.svgLabel.parentNode) old.svgLabel.parentNode.removeChild(old.svgLabel);
+  }
+}
 
 const ACTION_COLOR = {
   dispatch:'#FFD700',ci_check:'#00F0FF',deploy:'#00FF88',trello_update:'#9B6BFF',
@@ -737,10 +805,7 @@ function buildNodes(){
     g.addEventListener('mouseleave',()=>{
       hoverPct.setAttribute('opacity','0');
       hoverPctBg.setAttribute('opacity','0');
-      if(agentLastTool[id]){
-        toolIconEl.setAttribute('opacity','0.9');
-        toolBadgeBg.setAttribute('opacity','0.9');
-      }
+      // dots handle themselves via fade interval
     });
   }
 }
@@ -886,34 +951,36 @@ document.getElementById('grid-svg').addEventListener('click',e=>{
 //  TOOL BADGES
 // ═══════════════════════════════════════════════════════════
 function updateToolIcon(id){
+  // Legacy badge hidden — dots are used now
   const el=nodeEls[id];
-  if(!el?.toolIcon) return;
+  if(el?.toolIcon) el.toolIcon.setAttribute('opacity','0');
+  if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0');
+  // Push a new dot for the latest tool
   const t=agentLastTool[id];
-  if(t){
-    el.toolIcon.textContent=t.icon;
-    el.toolIcon.setAttribute('opacity','0.9');
-    if(el.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0.9');
-  } else {
-    el.toolIcon.setAttribute('opacity','0');
-    if(el.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0');
-  }
+  if(t) pushToolDot(id, t.icon);
 }
 
 setInterval(()=>{
   const now=Date.now();
-  for(const[id,t]of Object.entries(agentLastTool)){
-    const age=now-t.ts;
-    if(age>10000){ delete agentLastTool[id]; updateToolIcon(id); }
-    else if(age>6000){
-      const fade=((1-(age-6000)/4000)*0.9).toFixed(2);
-      const el=nodeEls[id];
-      if(el?.toolIcon) el.toolIcon.setAttribute('opacity',fade);
-      if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity',fade);
+  // Fade and expire tool dots
+  for(const[id,stack]of Object.entries(agentToolStack)){
+    for(let i=stack.length-1;i>=0;i--){
+      const d=stack[i];
+      const age=now-d.ts;
+      if(age>TOOL_DOT_LIFE){
+        if(d.svgDot?.parentNode) d.svgDot.parentNode.removeChild(d.svgDot);
+        if(d.svgLabel?.parentNode) d.svgLabel.parentNode.removeChild(d.svgLabel);
+        stack.splice(i,1);
+      } else if(age>TOOL_DOT_FADE_START){
+        const op=((1-(age-TOOL_DOT_FADE_START)/(TOOL_DOT_LIFE-TOOL_DOT_FADE_START))*0.95).toFixed(2);
+        if(d.svgDot) d.svgDot.setAttribute('opacity',op);
+        if(d.svgLabel) d.svgLabel.setAttribute('opacity',op);
+      }
     }
   }
   // Refresh inspect panel if open
   if(inspectId) document.getElementById('ib-tool').textContent=agentLastTool[inspectId]?.icon||'—';
-},150);
+},200);
 
 // ═══════════════════════════════════════════════════════════
 //  CONTEXT ARC COLOR
