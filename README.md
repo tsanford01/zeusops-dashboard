@@ -4,15 +4,11 @@ Real-time monitoring dashboard for the ZeusOps AI agent network.
 
 **GitHub:** https://github.com/tsanford01/zeusops-dashboard
 
-## Primary Dashboard
+## Dashboard
 
 **`index-tron.html`** — 2D TRON Edition  
-Open at: http://localhost:8878/index-tron.html
-
-## Alternate
-
-**`index-3d.html`** — 3D Three.js Edition (requires vendor/ JS files)  
-Open at: http://localhost:8878/index-3d.html
+Open at: http://localhost:8878/index-tron.html  
+Remote (Tailscale): http://100.110.224.101:8878/index-tron.html
 
 ## Running
 
