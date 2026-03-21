@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<!-- ZeusOps Grid — 2D TRON Edition
+     Backend: grid-server.py (port 8877) + PocketBase (port 8090)
+     Serve: python3 -m http.server 8878 (or use start-dashboard.sh)
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>⚡ ZEUSOPS GRID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#000810; --grid-dot:#0a1628; --border:#0d2040;
+  --text:#4a8090; --text-bright:#7bd4e8; --orange:#FF6600;
+}
+body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono',monospace;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* ── HEADER ── */
+#hdr{display:flex;align-items:center;gap:12px;padding:0 14px;height:36px;background:#000c1a;border-bottom:1px solid #0d2a40;flex-shrink:0;}
+#logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:13px;color:#00F0FF;letter-spacing:3px;text-shadow:0 0 12px #00F0FF88;}
+#logo span{color:#FFD700;}
+#badge{font-size:8px;padding:2px 6px;border-radius:2px;letter-spacing:2px;font-family:'Orbitron',sans-serif;}
+#badge.online{background:#001a0a;color:#00FF88;border:1px solid #00FF8844;}
+#badge.syncing{background:#1a0a00;color:#FFD700;border:1px solid #FFD70044;}
+.gw-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
+.gw-online{background:#00FF88;box-shadow:0 0 6px #00FF88;}
+.gw-offline{background:#333;box-shadow:none;}
+#gw-mc,#gw-zo{font-size:9px;color:var(--text);}
+#hdr-right{margin-left:auto;font-size:11px;color:var(--text);letter-spacing:1px;}
+#clock{color:#00F0FF;font-size:11px;}
+
+/* ── STATS BAR ── */
+#stats{display:flex;align-items:center;gap:0;height:28px;background:#00050f;border-bottom:1px solid #0d2a40;flex-shrink:0;overflow:hidden;}
+.stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 14px;border-right:1px solid #0d2040;min-width:80px;}
+.stat-label{font-size:7px;color:var(--text);letter-spacing:1px;}
+.stat-val{font-size:11px;color:#00F0FF;font-weight:bold;letter-spacing:1px;}
+.stat-val.warn{color:#FFD700;}
+.stat-val.err{color:#FF2244;}
+
+/* ── MAIN ROW ── */
+#main{display:flex;flex:1;overflow:hidden;}
+
+/* ── MC FACTION TOWER ── */
+#tower{width:175px;flex-shrink:0;background:#00050f;border-right:1px solid #0d2040;overflow-y:auto;padding:8px 6px;}
+#tower-title{font-size:8px;color:var(--text);letter-spacing:2px;padding:4px 6px 8px;border-bottom:1px solid #0d2040;margin-bottom:8px;}
+.acard{border:1px solid #0d2040;border-radius:2px;margin-bottom:6px;padding:6px 8px;cursor:default;transition:border-color .3s;}
+.acard.active-card{border-color:#FF660044;background:#FF660008;}
+.cname{font-size:10px;font-weight:bold;letter-spacing:1px;display:flex;align-items:center;gap:5px;}
+.cdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.cstatus{font-size:8px;margin-top:3px;letter-spacing:1px;}
+.st-active{color:#00FF88;}
+.st-idle{color:#FFD700;}
+.st-offline{color:#445566;}
+.ctx-row{display:flex;align-items:center;gap:5px;margin-top:5px;}
+.ctx-bar-bg{flex:1;height:3px;background:#0d2040;border-radius:1px;overflow:hidden;}
+.ctx-bar{height:100%;border-radius:1px;transition:width .5s;}
+.ctx-pct{font-size:8px;min-width:22px;text-align:right;}
+.active-pulse{animation:pulse-name 2s ease-in-out infinite;}
+@keyframes pulse-name{0%,100%{opacity:1;}50%{opacity:.6;}}
+@keyframes ctx-alarm{0%,100%{opacity:.85;stroke-width:4;}50%{opacity:.4;stroke-width:2.5;}}
+
+/* ── SVG GRID ── */
+#grid-wrap{flex:1;position:relative;overflow:hidden;}
+#grid-svg{width:100%;height:100%;}
+
+/* Node glow filter */
+.node-active{filter:url(#glow-active);}
+.node-idle{filter:url(#glow-idle);}
+
+/* Scan line sweep */
+#scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(0,240,255,.04),transparent);pointer-events:none;animation:scan 8s linear infinite;}
+@keyframes scan{0%{top:-2px;}100%{top:100%;}}
+
+/* Sector labels */
+.sector-label{font:7px 'Orbitron',sans-serif;fill:#142840;letter-spacing:2px;}
+
+/* ── ACTIVITY FEED ── */
+#feed-panel{width:175px;flex-shrink:0;background:#00050f;border-left:1px solid #0d2040;display:flex;flex-direction:column;}
+#feed-title{font-size:8px;color:var(--text);letter-spacing:2px;padding:8px;border-bottom:1px solid #0d2040;flex-shrink:0;}
+#activity-feed{flex:1;overflow-y:auto;padding:4px;font-size:9px;}
+#activity-feed::-webkit-scrollbar{width:3px;}
+#activity-feed::-webkit-scrollbar-track{background:#000;}
+#activity-feed::-webkit-scrollbar-thumb{background:#0d2040;}
+
+/* ── OFFLINE OVERLAY ── */
+#offline{display:none;position:fixed;inset:0;background:#000810ee;z-index:99;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;color:#FF2244;font-size:22px;letter-spacing:4px;}
+#offline.show{display:flex;}
+
+@media(max-width:800px){
+  #tower,#feed-panel{display:none;}
+  #grid-wrap{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <span id="logo">⚡ ZEUS<span>OPS</span> GRID</span>
+  <span id="badge" class="online">ONLINE</span>
+  <span id="sync" class="ok" style="font-size:9px;color:#00FF8877;">◉</span>
+  <span id="gw-mc"><span class="gw-dot gw-offline" id="dot-mc"></span>MC GATEWAY</span>
+  <span id="gw-zo"><span class="gw-dot gw-offline" id="dot-zo"></span>ZEUSOPS GATEWAY</span>
+  <span id="hdr-right"><span id="clock">--:--:--</span></span>
+</div>
+
+<!-- STATS BAR -->
+<div id="stats">
+  <div class="stat"><div class="stat-label">PROGRAMS</div><div class="stat-val" id="s-active">-</div></div>
+  <div class="stat"><div class="stat-label">DISPATCHES</div><div class="stat-val" id="s-handoffs">-</div></div>
+  <div class="stat"><div class="stat-label">TOKENS</div><div class="stat-val" id="s-tokens">-</div></div>
+  <div class="stat"><div class="stat-label">HOTTEST</div><div class="stat-val" id="s-hot">-</div></div>
+  <div class="stat"><div class="stat-label">LAST CI</div><div class="stat-val warn" id="s-ci">?</div></div>
+  <div class="stat"><div class="stat-label">DEPLOY</div><div class="stat-val" id="s-deploy">-</div></div>
+  <div class="stat" style="border-right:none;"><div class="stat-label">GRID TIME</div><div class="stat-val" id="s-time">-</div></div>
+</div>
+
+<!-- MAIN ROW -->
+<div id="main">
+
+  <!-- MC FACTION TOWER -->
+  <div id="tower">
+    <div id="tower-title">◈ MC FACTION</div>
+    <div class="acard" id="card-main">
+      <div class="cname"><span class="cdot" style="background:#FF6600;box-shadow:0 0 5px #FF6600;"></span><span class="cname active-pulse" id="nm-main">MC</span></div>
+      <div class="cstatus st-offline" id="st-main">OFFLINE</div>
+      <div class="ctx-row"><div class="ctx-bar-bg"><div class="ctx-bar" id="bar-main" style="background:#FF6600;width:0%"></div></div><span class="ctx-pct" id="ctx-main" style="color:#FF6600">0</span></div>
+    </div>
+    <div class="acard" id="card-mctravis">
+      <div class="cname"><span class="cdot" style="background:#FF8C00;box-shadow:0 0 5px #FF8C00;"></span><span id="nm-mctravis">MCTRAVIS</span></div>
+      <div class="cstatus st-offline" id="st-mctravis">OFFLINE</div>
+      <div class="ctx-row"><div class="ctx-bar-bg"><div class="ctx-bar" id="bar-mctravis" style="background:#FF8C00;width:0%"></div></div><span class="ctx-pct" id="ctx-mctravis" style="color:#FF8C00">0</span></div>
+    </div>
+    <div class="acard" id="card-zeus">
+      <div class="cname"><span class="cdot" style="background:#FF4500;box-shadow:0 0 5px #FF4500;"></span><span id="nm-zeus">ZEUS</span></div>
+      <div class="cstatus st-offline" id="st-zeus">OFFLINE</div>
+      <div class="ctx-row"><div class="ctx-bar-bg"><div class="ctx-bar" id="bar-zeus" style="background:#FF4500;width:0%"></div></div><span class="ctx-pct" id="ctx-zeus" style="color:#FF4500">0</span></div>
+    </div>
+    <div class="acard" id="card-obr">
+      <div class="cname"><span class="cdot" style="background:#FF7F50;box-shadow:0 0 5px #FF7F50;"></span><span id="nm-obr">OBR</span></div>
+      <div class="cstatus st-offline" id="st-obr">OFFLINE</div>
+      <div class="ctx-row"><div class="ctx-bar-bg"><div class="ctx-bar" id="bar-obr" style="background:#FF7F50;width:0%"></div></div><span class="ctx-pct" id="ctx-obr" style="color:#FF7F50">0</span></div>
+    </div>
+  </div>
+
+  <!-- SVG TRON GRID -->
+  <div id="grid-wrap">
+    <div id="scanline"></div>
+    <svg id="grid-svg" viewBox="0 0 900 720" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Glow filters -->
+        <filter id="glow-active" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b2"/>
+          <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-arc" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-idle" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-strong" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <!-- Packet gradient -->
+        <radialGradient id="pkt-grad">
+          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#00F0FF" stop-opacity="0.2"/>
+        </radialGradient>
+      </defs>
+
+      <!-- dot grid background -->
+      <g id="bg-dots"></g>
+
+      <!-- Sector dividers -->
+      <line x1="20" y1="148" x2="880" y2="148" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <line x1="20" y1="418" x2="880" y2="418" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <line x1="20" y1="550" x2="880" y2="550" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <!-- Sector labels sit just BELOW each divider line -->
+      <text class="sector-label" x="24" y="20">COMMAND</text>
+      <text class="sector-label" x="24" y="162">ENGINEERING</text>
+      <text class="sector-label" x="24" y="432">OPS</text>
+      <text class="sector-label" x="24" y="564">INTEL</text>
+
+      <!-- Circuit traces layer (rendered by JS) -->
+      <g id="traces"></g>
+      <!-- Active pulse overlays -->
+      <g id="pulse-overlays"></g>
+      <!-- Packets in flight -->
+      <g id="packets"></g>
+      <!-- Nodes layer (hexes, arcs, dots — no text) -->
+      <g id="nodes"></g>
+      <!-- Label layer — always on top, never occluded -->
+      <g id="labels"></g>
+    </svg>
+  </div>
+
+  <!-- ACTIVITY FEED -->
+  <div id="feed-panel">
+    <div id="feed-title">◈ ACTIVITY</div>
+    <div id="activity-feed"></div>
+  </div>
+</div>
+
+<div id="offline">GRID OFFLINE</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+const GS_URL  = 'http://localhost:8877';
+const PB_URL  = 'http://localhost:8090';
+const PB_EMAIL = 'zeus@zeusops.local';
+const PB_PASS  = 'ZeusOps2026!';
+let   PB_TOKEN = '';
+let   pbOnline = false;
+const pbJobs   = {};
+const _logSeenIds = new Set();
+
+// ── Agent config ──────────────────────────────────────────
+const AGENT_ALIAS = {
+  'devops':'devops-automator','devops-auto':'devops-automator',
+  'devops automator':'devops-automator','devops-automator':'devops-automator',
+  'workflow':'workflow-architect','workflow-arch':'workflow-architect',
+  'workflow architect':'workflow-architect','workflow-architect':'workflow-architect',
+  'incident':'incident-manager','incident-mgr':'incident-manager',
+  'incident manager':'incident-manager','incident-manager':'incident-manager',
+  'arch':'architect','mgr':'manager','rel':'releaser',
+  'res':'researcher','rev':'reviewer','sec':'security','security-eng':'security',
+};
+function canonicalName(n){
+  if(!n) return n;
+  const key = n.toLowerCase().trim().replace(/\s+/g,' ');
+  return AGENT_ALIAS[key] || key.replace(/\s+/g,'-');
+}
+
+const AGENT_COLOR = {
+  manager:'#FFD700',architect:'#9B6BFF',pm:'#00BFFF',sre:'#FF6B35',
+  releaser:'#00FF88',coder:'#00F0FF',tester:'#F1C40F',reviewer:'#FF69B4',
+  researcher:'#7B68EE','incident-manager':'#FF2244',
+  'workflow-architect':'#00CED1','devops-automator':'#98FF98',
+  security:'#FF4DFF',
+  main:'#FF6600',zeus:'#FF4500',mctravis:'#FF8C00',obr:'#FF7F50',
+};
+
+// Tool name → short label (SVG-safe, no emoji)
+// Displayed as a small badge inside the active hex
+const TOOL_ICON = {
+  exec:'EXC', bash:'SH', shell:'SH',
+  read:'RD', write:'WR', edit:'ED',
+  web_search:'SRC', web_fetch:'GET', browser:'WEB',
+  message:'MSG', sessions_spawn:'SPN', sessions_send:'SND',
+  memory_search:'MEM', memory_get:'MEM',
+  github:'GIT', gh:'GIT',
+  trello:'TRL',
+  deploy:'DEP', ci:'CI',
+  claude:'AI', codex:'AI',
+  tool_call:'TOOL',
+};
+function toolIcon(toolName){
+  if(!toolName) return null;
+  const k = toolName.toLowerCase().trim();
+  for(const[prefix,icon]of Object.entries(TOOL_ICON)){
+    if(k===prefix||k.startsWith(prefix)) return icon;
+  }
+  return 'RUN';
+}
+
+// Per-agent last tool used (for icon display)
+const agentLastTool = {};
+
+const ACTION_COLOR = {
+  dispatch:'#FFD700',ci_check:'#00F0FF',deploy:'#00FF88',trello_update:'#9B6BFF',
+  pr_event:'#00BFFF',heartbeat:'#8B7536',sre_alert:'#FF2244',escalation:'#FF6600',
+  system:'#4a6080',agent_checkpoint:'#7B68EE',tool_call:'#98FF98',
+};
+
+// ── Fixed 2D node positions in SVG viewBox 900×640 ───────
+const NODE_POS = {
+  // COMMAND tier  (y ≈ 82)
+  manager:             {x:450, y:82},
+  // ENGINEERING tier  (y ≈ 225–340)
+  architect:           {x:220, y:228},
+  pm:                  {x:680, y:228},
+  coder:               {x:145, y:340},
+  reviewer:            {x:330, y:340},
+  tester:              {x:530, y:340},
+  releaser:            {x:720, y:340},
+  // OPS tier           (y ≈ 478)
+  sre:                 {x:210, y:478},
+  'incident-manager':  {x:400, y:478},
+  'devops-automator':  {x:590, y:478},
+  // INTEL tier         (y ≈ 625)
+  researcher:          {x:190, y:625},
+  security:            {x:420, y:625},
+  'workflow-architect':{x:660, y:625},
+};
+
+const NODE_R = {
+  manager:46, architect:40, pm:40, sre:36,
+  security:32,'incident-manager':32,'devops-automator':36,
+};
+function nodeR(id){return NODE_R[id]||30;}
+
+const EDGES = [
+  ['manager','architect'],['manager','researcher'],['manager','releaser'],
+  ['manager','sre'],['manager','devops-automator'],['manager','security'],
+  ['architect','coder'],['architect','researcher'],['architect','workflow-architect'],
+  ['architect','reviewer'],['architect','security'],
+  ['coder','tester'],['coder','reviewer'],
+  ['pm','researcher'],
+  ['sre','incident-manager'],['sre','researcher'],['sre','devops-automator'],['sre','security'],
+  ['incident-manager','devops-automator'],
+  ['devops-automator','coder'],['devops-automator','reviewer'],
+  ['security','researcher'],['security','reviewer'],
+  ['workflow-architect','researcher'],
+  ['tester','releaser'],
+];
+
+// ═══════════════════════════════════════════════════════════
+//  DISPATCH EDGE TRACKING
+// ═══════════════════════════════════════════════════════════
+const activeDispatchEdges = new Set();
+const ADJ = {};
+for(const[a,b]of EDGES){(ADJ[a]=ADJ[a]||[]).push(b);(ADJ[b]=ADJ[b]||[]).push(a);}
+
+function bfs(start,end){
+  if(start===end)return[start];
+  const q=[[start,[start]]];const seen=new Set([start]);
+  while(q.length){const[n,p]=q.shift();for(const nb of(ADJ[n]||[])){if(nb===end)return[...p,nb];if(!seen.has(nb)){seen.add(nb);q.push([nb,[...p,nb]]);}}}
+  return null;
+}
+
+function activateDispatchPath(from,to){
+  const path=bfs(from,to);
+  if(!path||path.length<2)return;
+  for(let i=0;i<path.length-1;i++) activeDispatchEdges.add(path[i]+'|'+path[i+1]);
+}
+function clearDispatchToAgent(agentId){
+  for(const key of [...activeDispatchEdges]) if(key.endsWith('|'+agentId)) activeDispatchEdges.delete(key);
+}
+function dispatch(from,to){ spawnPackets(from,to); activateDispatchPath(from,to); }
+function launch(from,to){ spawnPackets(from,to); }
+
+// ═══════════════════════════════════════════════════════════
+//  SVG HELPERS
+// ═══════════════════════════════════════════════════════════
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag,attrs={}){
+  const el=document.createElementNS(SVG_NS,tag);
+  for(const[k,v]of Object.entries(attrs)) el.setAttribute(k,v);
+  return el;
+}
+
+// Per-edge explicit midY overrides so traces don't bisect nodes
+const ROUTE_MID_Y = {
+  'manager|architect':    148, 'architect|manager':    148,
+  'manager|pm':           148, 'pm|manager':           148,
+  'manager|sre':          148, 'sre|manager':          148,
+  'manager|devops-automator': 148, 'devops-automator|manager':148,
+  'manager|security':     148, 'security|manager':     148,
+  'manager|researcher':   148, 'researcher|manager':   148,
+  'manager|releaser':     148, 'releaser|manager':     148,
+  'architect|coder':      284, 'coder|architect':      284,
+  'architect|reviewer':   284, 'reviewer|architect':   284,
+  'architect|researcher': 418, 'researcher|architect': 418,
+  'architect|workflow-architect': 418, 'workflow-architect|architect': 418,
+  'architect|security':   418, 'security|architect':   418,
+  'devops-automator|coder':   418, 'coder|devops-automator':   418,
+  'devops-automator|reviewer':418, 'reviewer|devops-automator':418,
+  'sre|devops-automator': 460, 'devops-automator|sre': 460,
+  'sre|incident-manager': 460, 'incident-manager|sre': 460,
+  'incident-manager|devops-automator': 460, 'devops-automator|incident-manager': 460,
+  'security|researcher':  550, 'researcher|security':  550,
+  'security|reviewer':    418, 'reviewer|security':    418,
+  'workflow-architect|researcher': 550, 'researcher|workflow-architect': 550,
+  'pm|researcher':        550, 'researcher|pm':        550,
+};
+
+// Orthogonal PCB-style path between two nodes
+function pcbPath(a,b){
+  const pa=NODE_POS[a], pb=NODE_POS[b];
+  if(!pa||!pb) return null;
+  const key=a+'|'+b;
+  let my = ROUTE_MID_Y[key];
+  if(my===undefined){
+    const midY=(pa.y+pb.y)/2;
+    const hash=(a+b).split('').reduce((s,c)=>s+c.charCodeAt(0),0);
+    my=midY+(((hash%7)-3)*8);
+  }
+  return `M ${pa.x} ${pa.y} L ${pa.x} ${my} L ${pb.x} ${my} L ${pb.x} ${pb.y}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD BACKGROUND DOT GRID
+// ═══════════════════════════════════════════════════════════
+function buildDotGrid(){
+  const g = document.getElementById('bg-dots');
+  for(let x=0;x<=900;x+=40){
+    for(let y=0;y<=720;y+=40){
+      const c=svgEl('circle',{cx:x,cy:y,r:'1',fill:'#0a1628'});
+      g.appendChild(c);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD CIRCUIT TRACES
+// ═══════════════════════════════════════════════════════════
+const traceEls  = {}; // edgeKey → {base, pulse}
+const pulseState= {}; // edgeKey → {active, phase, completing, completingT}
+
+function buildTraces(){
+  const tg = document.getElementById('traces');
+  const pg = document.getElementById('pulse-overlays');
+  for(const[a,b]of EDGES){
+    const d = pcbPath(a,b);
+    if(!d) continue;
+    const key = a+'|'+b;
+    const colA = AGENT_COLOR[a]||'#00F0FF';
+    const colB = AGENT_COLOR[b]||'#00F0FF';
+
+    // Base trace — always visible, very dim
+    const base = svgEl('path',{
+      d, fill:'none', stroke:colA,
+      'stroke-width':'1.5', opacity:'0.06',
+      'stroke-linecap':'round', 'stroke-linejoin':'round'
+    });
+    tg.appendChild(base);
+
+    // Corner junction dots
+    const pa=NODE_POS[a],pb=NODE_POS[b];
+    const hash=(a+b).split('').reduce((s,c)=>s+c.charCodeAt(0),0);
+    const jitter=((hash%7)-3)*6;
+    const my=(pa.y+pb.y)/2+jitter;
+    const j1=svgEl('circle',{cx:pa.x,cy:my,r:'2.5',fill:colA,opacity:'0.08'});
+    const j2=svgEl('circle',{cx:pb.x,cy:my,r:'2.5',fill:colB,opacity:'0.08'});
+    tg.appendChild(j1); tg.appendChild(j2);
+
+    // Pulse overlay — animated dash-offset
+    const pLen = 900; // generous overestimate
+    const pulse = svgEl('path',{
+      d, fill:'none', stroke:'#fff',
+      'stroke-width':'2.5', opacity:'0',
+      'stroke-linecap':'round', 'stroke-linejoin':'round',
+      'stroke-dasharray':`60 ${pLen}`,
+      'stroke-dashoffset':'0',
+    });
+    pg.appendChild(pulse);
+
+    traceEls[key] = {base, pulse, j1, j2, colA, colB};
+    pulseState[key] = {active:false, phase:0, completing:false, completingT:0};
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILD NODES
+// ═══════════════════════════════════════════════════════════
+const nodeEls = {}; // id → {hex, fill, arc, dot, label, taskLabel, ctxArc}
+const agentData = {}; // id → {status, contextPct, lastActive, pbTask}
+
+for(const id of Object.keys(NODE_POS)){
+  agentData[id] = {status:'offline', contextPct:0, lastActive:null, pbTask:null};
+}
+
+function hexPoints(cx,cy,r,flat=true){
+  const pts=[];
+  for(let i=0;i<6;i++){
+    const a=(flat?0:30)+(60*i);
+    const rad=a*Math.PI/180;
+    pts.push(`${(cx+r*Math.cos(rad)).toFixed(1)},${(cy+r*Math.sin(rad)).toFixed(1)}`);
+  }
+  return pts.join(' ');
+}
+
+function arcPath(cx,cy,r,pct){
+  if(pct<=0) return '';
+  if(pct>=1) pct=0.9999;
+  const start=-Math.PI/2;
+  const end=start+2*Math.PI*pct;
+  const x1=cx+r*Math.cos(start), y1=cy+r*Math.sin(start);
+  const x2=cx+r*Math.cos(end),   y2=cy+r*Math.sin(end);
+  const large=pct>0.5?1:0;
+  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+}
+
+function buildNodes(){
+  const ng = document.getElementById('nodes');
+  const lg = document.getElementById('labels');
+
+  for(const[id,pos]of Object.entries(NODE_POS)){
+    const col = AGENT_COLOR[id]||'#00F0FF';
+    const r   = nodeR(id);
+
+    // ── Hex group (graphics only, no text) ──
+    const g = svgEl('g',{'data-id':id,transform:`translate(${pos.x},${pos.y})`});
+
+    const fill = svgEl('polygon',{
+      points:hexPoints(0,0,r*0.85), fill:col, opacity:'0.05'
+    });
+    const hex = svgEl('polygon',{
+      points:hexPoints(0,0,r),
+      fill:'none', stroke:col, 'stroke-width':'1.5', opacity:'0.25'
+    });
+    const ctxArc = svgEl('path',{
+      d:'', fill:'none', stroke:col, 'stroke-width':'3', opacity:'0.8',
+      filter:'url(#glow-arc)'
+    });
+    // Second arc — softer wider glow behind the main arc
+    const ctxArcGlow = svgEl('path',{
+      d:'', fill:'none', stroke:col, 'stroke-width':'6', opacity:'0.18'
+    });
+    const dot = svgEl('circle',{cx:'0',cy:r+7,r:'3',fill:col,opacity:'0.3'});
+    // Tool badge — small pill with short label, centered in hex
+    const toolBadgeBg = svgEl('rect',{
+      x:'-14', y:'-8', width:'28', height:'14',
+      rx:'3', fill:'#000810', stroke:col, 'stroke-width':'0.8', opacity:'0'
+    });
+    const toolIcon = svgEl('text',{
+      x:'0', y:'5', 'text-anchor':'middle',
+      'font-family':'Orbitron,sans-serif', 'font-weight':'700',
+      'font-size':'7', fill:col,
+      'letter-spacing':'1', opacity:'0'
+    });
+
+    g.appendChild(fill);
+    g.appendChild(hex);
+    g.appendChild(ctxArcGlow);
+    g.appendChild(ctxArc);
+    g.appendChild(dot);
+    ng.appendChild(g);
+    // toolBadgeBg and toolIcon added to label layer below (after lg_g is built)
+
+    // ── Label group (separate top layer, never occluded) ──
+    const lg_g = svgEl('g',{transform:`translate(${pos.x},${pos.y})`});
+
+    // Pill background behind the name
+    const pillW = Math.max(id.length*5.8, 52);
+    const pillH = 13;
+    const pill = svgEl('rect',{
+      x:(-pillW/2).toFixed(1), y:(r+10).toFixed(1),
+      width:pillW.toFixed(1), height:pillH,
+      rx:'2', fill:'#000810', opacity:'0.82'
+    });
+    const label = svgEl('text',{
+      x:'0', y:(r+21).toFixed(1), 'text-anchor':'middle',
+      'font-family':'Orbitron,sans-serif', 'font-weight':'700',
+      'font-size':'7.5', fill:col, opacity:'0.7', 'letter-spacing':'0.8'
+    });
+    label.textContent = id.toUpperCase();
+
+    // Task label pill
+    const taskPillW = 80;
+    const taskPill = svgEl('rect',{
+      x:(-taskPillW/2).toFixed(1), y:(r+24).toFixed(1),
+      width:taskPillW, height:'11',
+      rx:'2', fill:'#000810', opacity:'0'
+    });
+    const taskLabel = svgEl('text',{
+      x:'0', y:(r+33).toFixed(1), 'text-anchor':'middle',
+      'font-family':'Share Tech Mono,monospace',
+      'font-size':'6.5', fill:col, opacity:'0', 'letter-spacing':'0.3'
+    });
+
+    // Tool badge lives in label layer so glow filter doesn't blur it
+    lg_g.appendChild(toolBadgeBg);
+    lg_g.appendChild(toolIcon);
+    lg_g.appendChild(pill);
+    lg_g.appendChild(label);
+    lg_g.appendChild(taskPill);
+    lg_g.appendChild(taskLabel);
+    lg.appendChild(lg_g);
+
+    nodeEls[id] = {g, hex, fill, ctxArc, ctxArcGlow, dot, toolIcon, toolBadgeBg, label, taskLabel, taskPill, pill, col};
+  }
+}
+
+// Tool icon display — shows briefly then fades after 12s
+function updateToolIcon(id){
+  const el = nodeEls[id];
+  if(!el||!el.toolIcon) return;
+  const t = agentLastTool[id];
+  if(t){
+    el.toolIcon.textContent = t.icon;
+    el.toolIcon.setAttribute('opacity','0.9');
+    if(el.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0.9');
+  } else {
+    el.toolIcon.setAttribute('opacity','0');
+    if(el.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0');
+  }
+}
+
+// Fade tool badges older than 10s
+setInterval(()=>{
+  const now = Date.now();
+  for(const[id,t]of Object.entries(agentLastTool)){
+    const age = now - t.ts;
+    if(age > 10000){
+      delete agentLastTool[id];
+      updateToolIcon(id);
+    } else if(age > 6000){
+      const fade = ((1-(age-6000)/4000)*0.9).toFixed(2);
+      const el = nodeEls[id];
+      if(el?.toolIcon) el.toolIcon.setAttribute('opacity', fade);
+      if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity', fade);
+    }
+  }
+}, 150);
+
+// Context arc color: agent color → yellow → orange → red as ctx fills
+// Neutral below 65%, gradient shift 65-85%, full red alarm above 85%
+function ctxArcColor(baseColor, pct){
+  if(pct < 0.65) return baseColor;
+
+  // Parse base hex to RGB
+  const hex = baseColor.replace('#','');
+  const br = parseInt(hex.slice(0,2),16);
+  const bg = parseInt(hex.slice(2,4),16);
+  const bb = parseInt(hex.slice(4,6),16);
+
+  // Milestone colors
+  const yellow = [255, 210, 0];
+  const orange  = [255, 100, 0];
+  const red     = [255, 30,  30];
+
+  let tr, tg, tb, t;
+  if(pct < 0.75){
+    // 65-75%: base → yellow
+    t = (pct-0.65)/0.10;
+    [tr,tg,tb] = yellow;
+  } else if(pct < 0.88){
+    // 75-88%: yellow → orange
+    t = (pct-0.75)/0.13;
+    [tr,tg,tb] = orange;
+    const [sr,sg,sb] = yellow;
+    tr = sr+(tr-sr)*t; tg = sg+(tg-sg)*t; tb = sb+(tb-sb)*t;
+    const r2=Math.round(tr),g2=Math.round(tg),b2=Math.round(tb);
+    return `rgb(${r2},${g2},${b2})`;
+  } else {
+    // 88-100%: orange → red
+    t = Math.min((pct-0.88)/0.12, 1);
+    const [sr,sg,sb] = orange;
+    [tr,tg,tb] = red;
+    tr = sr+(tr-sr)*t; tg = sg+(tg-sg)*t; tb = sb+(tb-sb)*t;
+    const r2=Math.round(tr),g2=Math.round(tg),b2=Math.round(tb);
+    return `rgb(${r2},${g2},${b2})`;
+  }
+
+  // Blend base→target
+  const r2 = Math.round(br+(tr-br)*t);
+  const g2 = Math.round(bg+(tg-bg)*t);
+  const b2 = Math.round(bb+(tb-bb)*t);
+  return `rgb(${r2},${g2},${b2})`;
+}
+
+function updateNodeVis(id){
+  const el  = nodeEls[id];
+  const ag  = agentData[id];
+  if(!el||!ag) return;
+  const col = el.col;
+  const st  = ag.status||'offline';
+  const pct = (ag.contextPct||0)/100;
+  const r   = nodeR(id);
+  const isActive = st==='active';
+  const isIdle   = st==='idle';
+  const isOffline= st==='offline';
+
+  const outerOp = isActive?'1.0':isIdle?'0.55':'0.18';
+  const innerOp = isActive?'0.30':isIdle?'0.12':'0.04';
+  const dotOp   = isActive?'1.0':isIdle?'0.5':'0.15';
+  const labelOp = isActive?'1.0':isIdle?'0.5':'0.25';
+  const arcOp   = isActive?'0.9':isIdle?'0.45':'0.15';
+  const dotColor= isActive?col:isIdle?col:'#334455';
+
+  el.hex.setAttribute('opacity', outerOp);
+  el.fill.setAttribute('opacity', innerOp);
+  el.dot.setAttribute('opacity', dotOp);
+  el.dot.setAttribute('fill', dotColor);
+  el.label.setAttribute('opacity', labelOp);
+
+  // Context arc (main + glow behind) — heat color only for active/idle (not offline stale data)
+  if(pct>0){
+    const ap = arcPath(0,0,r+6,pct);
+    const arcColor = isOffline ? el.col : ctxArcColor(el.col, pct);
+    el.ctxArc.setAttribute('d', ap);
+    el.ctxArc.setAttribute('stroke', arcColor);
+    el.ctxArc.setAttribute('opacity', arcOp);
+    // Thicken + pulse at critical threshold
+    if(pct >= 0.88){
+      el.ctxArc.setAttribute('stroke-width','4');
+      el.ctxArc.style.animation='ctx-alarm 1.2s ease-in-out infinite';
+    } else if(pct >= 0.75){
+      el.ctxArc.setAttribute('stroke-width','3.5');
+      el.ctxArc.style.animation='';
+    } else {
+      el.ctxArc.setAttribute('stroke-width','3');
+      el.ctxArc.style.animation='';
+    }
+    el.ctxArcGlow.setAttribute('d', ap);
+    el.ctxArcGlow.setAttribute('stroke', arcColor);
+    el.ctxArcGlow.setAttribute('opacity', pct>=0.88?(isActive?'0.45':'0.20'):isActive?'0.28':isIdle?'0.10':'0.05');
+  } else {
+    el.ctxArc.setAttribute('d','');
+    el.ctxArcGlow.setAttribute('d','');
+  }
+
+  // Glow filter on hex group (active gets double-blur glow)
+  if(isActive){
+    el.g.setAttribute('filter','url(#glow-active)');
+  } else if(isIdle){
+    el.g.setAttribute('filter','url(#glow-idle)');
+  } else {
+    el.g.removeAttribute('filter');
+  }
+
+  // Task label + pill
+  const task = ag.pbTask;
+  if(task && isActive){
+    const txt = task.length>18?task.slice(0,17)+'…':task;
+    el.taskLabel.textContent = txt;
+    el.taskLabel.setAttribute('opacity','0.75');
+    if(el.taskPill) el.taskPill.setAttribute('opacity','0.82');
+  } else {
+    el.taskLabel.setAttribute('opacity','0');
+    if(el.taskPill) el.taskPill.setAttribute('opacity','0');
+  }
+
+  // Name label brightness
+  el.label.setAttribute('opacity', isActive?'1.0':isIdle?'0.55':'0.28');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PACKET ANIMATION
+// ═══════════════════════════════════════════════════════════
+const activePackets = [];
+
+function spawnPackets(from,to){
+  const path=bfs(from,to);
+  if(!path||path.length<2) return;
+  const col = AGENT_COLOR[from]||'#00F0FF';
+  for(let i=0;i<path.length-1;i++){
+    const a=path[i],b=path[i+1];
+    const d=pcbPath(a,b);
+    if(!d) continue;
+    // Create a temp path to measure
+    const tmpPath=svgEl('path',{d,fill:'none'});
+    document.getElementById('packets').appendChild(tmpPath);
+    const totalLen=tmpPath.getTotalLength();
+    document.getElementById('packets').removeChild(tmpPath);
+
+    // The visible packet: small diamond
+    const pkt=svgEl('polygon',{
+      points:'-4,0 0,-4 4,0 0,4',
+      fill:col, opacity:'0.95',
+      filter:'url(#glow-strong)'
+    });
+    document.getElementById('packets').appendChild(pkt);
+
+    activePackets.push({
+      el:pkt, pathD:d, totalLen,
+      t:0, speed:180, delay:i*0.18,
+      col
+    });
+  }
+}
+
+function animatePackets(dt){
+  const pg = document.getElementById('packets');
+  for(let i=activePackets.length-1;i>=0;i--){
+    const p=activePackets[i];
+    if(p.delay>0){p.delay-=dt;continue;}
+    p.t+=dt*p.speed;
+    if(p.t>=p.totalLen){
+      pg.removeChild(p.el);
+      activePackets.splice(i,1);
+      continue;
+    }
+    // getPointAtLength on a real path
+    if(!p._svgPath){
+      p._svgPath=svgEl('path',{d:p.pathD,fill:'none'});
+      // add offscreen so it can be measured
+      p._svgPath.style.display='none';
+      pg.appendChild(p._svgPath);
+    }
+    const pt=p._svgPath.getPointAtLength(p.t);
+    p.el.setAttribute('transform',`translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`);
+  }
+  // Clean up hidden measurement paths
+  for(const p of activePackets){
+    if(p._svgPath && p.t>=p.totalLen){
+      pg.removeChild(p._svgPath);
+      p._svgPath=null;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TRACE PULSE ANIMATION
+// ═══════════════════════════════════════════════════════════
+let _tracePaths = {}; // key → measured SVG path element
+
+function ensureTracePath(key){
+  if(_tracePaths[key]) return _tracePaths[key];
+  const[a,b]=key.split('|');
+  const d=pcbPath(a,b);
+  if(!d) return null;
+  const p=svgEl('path',{d,fill:'none'});
+  p.style.display='none';
+  document.getElementById('traces').appendChild(p);
+  _tracePaths[key]=p;
+  return p;
+}
+
+const PULSE_SPEED = 120; // px/sec
+
+function animateTraces(dt){
+  for(const key of Object.keys(traceEls)){
+    const te  = traceEls[key];
+    const ps  = pulseState[key];
+    const isDispatched = activeDispatchEdges.has(key);
+
+    // Update base trace brightness
+    const[a,b]=key.split('|');
+    const aActive=(agentData[a]||{}).status==='active';
+    const bActive=(agentData[b]||{}).status==='active';
+    const baseBright=(aActive&&bActive)?0.18:(aActive||bActive)?0.10:0.05;
+    te.base.setAttribute('opacity',baseBright);
+    te.j1.setAttribute('opacity',(aActive||bActive)?0.25:0.07);
+    te.j2.setAttribute('opacity',(aActive||bActive)?0.25:0.07);
+
+    if(isDispatched && !ps.active){
+      ps.active=true; ps.completing=false; ps.phase=0;
+      te.pulse.setAttribute('stroke', te.colA);
+    } else if(!isDispatched && ps.active && !ps.completing){
+      ps.completing=true; ps.completingT=1.5;
+    }
+
+    if(ps.completing){
+      ps.completingT-=dt;
+      if(ps.completingT<=0){ ps.active=false; ps.completing=false; te.pulse.setAttribute('opacity','0'); continue; }
+      te.pulse.setAttribute('opacity', (ps.completingT/1.5*0.9).toFixed(3));
+    }
+
+    if(ps.active){
+      const tp = ensureTracePath(key);
+      if(!tp){te.pulse.setAttribute('opacity','0');continue;}
+      const totalLen = tp.getTotalLength();
+      ps.phase = (ps.phase + PULSE_SPEED*dt) % (totalLen+60);
+      // stroke-dasharray: "60 BIG", offset marches backward = forward travel
+      te.pulse.setAttribute('stroke-dasharray', `60 ${Math.max(totalLen,200)}`);
+      te.pulse.setAttribute('stroke-dashoffset', (-(ps.phase)).toFixed(1));
+      if(!ps.completing) te.pulse.setAttribute('opacity','0.9');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  POCKETBASE AUTH + POLLING
+// ═══════════════════════════════════════════════════════════
+function pbHeaders(){
+  return PB_TOKEN ? {Authorization: PB_TOKEN} : {};
+}
+
+async function pbAuth(){
+  try{
+    const r=await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({identity:PB_EMAIL,password:PB_PASS})
+    });
+    if(!r.ok) return;
+    const d=await r.json();
+    if(d.token){ PB_TOKEN=d.token; pbOnline=true; }
+  }catch{}
+}
+
+async function hydratePB(){
+  try{
+    const r=await fetch(`${PB_URL}/api/collections/agent_jobs/records?perPage=50&sort=-dispatched_at`,{headers:pbHeaders()});
+    if(!r.ok) return;
+    const d=await r.json();
+    const runningAgents=new Set();
+    const seenNames=new Set();
+    for(const job of(d.items||[])){
+      const name=canonicalName(job.agent_name);
+      if(!seenNames.has(name)){
+        seenNames.add(name);
+        pbJobs[name]={status:job.status,task_summary:job.task_summary,session_id:job.session_id,trello_card_url:job.trello_card_url};
+      }
+      if(job.status==='running'){
+        runningAgents.add(name);
+        activateDispatchPath('manager',name);
+      }
+    }
+    const toRemove=[...activeDispatchEdges].filter(k=>!runningAgents.has(k.split('|')[1]));
+    for(const key of toRemove){ activeDispatchEdges.delete(key); clearDispatchToAgent(key.split('|')[1]); }
+    pbOnline=true;
+  }catch{}
+}
+
+async function pollLog(){
+  try{
+    // Sort newest-first from PB, process oldest-first for chronological dedup,
+    // but push to END of activityLog so newest ends up at index 0 after reverse render
+    const r=await fetch(`${PB_URL}/api/collections/manager_log/records?sort=-created&perPage=50`,{headers:pbHeaders()});
+    if(!r.ok) return;
+    const d=await r.json();
+    // Items arrive newest-first (sort=-created).
+    // Process oldest→newest so each unshift puts the newer item at index 0.
+    // Final result: activityLog[0] = most recent entry.
+    const items=(d.items||[]).slice().reverse(); // reverse newest-first → oldest-first
+    for(const item of items){
+      if(_logSeenIds.has(item.id)) continue;
+      _logSeenIds.add(item.id);
+      applyLog(item);
+    }
+  }catch{}
+}
+
+function applyLog(rec){
+  const col = ACTION_COLOR[rec.action_type]||'#4a6080';
+  let ctx = null;
+  try{ if(rec.context) ctx = typeof rec.context==='string'?JSON.parse(rec.context):rec.context; }catch{}
+
+  // Tool use → update agent icon
+  if(rec.action_type==='tool_call' && ctx?.tool){
+    const icon = toolIcon(ctx.tool);
+    // Try to extract agent from description (e.g. "claude: spawned Coder on...")
+    const desc = (rec.description||'').toLowerCase();
+    for(const id of Object.keys(NODE_POS)){
+      if(desc.includes(id.replace('-',' '))||desc.includes(id)){
+        agentLastTool[id] = {icon, ts: Date.now()};
+        updateToolIcon(id);
+        break;
+      }
+    }
+    // Also tag manager since it's the one calling tools
+    agentLastTool['manager'] = {icon, ts: Date.now()};
+    updateToolIcon('manager');
+  }
+
+  // CI / deploy stats
+  if(rec.action_type==='ci_check'){
+    const v=document.getElementById('s-ci');
+    if(v){ const txt=rec.description||''; v.textContent=txt.includes('fail')||txt.includes('FAIL')?'FAIL':'OK'; v.className='stat-val '+(txt.toLowerCase().includes('fail')?'err':''); }
+  }
+  if(rec.action_type==='deploy'){
+    const v=document.getElementById('s-deploy');
+    if(v){ const t=(rec.description||'').slice(0,14); v.textContent=t; }
+  }
+  pushActivity(rec.description||'', col, ctx, rec.action_type, rec.created);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ACTIVITY FEED
+// ═══════════════════════════════════════════════════════════
+let activityLog = [];
+let expandedIdx = null;
+
+function pushActivity(msg,color,ctx,actionType,ts){
+  let timeStr; let hasRealTs=false;
+  if(ts&&ts.trim()){
+    const d=new Date(ts.trim().replace(' ','T'));
+    if(!isNaN(d)){
+      const now=new Date();
+      const sameDay=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+      const t=d.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      timeStr=sameDay?t:(d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+t);
+      hasRealTs=true;
+    }
+  }
+  if(!timeStr) timeStr='—';
+  activityLog.unshift({msg,color,time:timeStr,ctx:ctx||null,actionType,hasRealTs});
+  if(activityLog.length>50) activityLog.pop();
+  renderFeed();
+}
+
+function renderFeed(){
+  const feed=document.getElementById('activity-feed');
+  if(!feed) return;
+  feed.innerHTML=activityLog.map((e,i)=>{
+    const col=e.color||'#4a6080';
+    const hasCtx=e.ctx&&typeof e.ctx==='object'&&Object.keys(e.ctx).length>0;
+    const isExp=expandedIdx===i;
+    const tsColor=e.hasRealTs?'#4a6080':'#2a3040';
+    let detail='';
+    if(isExp&&hasCtx){
+      const rows=Object.entries(e.ctx).map(([k,v])=>{
+        const isUrl=typeof v==='string'&&v.startsWith('http');
+        const val=isUrl?`<a href="${v}" target="_blank" style="color:${col};text-decoration:underline">${v.length>22?v.slice(0,21)+'…':v}</a>`:`<span style="color:#c0d8f0">${String(v).slice(0,40)}</span>`;
+        return`<div style="display:flex;gap:4px;margin-top:2px"><span style="color:#4a6060;min-width:50px">${k}:</span>${val}</div>`;
+      }).join('');
+      detail=`<div style="margin-top:5px;padding:4px;background:#020c1a;border:1px solid ${col}22;border-radius:2px;font-size:7px">${rows}</div>`;
+    }
+    return`<div onclick="expandedIdx=${isExp?'null':i};renderFeed()" style="border-left:2px solid ${col};padding:4px 6px;margin-bottom:4px;cursor:${hasCtx?'pointer':'default'};background:${isExp?'#020c1a':'transparent'}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="color:${tsColor};font-size:7px;letter-spacing:1px">${e.time}${e.actionType?` · <span style="color:${col};opacity:.7">${e.actionType.toUpperCase()}</span>`:''}</div>
+        ${hasCtx?`<div style="color:${col};font-size:8px;opacity:.6">${isExp?'▲':'▼'}</div>`:''}
+      </div>
+      <div style="color:${col};margin-top:2px;font-size:9px;line-height:1.4">${e.msg}</div>${detail}</div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOWER CARDS
+// ═══════════════════════════════════════════════════════════
+function fmt(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n);}
+function rel(ms){if(!ms)return'–';const s=Math.floor((Date.now()-ms)/1000);if(s<10)return'just now';if(s<60)return s+'s ago';const m=Math.floor(s/60);return m<60?m+'m ago':Math.floor(m/60)+'h ago';}
+function setT(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+
+function updateCard(id,ag){
+  const pct=ag.contextPct||0;
+  const st=ag.status||'offline';
+  const isOffline=st==='offline';
+  const baseCol=AGENT_COLOR[id]||'#FF6600';
+  const barCol=isOffline?baseCol:ctxArcColor(baseCol,pct/100);
+  const bar=document.getElementById('bar-'+id);
+  if(bar){bar.style.width=pct+'%';bar.style.background=barCol;bar.style.opacity=isOffline?'0.25':st==='idle'?'0.55':'1.0';}
+  const ctx=document.getElementById('ctx-'+id);
+  if(ctx){ctx.textContent=pct;ctx.style.opacity=isOffline?'0.3':st==='idle'?'0.6':'1.0';}
+  const stEl=document.getElementById('st-'+id);
+  if(stEl){stEl.textContent=st.toUpperCase()+(ag.lastActive?' · '+rel(ag.lastActive):'');stEl.className='cstatus st-'+st;}
+  const card=document.getElementById('card-'+id);
+  if(card) card.classList.toggle('active-card',st==='active');
+  const nm=document.getElementById('nm-'+id);
+  if(nm) nm.classList.toggle('active-pulse',st==='active');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAIN DATA FETCH
+// ═══════════════════════════════════════════════════════════
+async function fetchData(){
+  try{
+    const r=await fetch(`${GS_URL}/data`);
+    if(!r.ok) throw new Error('grid server down');
+    const data=await r.json();
+
+    document.getElementById('offline').classList.remove('show');
+    document.getElementById('sync').style.color='#00FF8877';
+
+    const gwMC = data.gateways?.mc?.online!==false;
+    const gwZO = data.gateways?.zeusops?.online!==false;
+    document.getElementById('dot-mc').className='gw-dot '+(gwMC?'gw-online':'gw-offline');
+    document.getElementById('dot-zo').className='gw-dot '+(gwZO?'gw-online':'gw-offline');
+    document.getElementById('badge').textContent=(gwMC||gwZO)?'ONLINE':'OFFLINE';
+
+    const combined={};
+    for(const ag of(data.agents||[])){
+      const id=canonicalName(ag.id)||ag.id;
+      combined[id]=ag;
+    }
+    // PB overrides for ZeusOps agents
+    for(const id of Object.keys(NODE_POS)){
+      if(pbJobs[id]?.status==='running'){
+        combined[id]={...combined[id]||{},status:'active',pbTask:pbJobs[id].task_summary};
+      }
+    }
+
+    // Update ZeusOps grid nodes
+    for(const id of Object.keys(NODE_POS)){
+      const ag=combined[id]||{};
+      agentData[id]={
+        status:ag.status||'offline',
+        contextPct:ag.contextPct||0,
+        lastActive:ag.lastActive||null,
+        pbTask:(combined[id]?.pbTask)||null
+      };
+      updateNodeVis(id);
+    }
+
+    // Tower cards
+    for(const id of ['main','mctravis','zeus','obr']){
+      if(combined[id]) updateCard(id,combined[id]);
+    }
+
+    // Stats
+    const activeCount=Object.values(agentData).filter(a=>a.status==='active').length;
+    setT('s-active',activeCount);
+    const s=data.stats||{};
+    const dispatchCount=activityLog.filter(e=>e.actionType==='dispatch').length;
+    setT('s-handoffs',dispatchCount||(s.handoffsToday!=null?s.handoffsToday:0));
+    if(s.totalTokensBurned!=null) setT('s-tokens',fmt(s.totalTokensBurned));
+    if(s.hottestAgent) setT('s-hot',s.hottestAgent.toUpperCase());
+
+    // Occasional demo packet (visual only — does not touch dispatch state)
+    const demoPairs=[['manager','architect'],['architect','coder'],['sre','devops-automator'],['coder','tester'],['tester','releaser']];
+    if(Math.random()<0.2){
+      const[a,b]=demoPairs[Math.floor(Math.random()*demoPairs.length)];
+      launch(a,b);
+    }
+
+  }catch{
+    document.getElementById('offline').classList.add('show');
+    document.getElementById('badge').textContent='OFFLINE';
+    document.getElementById('sync').style.color='#FF224477';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SSE SUBSCRIPTION
+// ═══════════════════════════════════════════════════════════
+function startSSE(){
+  const sseUrl=PB_TOKEN?`${PB_URL}/api/realtime?token=${encodeURIComponent(PB_TOKEN)}`:`${PB_URL}/api/realtime`;
+  const evtSrc=new EventSource(sseUrl);
+  let subscribed=false;
+
+  evtSrc.addEventListener('PB_CONNECT',(e)=>{
+    try{
+      const d=JSON.parse(e.data);
+      const clientId=d.clientId;
+      if(!clientId||subscribed) return;
+      subscribed=true;
+      fetch(`${PB_URL}/api/realtime`,{method:'POST',headers:{...pbHeaders(),'Content-Type':'application/json'},
+        body:JSON.stringify({clientId,subscriptions:['agent_jobs','manager_log']})}).catch(()=>{});
+    }catch{}
+  });
+
+  evtSrc.addEventListener('agent_jobs',(e)=>{
+    try{
+      const d=JSON.parse(e.data); const rec=d.record||d;
+      const name=canonicalName(rec.agent_name);
+      const prev=pbJobs[name]||{};
+      pbJobs[name]={status:rec.status,task_summary:rec.task_summary,session_id:rec.session_id,trello_card_url:rec.trello_card_url};
+      if(rec.status==='running'&&prev.status!=='running'){
+        const col=AGENT_COLOR[name]||'#00F0FF';
+        const ctx={agent:name,task:rec.task_summary,trello_card_url:rec.trello_card_url};
+        pushActivity(`DISPATCH → ${name.toUpperCase()}: ${rec.task_summary||''}`,col,ctx,'dispatch',new Date().toISOString());
+        dispatch('manager',name);
+        // Show spawn icon on the dispatched agent
+        agentLastTool[name] = {icon:'SPN', ts: Date.now()};
+        updateToolIcon(name);
+      } else if(rec.status!=='running'&&prev.status==='running'){
+        clearDispatchToAgent(name);
+      }
+    }catch{}
+  });
+
+  evtSrc.addEventListener('manager_log',(e)=>{
+    try{
+      const d=JSON.parse(e.data); const rec=d.record||d;
+      if(!rec.id||_logSeenIds.has(rec.id)) return;
+      _logSeenIds.add(rec.id);
+      applyLog(rec);
+    }catch{}
+  });
+
+  evtSrc.onerror=()=>{ subscribed=false; setTimeout(startSSE,8000); evtSrc.close(); };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════════════════
+function tickClock(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('clock').textContent=t;
+  setT('s-time',t);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RAF LOOP
+// ═══════════════════════════════════════════════════════════
+let lastRaf=0;
+function rafLoop(ts){
+  const dt=Math.min((ts-lastRaf)/1000,0.1);
+  lastRaf=ts;
+  animatePackets(dt);
+  animateTraces(dt);
+  requestAnimationFrame(rafLoop);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+buildDotGrid();
+buildTraces();
+buildNodes();
+
+tickClock();
+setInterval(tickClock,1000);
+
+pbAuth().then(()=>{ hydratePB(); pollLog(); startSSE(); });
+setInterval(()=>{ if(!PB_TOKEN) pbAuth(); },60000);
+setInterval(hydratePB,8000);
+setInterval(pollLog,8000);
+
+fetchData();
+setInterval(fetchData,8000);
+
+requestAnimationFrame(ts=>{ lastRaf=ts; requestAnimationFrame(rafLoop); });
+
+// Resize observer — SVG scales itself via viewBox/preserveAspectRatio
+// no manual resize needed
+</script>
+</body>
+</html>
