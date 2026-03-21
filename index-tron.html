@@ -742,7 +742,7 @@ function buildNodes(){
     const labelY = r*1.35 + 18; // label offset below triangle bottom
 
     const g=svgEl('g',{'data-id':id,transform:`translate(${pos.x},${pos.y})`,style:'cursor:pointer'});
-    g.addEventListener('click',()=>openInspect(id));
+    g.addEventListener('click',e=>{ e.stopPropagation(); openInspect(id); });
     g.addEventListener('mouseenter',()=>highlightEdges(id,true));
     g.addEventListener('mouseleave',()=>highlightEdges(id,false));
 
@@ -1079,6 +1079,56 @@ function openInspect(id){
   document.getElementById('inspect').classList.add('open');
 }
 
+// Refresh panel content without toggling open/close state
+function refreshInspect(id){
+  if(!inspectId||inspectId!==id) return;
+  const ag=agentData[id]||{}, col=AGENT_COLOR[id]||'#00F0FF';
+  const pct=(ag.contextPct||0)/100, st=ag.status||'offline';
+  const arcColor=pct>0&&st!=='offline'?ctxArcColor(col,pct):col;
+  const now=Date.now();
+
+  // Update timer section
+  const jobs=agentTimers[id]||[];
+  const jobsSection=document.getElementById('ib-jobs-section');
+  const jobsDiv=document.getElementById('ib-jobs');
+  if(jobs.length>0){
+    jobsSection.style.display='block';
+    jobsDiv.innerHTML=jobs.map(j=>{
+      const elapsed=fmtElapsed(now-j.dispatchedAt);
+      const task=j.taskSummary?(j.taskSummary.length>36?j.taskSummary.slice(0,35)+'…':j.taskSummary):'—';
+      const sid=j.sessionId?j.sessionId.slice(0,20):'';
+      return `<div style="padding:5px 0;border-bottom:1px solid #0d2040">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="color:${col};font-family:Orbitron,sans-serif;font-weight:700;font-size:12px;letter-spacing:1px">${elapsed}</span>
+          <span style="color:#3a5070;font-size:7px">${sid}</span>
+        </div>
+        <div style="color:#7bd4e8;font-size:8px;margin-top:2px">${task}</div>
+      </div>`;
+    }).join('');
+  } else { jobsSection.style.display='none'; }
+
+  // Update ctx arc
+  if(pct>0){
+    document.getElementById('ia-arc').setAttribute('d',arcPath(0,0,46,pct));
+    document.getElementById('ia-arc-glow').setAttribute('d',arcPath(0,0,46,pct));
+  }
+  document.getElementById('ia-pct').textContent=(ag.contextPct||0)+'%';
+  document.getElementById('ia-pct').setAttribute('fill',arcColor);
+  document.getElementById('ia-arc').setAttribute('stroke',arcColor);
+  document.getElementById('ia-arc-glow').setAttribute('stroke',arcColor);
+
+  // Stats
+  const ctxEl=document.getElementById('ib-ctx');
+  if(ctxEl){ ctxEl.textContent=(ag.contextPct||0)+'%'; ctxEl.style.color=arcColor; }
+  const tokEl=document.getElementById('ib-tokens');
+  if(tokEl) tokEl.textContent=ag.totalTokens!=null
+    ?(ag.totalTokens>=1000000?(ag.totalTokens/1000000).toFixed(2)+'M'
+      :ag.totalTokens>=1000?(ag.totalTokens/1000).toFixed(1)+'K'
+      :String(ag.totalTokens)):'—';
+  const actEl=document.getElementById('ib-active');
+  if(actEl) actEl.textContent=ag.lastActive?rel(ag.lastActive):'—';
+}
+
 function closeInspect(){
   inspectId=null;
   document.getElementById('inspect').classList.remove('open');
@@ -1090,9 +1140,10 @@ function closeInspect(){
 
 // Close on ESC
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeInspect(); });
-// Close on click outside inspect panel (on the SVG)
+// Close on click outside any node group — but not if we just opened (stopPropagation on node clicks)
 document.getElementById('grid-svg').addEventListener('click',e=>{
-  if(!e.target.closest('g[data-id]')) closeInspect();
+  // Node group clicks stop propagation themselves, so this only fires for empty space
+  closeInspect();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -1137,7 +1188,7 @@ setInterval(()=>{
     }
   }
   // Refresh inspect panel if open
-  if(inspectId) openInspect(inspectId); // refresh inspect panel live
+  if(inspectId) refreshInspect(inspectId); // refresh content without toggling open/close
 },200);
 
 // ═══════════════════════════════════════════════════════════
@@ -1265,7 +1316,7 @@ function updateNodeVis(id){
     if(el.taskPill) el.taskPill.setAttribute('opacity','0');
   }
 
-  if(inspectId===id) openInspect(id);
+  if(inspectId===id) refreshInspect(id);
 }
 
 // ═══════════════════════════════════════════════════════════
