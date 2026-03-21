@@ -369,6 +369,60 @@ const TOOL_DOT_COLOR = {
 };
 function toolDotColor(icon){ return TOOL_DOT_COLOR[icon]||'#4a8090'; }
 
+// ── Elapsed timer helpers ──────────────────────────────────────────────────
+function fmtElapsed(ms){
+  if(ms<0) ms=0;
+  const s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  if(h>0) return `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+
+// agentTimers[id] = [{dispatchedAt:ms, sessionId, taskSummary}]
+const agentTimers = {};
+
+function updateTimers(){
+  const now = Date.now();
+  for(const[id, el] of Object.entries(nodeEls)){
+    if(!el.timer1) continue;
+    const ag = agentData[id];
+    const isActive = ag?.status==='active';
+    const jobs = agentTimers[id]||[];
+
+    if(!isActive || jobs.length===0){
+      el.timer1.setAttribute('opacity','0');
+      el.timer2.setAttribute('opacity','0');
+      continue;
+    }
+
+    // Sort by dispatched time (oldest first = longest running first)
+    jobs.sort((a,b)=>a.dispatchedAt-b.dispatchedAt);
+
+    if(jobs.length===1){
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
+      el.timer1.setAttribute('font-size','9');
+      el.timer1.setAttribute('opacity','0.85');
+      el.timer2.setAttribute('opacity','0');
+    } else if(jobs.length===2){
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
+      el.timer1.setAttribute('font-size','8');
+      el.timer1.setAttribute('opacity','0.85');
+      el.timer2.textContent = fmtElapsed(now - jobs[1].dispatchedAt);
+      el.timer2.setAttribute('font-size','7');
+      el.timer2.setAttribute('opacity','0.55');
+    } else {
+      // 3+: show longest + count
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
+      el.timer1.setAttribute('font-size','8');
+      el.timer1.setAttribute('opacity','0.85');
+      el.timer2.textContent = `+${jobs.length-1} more`;
+      el.timer2.setAttribute('font-size','6.5');
+      el.timer2.setAttribute('opacity','0.4');
+    }
+  }
+}
+setInterval(updateTimers, 1000);
+
 function pushToolDot(agentId, icon){
   const el = nodeEls[agentId];
   if(!el) return;
@@ -771,10 +825,23 @@ function buildNodes(){
     const taskPill=svgEl('rect',{x:(-taskPillW/2).toFixed(1),y:(labelY+4).toFixed(1),width:taskPillW,height:'11',rx:'2',fill:'#000810',opacity:'0'});
     const taskLabel=svgEl('text',{x:'0',y:(labelY+13).toFixed(1),'text-anchor':'middle','font-family':'Share Tech Mono,monospace','font-size':'6.5',fill:col,opacity:'0','letter-spacing':'0.3'});
 
+    // ── Timer display (center of triangle, below inner hex) ──
+    // Two rows: primary timer + overflow indicator
+    const timerY1 = (r * 0.38).toFixed(1);  // below inner hex bottom
+    const timerY2 = (r * 0.58).toFixed(1);  // second timer row
+    const timer1 = svgEl('text',{x:'0',y:timerY1,'text-anchor':'middle',
+      'font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'9',
+      fill:col,opacity:'0','letter-spacing':'1'});
+    const timer2 = svgEl('text',{x:'0',y:timerY2,'text-anchor':'middle',
+      'font-family':'Orbitron,sans-serif','font-weight':'400','font-size':'7',
+      fill:col,opacity:'0','letter-spacing':'0.5'});
+
     lg_g.appendChild(toolBadgeBg);
     lg_g.appendChild(toolIconEl);
     lg_g.appendChild(hoverPctBg);
     lg_g.appendChild(hoverPct);
+    lg_g.appendChild(timer1);
+    lg_g.appendChild(timer2);
     lg_g.appendChild(pill);
     lg_g.appendChild(label);
     lg_g.appendChild(taskPill);
@@ -787,7 +854,8 @@ function buildNodes(){
       outerGlow, innerHex, innerFill, innerGlow, tickGroup,
       ctxArc, ctxArcGlow, ctxBarBg, r,
       dot, toolIcon:toolIconEl, toolBadgeBg, hoverPct, hoverPctBg,
-      label, taskLabel, taskPill, pill, col
+      label, taskLabel, taskPill, pill, col,
+      timer1, timer2
     };
 
     // Hover ctx% show/hide
@@ -1233,18 +1301,32 @@ async function hydratePB(){
     if(!r.ok) return;
     const d=await r.json();
     const runningAgents=new Set();const seenNames=new Set();
+    // Reset timers — rebuild from running jobs each hydrate
+    const freshTimers={};
     for(const job of(d.items||[])){
       const name=canonicalName(job.agent_name);
       if(!seenNames.has(name)){seenNames.add(name);pbJobs[name]={status:job.status,task_summary:job.task_summary,session_id:job.session_id,trello_card_url:job.trello_card_url};}
       if(job.status==='running'){
         runningAgents.add(name);
         activateDispatchPath('manager',name);
+        // Build timer entry
+        const dispatchedAt = job.dispatched_at ? new Date(job.dispatched_at).getTime() : Date.now();
+        if(!freshTimers[name]) freshTimers[name]=[];
+        freshTimers[name].push({dispatchedAt, sessionId:job.session_id, taskSummary:job.task_summary});
         // Seed a SPN dot if no stack exists yet for this agent
         if(!agentToolStack[name]||agentToolStack[name].length===0){
           agentLastTool[name]={icon:'SPN',ts:Date.now()};
           pushToolDot(name,'SPN');
         }
       }
+    }
+    // Commit fresh timers (only update, don't clobber if same jobs)
+    for(const[name,jobs] of Object.entries(freshTimers)){
+      agentTimers[name]=jobs;
+    }
+    // Clear timers for agents no longer running
+    for(const name of Object.keys(agentTimers)){
+      if(!runningAgents.has(name)) delete agentTimers[name];
     }
     const toRemove=[...activeDispatchEdges].filter(k=>!runningAgents.has(k.split('|')[1]));
     for(const key of toRemove){activeDispatchEdges.delete(key);clearDispatchToAgent(key.split('|')[1]);}
