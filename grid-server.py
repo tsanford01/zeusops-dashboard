@@ -209,7 +209,12 @@ def compute_data() -> dict:
             used_tokens = active_v.get("totalTokens") or 0
             max_ctx = active_v.get("contextTokens") or 200_000
             ctx_tokens = max_ctx  # keep for output field
-            ctx_pct = min(100, round(used_tokens / max_ctx * 100)) if max_ctx else 0
+            # Only report ctx% if session is active or idle (≤120 min)
+            # Offline agents show 0% — their last-known value is stale and misleading
+            if status == "offline":
+                ctx_pct = 0
+            else:
+                ctx_pct = min(100, round(used_tokens / max_ctx * 100)) if max_ctx else 0
             model = active_v.get("model")
 
             all_agents.append({
