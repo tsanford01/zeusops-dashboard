@@ -215,8 +215,8 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 // ═══════════════════════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════════════════════
-const GS_URL  = 'http://localhost:8877';
-const PB_URL  = 'http://localhost:8090';
+const GS_URL  = `http://${location.hostname}:8877`;
+const PB_URL  = `http://${location.hostname}:8090`;
 const PB_EMAIL = 'zeus@zeusops.local';
 const PB_PASS  = 'ZeusOps2026!';
 let   PB_TOKEN = '';
