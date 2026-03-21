@@ -79,20 +79,56 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 
 /* ── ACTIVITY FEED ── */
 #feed-panel{width:175px;flex-shrink:0;background:#00050f;border-left:1px solid #0d2040;display:flex;flex-direction:column;}
-#feed-title{font-size:8px;color:var(--text);letter-spacing:2px;padding:8px;border-bottom:1px solid #0d2040;flex-shrink:0;}
-#activity-feed{flex:1;overflow-y:auto;padding:4px;font-size:9px;}
+#feed-title{font-size:8px;color:var(--text);letter-spacing:2px;padding:6px 8px 4px;border-bottom:1px solid #0d2040;flex-shrink:0;}
+#feed-filters{display:flex;flex-wrap:wrap;gap:3px;padding:5px 6px;border-bottom:1px solid #0d2040;flex-shrink:0;}
+.ff-chip{font-size:7px;font-family:'Orbitron',sans-serif;letter-spacing:1px;padding:2px 5px;border-radius:2px;border:1px solid #0d2040;background:transparent;color:#4a6080;cursor:pointer;transition:all .2s;}
+.ff-chip.active{color:#000;border-color:currentColor;}
+#activity-feed{flex:1;overflow-y:auto;padding:4px;}
 #activity-feed::-webkit-scrollbar{width:3px;}
 #activity-feed::-webkit-scrollbar-track{background:#000;}
 #activity-feed::-webkit-scrollbar-thumb{background:#0d2040;}
+#load-older{width:100%;background:transparent;border:none;border-top:1px solid #0d2040;color:#2a4060;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;padding:6px;cursor:pointer;text-align:center;}
+#load-older:hover{color:#4a8090;}
+
+/* ── INSPECT PANEL ── */
+#inspect{position:fixed;top:64px;right:175px;bottom:0;width:240px;background:#000c1a;border-left:2px solid #0d2040;border-right:2px solid #0d2040;display:flex;flex-direction:column;transform:translateX(calc(100% + 175px));transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:30;pointer-events:none;}
+#inspect.open{transform:translateX(0);pointer-events:all;}
+/* stats bar is 36+28=64px from top */
+#inspect-close{position:absolute;top:8px;right:10px;background:none;border:none;color:#4a8090;font-size:14px;cursor:pointer;font-family:'Orbitron',sans-serif;}
+#inspect-close:hover{color:#00F0FF;}
+#inspect-name{font-family:'Orbitron',sans-serif;font-weight:900;font-size:13px;letter-spacing:2px;padding:12px 14px 4px;}
+#inspect-status{font-size:8px;letter-spacing:2px;padding:0 14px 10px;border-bottom:1px solid #0d2040;}
+#inspect-arc-wrap{display:flex;justify-content:center;padding:14px 0 8px;border-bottom:1px solid #0d2040;}
+#inspect-arc-svg{overflow:visible;}
+#inspect-body{padding:10px 14px;flex:1;overflow-y:auto;font-size:9px;}
+.ib-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0d2040;}
+.ib-label{color:#4a6080;letter-spacing:1px;}
+.ib-val{color:#7bd4e8;text-align:right;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#inspect-feed{margin-top:10px;}
+#inspect-feed-title{font-size:7px;letter-spacing:2px;color:#4a6080;margin-bottom:6px;}
+#inspect-entries{font-size:8px;}
+#inspect-entries .ie{border-left:2px solid;padding:3px 5px;margin-bottom:4px;opacity:.85;}
 
 /* ── OFFLINE OVERLAY ── */
 #offline{display:none;position:fixed;inset:0;background:#000810ee;z-index:99;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;color:#FF2244;font-size:22px;letter-spacing:4px;}
 #offline.show{display:flex;}
 
+/* ── MOBILE (< 640px) ── */
 @media(max-width:800px){
   #tower,#feed-panel{display:none;}
-  #grid-wrap{width:100%;}
 }
+@media(max-width:640px){
+  #grid-wrap{display:none;}
+  #mobile-list{display:flex;flex-direction:column;flex:1;overflow-y:auto;padding:8px;}
+}
+#mobile-list{display:none;}
+.ml-agent{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #0d2040;border-radius:3px;margin-bottom:6px;}
+.ml-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ml-name{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:1px;flex:1;}
+.ml-task{font-size:8px;color:#4a6080;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+.ml-ctx{font-size:8px;min-width:30px;text-align:right;}
+.ml-bar-wrap{width:60px;height:4px;background:#0d2040;border-radius:2px;overflow:hidden;}
+.ml-bar{height:100%;border-radius:2px;}
 </style>
 </head>
 <body>
@@ -149,9 +185,42 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
   <!-- SVG TRON GRID -->
   <div id="grid-wrap">
     <div id="scanline"></div>
+
+    <!-- INSPECT PANEL (overlays grid-wrap) -->
+    <div id="inspect">
+      <button id="inspect-close" onclick="closeInspect()">✕</button>
+      <div id="inspect-name" style="color:#00F0FF">—</div>
+      <div id="inspect-status" style="color:#4a6080">OFFLINE</div>
+      <div id="inspect-arc-wrap">
+        <svg id="inspect-arc-svg" width="100" height="100" viewBox="-55 -55 110 110">
+          <polygon id="ia-hex" points="" fill="none" stroke="#00F0FF" stroke-width="1.5" opacity="0.4"/>
+          <polygon id="ia-fill" points="" fill="#00F0FF" opacity="0.06"/>
+          <path id="ia-arc-glow" d="" fill="none" stroke="#00F0FF" stroke-width="8" opacity="0.12"/>
+          <path id="ia-arc" d="" fill="none" stroke="#00F0FF" stroke-width="3" opacity="0.9" filter="url(#ia-glow)"/>
+          <text id="ia-pct" x="0" y="5" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="13" fill="#00F0FF" opacity="0.9">0%</text>
+          <defs>
+            <filter id="ia-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+        </svg>
+      </div>
+      <div id="inspect-body">
+        <div class="ib-row"><span class="ib-label">SESSIONS</span><span class="ib-val" id="ib-sessions">—</span></div>
+        <div class="ib-row"><span class="ib-label">LAST TOOL</span><span class="ib-val" id="ib-tool">—</span></div>
+        <div class="ib-row"><span class="ib-label">LAST ACTIVE</span><span class="ib-val" id="ib-active">—</span></div>
+        <div class="ib-row"><span class="ib-label">GATEWAY</span><span class="ib-val" id="ib-gateway">—</span></div>
+        <div class="ib-row" id="ib-task-row"><span class="ib-label">TASK</span><span class="ib-val" id="ib-task" style="white-space:normal;word-break:break-word;max-width:150px">—</span></div>
+        <div id="inspect-feed">
+          <div id="inspect-feed-title">◈ RECENT ACTIVITY</div>
+          <div id="inspect-entries"></div>
+        </div>
+      </div>
+    </div>
+
     <svg id="grid-svg" viewBox="0 0 900 720" preserveAspectRatio="xMidYMid meet">
       <defs>
-        <!-- Glow filters -->
         <filter id="glow-active" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
           <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b2"/>
@@ -169,35 +238,29 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
           <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"/>
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-        <!-- Packet gradient -->
         <radialGradient id="pkt-grad">
           <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
           <stop offset="100%" stop-color="#00F0FF" stop-opacity="0.2"/>
         </radialGradient>
       </defs>
 
-      <!-- dot grid background -->
       <g id="bg-dots"></g>
 
       <!-- Sector dividers -->
       <line x1="20" y1="148" x2="880" y2="148" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
       <line x1="20" y1="418" x2="880" y2="418" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
       <line x1="20" y1="550" x2="880" y2="550" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
-      <!-- Sector labels sit just BELOW each divider line -->
-      <text class="sector-label" x="24" y="20">COMMAND</text>
-      <text class="sector-label" x="24" y="162">ENGINEERING</text>
-      <text class="sector-label" x="24" y="432">OPS</text>
-      <text class="sector-label" x="24" y="564">INTEL</text>
 
-      <!-- Circuit traces layer (rendered by JS) -->
+      <!-- Tier labels with collapse targets -->
+      <text class="sector-label" x="24" y="20" data-tier="COMMAND" style="cursor:pointer" onclick="toggleTier('COMMAND')">COMMAND</text>
+      <text class="sector-label" x="24" y="162" data-tier="ENGINEERING" style="cursor:pointer" onclick="toggleTier('ENGINEERING')">ENGINEERING</text>
+      <text class="sector-label" x="24" y="432" data-tier="OPS" style="cursor:pointer" onclick="toggleTier('OPS')">OPS</text>
+      <text class="sector-label" x="24" y="564" data-tier="INTEL" style="cursor:pointer" onclick="toggleTier('INTEL')">INTEL</text>
+
       <g id="traces"></g>
-      <!-- Active pulse overlays -->
       <g id="pulse-overlays"></g>
-      <!-- Packets in flight -->
       <g id="packets"></g>
-      <!-- Nodes layer (hexes, arcs, dots — no text) -->
       <g id="nodes"></g>
-      <!-- Label layer — always on top, never occluded -->
       <g id="labels"></g>
     </svg>
   </div>
@@ -205,9 +268,21 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
   <!-- ACTIVITY FEED -->
   <div id="feed-panel">
     <div id="feed-title">◈ ACTIVITY</div>
+    <div id="feed-filters">
+      <span class="ff-chip active" data-filter="ALL" style="color:#7bd4e8;border-color:#0d2a40;background:#0d2a4033" onclick="setFeedFilter('ALL',this)">ALL</span>
+      <span class="ff-chip" data-filter="dispatch" style="--fc:#FFD700" onclick="setFeedFilter('dispatch',this)">DISP</span>
+      <span class="ff-chip" data-filter="tool_call" style="--fc:#98FF98" onclick="setFeedFilter('tool_call',this)">TOOL</span>
+      <span class="ff-chip" data-filter="ci_check" style="--fc:#00F0FF" onclick="setFeedFilter('ci_check',this)">CI</span>
+      <span class="ff-chip" data-filter="deploy" style="--fc:#00FF88" onclick="setFeedFilter('deploy',this)">DEP</span>
+      <span class="ff-chip" data-filter="sre_alert" style="--fc:#FF2244" onclick="setFeedFilter('sre_alert',this)">ALERT</span>
+    </div>
     <div id="activity-feed"></div>
+    <button id="load-older" onclick="loadOlderFeed()">▼ LOAD OLDER</button>
   </div>
 </div>
+
+<!-- MOBILE LIST VIEW (< 640px) -->
+<div id="mobile-list"></div>
 
 <div id="offline">GRID OFFLINE</div>
 
@@ -223,6 +298,7 @@ let   PB_TOKEN = '';
 let   pbOnline = false;
 const pbJobs   = {};
 const _logSeenIds = new Set();
+let   _pbLogPage  = 1; // for load-older pagination
 
 // ── Agent config ──────────────────────────────────────────
 const AGENT_ALIAS = {
@@ -250,8 +326,6 @@ const AGENT_COLOR = {
   main:'#FF6600',zeus:'#FF4500',mctravis:'#FF8C00',obr:'#FF7F50',
 };
 
-// Tool name → short label (SVG-safe, no emoji)
-// Displayed as a small badge inside the active hex
 const TOOL_ICON = {
   exec:'EXC', bash:'SH', shell:'SH',
   read:'RD', write:'WR', edit:'ED',
@@ -273,7 +347,6 @@ function toolIcon(toolName){
   return 'RUN';
 }
 
-// Per-agent last tool used (for icon display)
 const agentLastTool = {};
 
 const ACTION_COLOR = {
@@ -282,26 +355,32 @@ const ACTION_COLOR = {
   system:'#4a6080',agent_checkpoint:'#7B68EE',tool_call:'#98FF98',
 };
 
-// ── Fixed 2D node positions in SVG viewBox 900×640 ───────
+// ── Fixed 2D node positions ───────────────────────────────
 const NODE_POS = {
-  // COMMAND tier  (y ≈ 82)
   manager:             {x:450, y:82},
-  // ENGINEERING tier  (y ≈ 225–340)
   architect:           {x:220, y:228},
   pm:                  {x:680, y:228},
   coder:               {x:145, y:340},
   reviewer:            {x:330, y:340},
   tester:              {x:530, y:340},
   releaser:            {x:720, y:340},
-  // OPS tier           (y ≈ 478)
   sre:                 {x:210, y:478},
   'incident-manager':  {x:400, y:478},
   'devops-automator':  {x:590, y:478},
-  // INTEL tier         (y ≈ 625)
   researcher:          {x:190, y:625},
   security:            {x:420, y:625},
   'workflow-architect':{x:660, y:625},
 };
+
+// Agent → tier mapping (for tier collapse)
+const AGENT_TIER = {
+  manager:'COMMAND',
+  architect:'ENGINEERING',pm:'ENGINEERING',coder:'ENGINEERING',
+  reviewer:'ENGINEERING',tester:'ENGINEERING',releaser:'ENGINEERING',
+  sre:'OPS','incident-manager':'OPS','devops-automator':'OPS',
+  researcher:'INTEL',security:'INTEL','workflow-architect':'INTEL',
+};
+const collapsedTiers = new Set();
 
 const NODE_R = {
   manager:46, architect:40, pm:40, sre:36,
@@ -337,10 +416,8 @@ function bfs(start,end){
   while(q.length){const[n,p]=q.shift();for(const nb of(ADJ[n]||[])){if(nb===end)return[...p,nb];if(!seen.has(nb)){seen.add(nb);q.push([nb,[...p,nb]]);}}}
   return null;
 }
-
 function activateDispatchPath(from,to){
-  const path=bfs(from,to);
-  if(!path||path.length<2)return;
+  const path=bfs(from,to);if(!path||path.length<2)return;
   for(let i=0;i<path.length-1;i++) activeDispatchEdges.add(path[i]+'|'+path[i+1]);
 }
 function clearDispatchToAgent(agentId){
@@ -359,32 +436,30 @@ function svgEl(tag,attrs={}){
   return el;
 }
 
-// Per-edge explicit midY overrides so traces don't bisect nodes
 const ROUTE_MID_Y = {
-  'manager|architect':    148, 'architect|manager':    148,
-  'manager|pm':           148, 'pm|manager':           148,
-  'manager|sre':          148, 'sre|manager':          148,
-  'manager|devops-automator': 148, 'devops-automator|manager':148,
-  'manager|security':     148, 'security|manager':     148,
-  'manager|researcher':   148, 'researcher|manager':   148,
-  'manager|releaser':     148, 'releaser|manager':     148,
-  'architect|coder':      284, 'coder|architect':      284,
-  'architect|reviewer':   284, 'reviewer|architect':   284,
-  'architect|researcher': 418, 'researcher|architect': 418,
-  'architect|workflow-architect': 418, 'workflow-architect|architect': 418,
-  'architect|security':   418, 'security|architect':   418,
-  'devops-automator|coder':   418, 'coder|devops-automator':   418,
-  'devops-automator|reviewer':418, 'reviewer|devops-automator':418,
-  'sre|devops-automator': 460, 'devops-automator|sre': 460,
-  'sre|incident-manager': 460, 'incident-manager|sre': 460,
-  'incident-manager|devops-automator': 460, 'devops-automator|incident-manager': 460,
-  'security|researcher':  550, 'researcher|security':  550,
-  'security|reviewer':    418, 'reviewer|security':    418,
-  'workflow-architect|researcher': 550, 'researcher|workflow-architect': 550,
-  'pm|researcher':        550, 'researcher|pm':        550,
+  'manager|architect':148,'architect|manager':148,
+  'manager|pm':148,'pm|manager':148,
+  'manager|sre':148,'sre|manager':148,
+  'manager|devops-automator':148,'devops-automator|manager':148,
+  'manager|security':148,'security|manager':148,
+  'manager|researcher':148,'researcher|manager':148,
+  'manager|releaser':148,'releaser|manager':148,
+  'architect|coder':284,'coder|architect':284,
+  'architect|reviewer':284,'reviewer|architect':284,
+  'architect|researcher':418,'researcher|architect':418,
+  'architect|workflow-architect':418,'workflow-architect|architect':418,
+  'architect|security':418,'security|architect':418,
+  'devops-automator|coder':418,'coder|devops-automator':418,
+  'devops-automator|reviewer':418,'reviewer|devops-automator':418,
+  'sre|devops-automator':460,'devops-automator|sre':460,
+  'sre|incident-manager':460,'incident-manager|sre':460,
+  'incident-manager|devops-automator':460,'devops-automator|incident-manager':460,
+  'security|researcher':550,'researcher|security':550,
+  'security|reviewer':418,'reviewer|security':418,
+  'workflow-architect|researcher':550,'researcher|workflow-architect':550,
+  'pm|researcher':550,'researcher|pm':550,
 };
 
-// Orthogonal PCB-style path between two nodes
 function pcbPath(a,b){
   const pa=NODE_POS[a], pb=NODE_POS[b];
   if(!pa||!pb) return null;
@@ -402,40 +477,27 @@ function pcbPath(a,b){
 //  BUILD BACKGROUND DOT GRID
 // ═══════════════════════════════════════════════════════════
 function buildDotGrid(){
-  const g = document.getElementById('bg-dots');
-  for(let x=0;x<=900;x+=40){
-    for(let y=0;y<=720;y+=40){
-      const c=svgEl('circle',{cx:x,cy:y,r:'1',fill:'#0a1628'});
-      g.appendChild(c);
-    }
-  }
+  const g=document.getElementById('bg-dots');
+  for(let x=0;x<=900;x+=40) for(let y=0;y<=720;y+=40)
+    g.appendChild(svgEl('circle',{cx:x,cy:y,r:'1',fill:'#0a1628'}));
 }
 
 // ═══════════════════════════════════════════════════════════
 //  BUILD CIRCUIT TRACES
 // ═══════════════════════════════════════════════════════════
-const traceEls  = {}; // edgeKey → {base, pulse}
-const pulseState= {}; // edgeKey → {active, phase, completing, completingT}
+const traceEls  = {};
+const pulseState= {};
 
 function buildTraces(){
-  const tg = document.getElementById('traces');
-  const pg = document.getElementById('pulse-overlays');
+  const tg=document.getElementById('traces');
+  const pg=document.getElementById('pulse-overlays');
   for(const[a,b]of EDGES){
-    const d = pcbPath(a,b);
-    if(!d) continue;
-    const key = a+'|'+b;
-    const colA = AGENT_COLOR[a]||'#00F0FF';
-    const colB = AGENT_COLOR[b]||'#00F0FF';
-
-    // Base trace — always visible, very dim
-    const base = svgEl('path',{
-      d, fill:'none', stroke:colA,
-      'stroke-width':'1.5', opacity:'0.06',
-      'stroke-linecap':'round', 'stroke-linejoin':'round'
-    });
+    const d=pcbPath(a,b); if(!d) continue;
+    const key=a+'|'+b;
+    const colA=AGENT_COLOR[a]||'#00F0FF';
+    const colB=AGENT_COLOR[b]||'#00F0FF';
+    const base=svgEl('path',{d,fill:'none',stroke:colA,'stroke-width':'1.5',opacity:'0.06','stroke-linecap':'round','stroke-linejoin':'round'});
     tg.appendChild(base);
-
-    // Corner junction dots
     const pa=NODE_POS[a],pb=NODE_POS[b];
     const hash=(a+b).split('').reduce((s,c)=>s+c.charCodeAt(0),0);
     const jitter=((hash%7)-3)*6;
@@ -443,32 +505,23 @@ function buildTraces(){
     const j1=svgEl('circle',{cx:pa.x,cy:my,r:'2.5',fill:colA,opacity:'0.08'});
     const j2=svgEl('circle',{cx:pb.x,cy:my,r:'2.5',fill:colB,opacity:'0.08'});
     tg.appendChild(j1); tg.appendChild(j2);
-
-    // Pulse overlay — animated dash-offset
-    const pLen = 900; // generous overestimate
-    const pulse = svgEl('path',{
-      d, fill:'none', stroke:'#fff',
-      'stroke-width':'2.5', opacity:'0',
-      'stroke-linecap':'round', 'stroke-linejoin':'round',
-      'stroke-dasharray':`60 ${pLen}`,
-      'stroke-dashoffset':'0',
-    });
+    const pulse=svgEl('path',{d,fill:'none',stroke:'#fff','stroke-width':'2.5',opacity:'0','stroke-linecap':'round','stroke-linejoin':'round','stroke-dasharray':`60 900`,'stroke-dashoffset':'0'});
     pg.appendChild(pulse);
-
-    traceEls[key] = {base, pulse, j1, j2, colA, colB};
-    pulseState[key] = {active:false, phase:0, completing:false, completingT:0};
+    traceEls[key]={base,pulse,j1,j2,colA,colB};
+    pulseState[key]={active:false,phase:0,completing:false,completingT:0};
   }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  BUILD NODES
 // ═══════════════════════════════════════════════════════════
-const nodeEls = {}; // id → {hex, fill, arc, dot, label, taskLabel, ctxArc}
-const agentData = {}; // id → {status, contextPct, lastActive, pbTask}
+const nodeEls  = {};
+const agentData= {};
+// Extra data for inspect panel
+const agentMeta= {}; // id → {sessionCount, gateway, model}
 
-for(const id of Object.keys(NODE_POS)){
-  agentData[id] = {status:'offline', contextPct:0, lastActive:null, pbTask:null};
-}
+for(const id of Object.keys(NODE_POS))
+  agentData[id]={status:'offline',contextPct:0,lastActive:null,pbTask:null};
 
 function hexPoints(cx,cy,r,flat=true){
   const pts=[];
@@ -485,50 +538,38 @@ function arcPath(cx,cy,r,pct){
   if(pct>=1) pct=0.9999;
   const start=-Math.PI/2;
   const end=start+2*Math.PI*pct;
-  const x1=cx+r*Math.cos(start), y1=cy+r*Math.sin(start);
-  const x2=cx+r*Math.cos(end),   y2=cy+r*Math.sin(end);
+  const x1=cx+r*Math.cos(start),y1=cy+r*Math.sin(start);
+  const x2=cx+r*Math.cos(end),  y2=cy+r*Math.sin(end);
   const large=pct>0.5?1:0;
   return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
 }
 
 function buildNodes(){
-  const ng = document.getElementById('nodes');
-  const lg = document.getElementById('labels');
+  const ng=document.getElementById('nodes');
+  const lg=document.getElementById('labels');
 
   for(const[id,pos]of Object.entries(NODE_POS)){
-    const col = AGENT_COLOR[id]||'#00F0FF';
-    const r   = nodeR(id);
+    const col=AGENT_COLOR[id]||'#00F0FF';
+    const r=nodeR(id);
 
-    // ── Hex group (graphics only, no text) ──
-    const g = svgEl('g',{'data-id':id,transform:`translate(${pos.x},${pos.y})`});
+    const g=svgEl('g',{'data-id':id,transform:`translate(${pos.x},${pos.y})`,style:'cursor:pointer'});
+    g.addEventListener('click',()=>openInspect(id));
+    // Edge hover highlight
+    g.addEventListener('mouseenter',()=>highlightEdges(id,true));
+    g.addEventListener('mouseleave',()=>highlightEdges(id,false));
 
-    const fill = svgEl('polygon',{
-      points:hexPoints(0,0,r*0.85), fill:col, opacity:'0.05'
-    });
-    const hex = svgEl('polygon',{
-      points:hexPoints(0,0,r),
-      fill:'none', stroke:col, 'stroke-width':'1.5', opacity:'0.25'
-    });
-    const ctxArc = svgEl('path',{
-      d:'', fill:'none', stroke:col, 'stroke-width':'3', opacity:'0.8',
-      filter:'url(#glow-arc)'
-    });
-    // Second arc — softer wider glow behind the main arc
-    const ctxArcGlow = svgEl('path',{
-      d:'', fill:'none', stroke:col, 'stroke-width':'6', opacity:'0.18'
-    });
-    const dot = svgEl('circle',{cx:'0',cy:r+7,r:'3',fill:col,opacity:'0.3'});
-    // Tool badge — small pill with short label, centered in hex
-    const toolBadgeBg = svgEl('rect',{
-      x:'-14', y:'-8', width:'28', height:'14',
-      rx:'3', fill:'#000810', stroke:col, 'stroke-width':'0.8', opacity:'0'
-    });
-    const toolIcon = svgEl('text',{
-      x:'0', y:'5', 'text-anchor':'middle',
-      'font-family':'Orbitron,sans-serif', 'font-weight':'700',
-      'font-size':'7', fill:col,
-      'letter-spacing':'1', opacity:'0'
-    });
+    const fill=svgEl('polygon',{points:hexPoints(0,0,r*0.85),fill:col,opacity:'0.05'});
+    const hex=svgEl('polygon',{points:hexPoints(0,0,r),fill:'none',stroke:col,'stroke-width':'1.5',opacity:'0.25'});
+    const ctxArc=svgEl('path',{d:'',fill:'none',stroke:col,'stroke-width':'3',opacity:'0.8',filter:'url(#glow-arc)'});
+    const ctxArcGlow=svgEl('path',{d:'',fill:'none',stroke:col,'stroke-width':'6',opacity:'0.18'});
+    const dot=svgEl('circle',{cx:'0',cy:r+7,r:'3',fill:col,opacity:'0.3'});
+
+    // Hover ctx% overlay (hidden by default)
+    const hoverPctBg=svgEl('rect',{x:'-16',y:'-10',width:'32',height:'18',rx:'3',fill:'#000810',opacity:'0'});
+    const hoverPct=svgEl('text',{x:'0',y:'5','text-anchor':'middle','font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'10',fill:col,opacity:'0'});
+
+    const toolBadgeBg=svgEl('rect',{x:'-14',y:'-8',width:'28',height:'14',rx:'3',fill:'#000810',stroke:col,'stroke-width':'0.8',opacity:'0'});
+    const toolIconEl=svgEl('text',{x:'0',y:'5','text-anchor':'middle','font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'7',fill:col,'letter-spacing':'1',opacity:'0'});
 
     g.appendChild(fill);
     g.appendChild(hex);
@@ -536,59 +577,200 @@ function buildNodes(){
     g.appendChild(ctxArc);
     g.appendChild(dot);
     ng.appendChild(g);
-    // toolBadgeBg and toolIcon added to label layer below (after lg_g is built)
 
-    // ── Label group (separate top layer, never occluded) ──
-    const lg_g = svgEl('g',{transform:`translate(${pos.x},${pos.y})`});
+    // Label layer
+    const lg_g=svgEl('g',{transform:`translate(${pos.x},${pos.y})`});
+    const pillW=Math.max(id.length*5.8,52);
+    const pill=svgEl('rect',{x:(-pillW/2).toFixed(1),y:(r+10).toFixed(1),width:pillW.toFixed(1),height:'13',rx:'2',fill:'#000810',opacity:'0.82'});
+    const label=svgEl('text',{x:'0',y:(r+21).toFixed(1),'text-anchor':'middle','font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'7.5',fill:col,opacity:'0.7','letter-spacing':'0.8'});
+    label.textContent=id.toUpperCase();
+    const taskPillW=80;
+    const taskPill=svgEl('rect',{x:(-taskPillW/2).toFixed(1),y:(r+24).toFixed(1),width:taskPillW,height:'11',rx:'2',fill:'#000810',opacity:'0'});
+    const taskLabel=svgEl('text',{x:'0',y:(r+33).toFixed(1),'text-anchor':'middle','font-family':'Share Tech Mono,monospace','font-size':'6.5',fill:col,opacity:'0','letter-spacing':'0.3'});
 
-    // Pill background behind the name
-    const pillW = Math.max(id.length*5.8, 52);
-    const pillH = 13;
-    const pill = svgEl('rect',{
-      x:(-pillW/2).toFixed(1), y:(r+10).toFixed(1),
-      width:pillW.toFixed(1), height:pillH,
-      rx:'2', fill:'#000810', opacity:'0.82'
-    });
-    const label = svgEl('text',{
-      x:'0', y:(r+21).toFixed(1), 'text-anchor':'middle',
-      'font-family':'Orbitron,sans-serif', 'font-weight':'700',
-      'font-size':'7.5', fill:col, opacity:'0.7', 'letter-spacing':'0.8'
-    });
-    label.textContent = id.toUpperCase();
-
-    // Task label pill
-    const taskPillW = 80;
-    const taskPill = svgEl('rect',{
-      x:(-taskPillW/2).toFixed(1), y:(r+24).toFixed(1),
-      width:taskPillW, height:'11',
-      rx:'2', fill:'#000810', opacity:'0'
-    });
-    const taskLabel = svgEl('text',{
-      x:'0', y:(r+33).toFixed(1), 'text-anchor':'middle',
-      'font-family':'Share Tech Mono,monospace',
-      'font-size':'6.5', fill:col, opacity:'0', 'letter-spacing':'0.3'
-    });
-
-    // Tool badge lives in label layer so glow filter doesn't blur it
     lg_g.appendChild(toolBadgeBg);
-    lg_g.appendChild(toolIcon);
+    lg_g.appendChild(toolIconEl);
+    lg_g.appendChild(hoverPctBg);
+    lg_g.appendChild(hoverPct);
     lg_g.appendChild(pill);
     lg_g.appendChild(label);
     lg_g.appendChild(taskPill);
     lg_g.appendChild(taskLabel);
     lg.appendChild(lg_g);
 
-    nodeEls[id] = {g, hex, fill, ctxArc, ctxArcGlow, dot, toolIcon, toolBadgeBg, label, taskLabel, taskPill, pill, col};
+    nodeEls[id]={g,hex,fill,ctxArc,ctxArcGlow,dot,toolIcon:toolIconEl,toolBadgeBg,hoverPct,hoverPctBg,label,taskLabel,taskPill,pill,col};
+
+    // Hover ctx% show/hide
+    g.addEventListener('mouseenter',()=>{
+      const pct=agentData[id]?.contextPct||0;
+      if(pct>0){
+        hoverPct.textContent=pct+'%';
+        hoverPct.setAttribute('fill', agentData[id]?.status==='offline'?col:ctxArcColor(col,pct/100));
+        hoverPct.setAttribute('opacity','1');
+        hoverPctBg.setAttribute('opacity','0.9');
+        // Hide tool badge while hovering
+        if(toolIconEl) toolIconEl.setAttribute('opacity','0');
+        if(toolBadgeBg) toolBadgeBg.setAttribute('opacity','0');
+      }
+    });
+    g.addEventListener('mouseleave',()=>{
+      hoverPct.setAttribute('opacity','0');
+      hoverPctBg.setAttribute('opacity','0');
+      // Restore tool badge if still active
+      if(agentLastTool[id]){
+        toolIconEl.setAttribute('opacity','0.9');
+        toolBadgeBg.setAttribute('opacity','0.9');
+      }
+    });
   }
 }
 
-// Tool icon display — shows briefly then fades after 12s
+// ═══════════════════════════════════════════════════════════
+//  EDGE HOVER HIGHLIGHT (#13)
+// ═══════════════════════════════════════════════════════════
+function highlightEdges(id,on){
+  for(const[a,b]of EDGES){
+    if(a===id||b===id){
+      const key=a+'|'+b;
+      if(traceEls[key]){
+        traceEls[key].base.setAttribute('opacity',on?'0.35':'0.06');
+        traceEls[key].j1.setAttribute('opacity',on?'0.5':'0.08');
+        traceEls[key].j2.setAttribute('opacity',on?'0.5':'0.08');
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TIER COLLAPSE (#12)
+// ═══════════════════════════════════════════════════════════
+function toggleTier(tier){
+  if(collapsedTiers.has(tier)) collapsedTiers.delete(tier);
+  else collapsedTiers.add(tier);
+  applyTierCollapse();
+}
+function applyTierCollapse(){
+  for(const[id]of Object.entries(NODE_POS)){
+    const t=AGENT_TIER[id];
+    const hidden=collapsedTiers.has(t);
+    const el=nodeEls[id];
+    if(!el) continue;
+    el.g.style.display=hidden?'none':'';
+    // Find the label group
+    const lg=document.getElementById('labels');
+    for(const ch of lg.children){
+      const pos=NODE_POS[id];
+      if(ch.getAttribute('transform')===`translate(${pos.x},${pos.y})`){
+        ch.style.display=hidden?'none':'';
+      }
+    }
+  }
+  // Update tier label text
+  const tierLabels=document.querySelectorAll('.sector-label[data-tier]');
+  for(const tl of tierLabels){
+    const t=tl.getAttribute('data-tier');
+    const base={COMMAND:'COMMAND',ENGINEERING:'ENGINEERING',OPS:'OPS',INTEL:'INTEL'}[t]||t;
+    tl.textContent=collapsedTiers.has(t)?`▶ ${base}`:`${base}`;
+    tl.setAttribute('fill',collapsedTiers.has(t)?'#2a4060':'#142840');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INSPECT PANEL (#2)
+// ═══════════════════════════════════════════════════════════
+let inspectId = null;
+
+function openInspect(id){
+  if(inspectId===id){ closeInspect(); return; }
+  inspectId=id;
+  const ag=agentData[id]||{};
+  const meta=agentMeta[id]||{};
+  const col=AGENT_COLOR[id]||'#00F0FF';
+  const pct=(ag.contextPct||0)/100;
+  const r=40;
+
+  // Highlight the selected node
+  for(const[nid,el]of Object.entries(nodeEls)){
+    el.hex.setAttribute('stroke-width', nid===id?'3':'1.5');
+    el.hex.style.filter= nid===id?`drop-shadow(0 0 6px ${col})`:'';
+  }
+
+  // Name + status
+  const nameEl=document.getElementById('inspect-name');
+  nameEl.textContent=id.toUpperCase();
+  nameEl.style.color=col;
+
+  const stEl=document.getElementById('inspect-status');
+  const st=ag.status||'offline';
+  stEl.textContent=st.toUpperCase()+(ag.lastActive?` · ${rel(ag.lastActive)}`:'');
+  stEl.style.color=st==='active'?'#00FF88':st==='idle'?'#FFD700':'#445566';
+
+  // Arc
+  const arcColor=pct>0&&st!=='offline'?ctxArcColor(col,pct):col;
+  document.getElementById('ia-hex').setAttribute('points',hexPoints(0,0,r));
+  document.getElementById('ia-fill').setAttribute('points',hexPoints(0,0,r*0.85));
+  document.getElementById('ia-hex').setAttribute('stroke',col);
+  document.getElementById('ia-fill').setAttribute('fill',col);
+  document.getElementById('ia-arc').setAttribute('stroke',arcColor);
+  document.getElementById('ia-arc-glow').setAttribute('stroke',arcColor);
+  if(pct>0){
+    document.getElementById('ia-arc').setAttribute('d',arcPath(0,0,r+6,pct));
+    document.getElementById('ia-arc-glow').setAttribute('d',arcPath(0,0,r+6,pct));
+  } else {
+    document.getElementById('ia-arc').setAttribute('d','');
+    document.getElementById('ia-arc-glow').setAttribute('d','');
+  }
+  document.getElementById('ia-pct').textContent=(ag.contextPct||0)+'%';
+  document.getElementById('ia-pct').setAttribute('fill',arcColor);
+
+  // Body rows
+  document.getElementById('ib-sessions').textContent=meta.sessionCount!=null?meta.sessionCount:'—';
+  document.getElementById('ib-tool').textContent=agentLastTool[id]?.icon||'—';
+  document.getElementById('ib-active').textContent=ag.lastActive?rel(ag.lastActive):'—';
+  document.getElementById('ib-gateway').textContent=meta.gateway||'—';
+  const taskEl=document.getElementById('ib-task');
+  taskEl.textContent=ag.pbTask||'—';
+  taskEl.style.color=ag.pbTask?col:'#4a6080';
+
+  // Filtered feed entries
+  const entries=activityLog.filter(e=>{
+    const m=(e.msg||'').toLowerCase();
+    return m.includes(id.replace('-',' '))||m.includes(id);
+  }).slice(0,8);
+  const ef=document.getElementById('inspect-entries');
+  ef.innerHTML=entries.map(e=>`<div class="ie" style="border-color:${e.color||'#4a6080'}">
+    <span style="color:#4a6080;font-size:7px">${e.time}</span>
+    <div style="color:${e.color||'#7bd4e8'};margin-top:2px">${e.msg.slice(0,80)}</div>
+  </div>`).join('')||`<div style="color:#2a4060;font-size:8px">No recent activity</div>`;
+
+  document.getElementById('inspect').classList.add('open');
+}
+
+function closeInspect(){
+  inspectId=null;
+  document.getElementById('inspect').classList.remove('open');
+  for(const el of Object.values(nodeEls)){
+    el.hex.setAttribute('stroke-width','1.5');
+    el.hex.style.filter='';
+  }
+}
+
+// Close on ESC
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeInspect(); });
+// Close on click outside inspect panel (on the SVG)
+document.getElementById('grid-svg').addEventListener('click',e=>{
+  if(!e.target.closest('g[data-id]')) closeInspect();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  TOOL BADGES
+// ═══════════════════════════════════════════════════════════
 function updateToolIcon(id){
-  const el = nodeEls[id];
-  if(!el||!el.toolIcon) return;
-  const t = agentLastTool[id];
+  const el=nodeEls[id];
+  if(!el?.toolIcon) return;
+  const t=agentLastTool[id];
   if(t){
-    el.toolIcon.textContent = t.icon;
+    el.toolIcon.textContent=t.icon;
     el.toolIcon.setAttribute('opacity','0.9');
     if(el.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0.9');
   } else {
@@ -597,134 +779,89 @@ function updateToolIcon(id){
   }
 }
 
-// Fade tool badges older than 10s
 setInterval(()=>{
-  const now = Date.now();
+  const now=Date.now();
   for(const[id,t]of Object.entries(agentLastTool)){
-    const age = now - t.ts;
-    if(age > 10000){
-      delete agentLastTool[id];
-      updateToolIcon(id);
-    } else if(age > 6000){
-      const fade = ((1-(age-6000)/4000)*0.9).toFixed(2);
-      const el = nodeEls[id];
-      if(el?.toolIcon) el.toolIcon.setAttribute('opacity', fade);
-      if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity', fade);
+    const age=now-t.ts;
+    if(age>10000){ delete agentLastTool[id]; updateToolIcon(id); }
+    else if(age>6000){
+      const fade=((1-(age-6000)/4000)*0.9).toFixed(2);
+      const el=nodeEls[id];
+      if(el?.toolIcon) el.toolIcon.setAttribute('opacity',fade);
+      if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity',fade);
     }
   }
-}, 150);
+  // Refresh inspect panel if open
+  if(inspectId) document.getElementById('ib-tool').textContent=agentLastTool[inspectId]?.icon||'—';
+},150);
 
-// Context arc color: agent color → yellow → orange → red as ctx fills
-// Neutral below 65%, gradient shift 65-85%, full red alarm above 85%
-function ctxArcColor(baseColor, pct){
-  if(pct < 0.65) return baseColor;
-
-  // Parse base hex to RGB
-  const hex = baseColor.replace('#','');
-  const br = parseInt(hex.slice(0,2),16);
-  const bg = parseInt(hex.slice(2,4),16);
-  const bb = parseInt(hex.slice(4,6),16);
-
-  // Milestone colors
-  const yellow = [255, 210, 0];
-  const orange  = [255, 100, 0];
-  const red     = [255, 30,  30];
-
-  let tr, tg, tb, t;
-  if(pct < 0.75){
-    // 65-75%: base → yellow
-    t = (pct-0.65)/0.10;
-    [tr,tg,tb] = yellow;
-  } else if(pct < 0.88){
-    // 75-88%: yellow → orange
-    t = (pct-0.75)/0.13;
-    [tr,tg,tb] = orange;
-    const [sr,sg,sb] = yellow;
-    tr = sr+(tr-sr)*t; tg = sg+(tg-sg)*t; tb = sb+(tb-sb)*t;
-    const r2=Math.round(tr),g2=Math.round(tg),b2=Math.round(tb);
-    return `rgb(${r2},${g2},${b2})`;
+// ═══════════════════════════════════════════════════════════
+//  CONTEXT ARC COLOR
+// ═══════════════════════════════════════════════════════════
+function ctxArcColor(baseColor,pct){
+  if(pct<0.65) return baseColor;
+  const hex=baseColor.replace('#','');
+  const br=parseInt(hex.slice(0,2),16);
+  const bg=parseInt(hex.slice(2,4),16);
+  const bb=parseInt(hex.slice(4,6),16);
+  const yellow=[255,210,0],orange=[255,100,0],red=[255,30,30];
+  let tr,tg,tb,t;
+  if(pct<0.75){
+    t=(pct-0.65)/0.10;[tr,tg,tb]=yellow;
+  } else if(pct<0.88){
+    t=(pct-0.75)/0.13;[tr,tg,tb]=orange;
+    const[sr,sg,sb]=yellow;
+    tr=sr+(tr-sr)*t;tg=sg+(tg-sg)*t;tb=sb+(tb-sb)*t;
+    return`rgb(${Math.round(tr)},${Math.round(tg)},${Math.round(tb)})`;
   } else {
-    // 88-100%: orange → red
-    t = Math.min((pct-0.88)/0.12, 1);
-    const [sr,sg,sb] = orange;
-    [tr,tg,tb] = red;
-    tr = sr+(tr-sr)*t; tg = sg+(tg-sg)*t; tb = sb+(tb-sb)*t;
-    const r2=Math.round(tr),g2=Math.round(tg),b2=Math.round(tb);
-    return `rgb(${r2},${g2},${b2})`;
+    t=Math.min((pct-0.88)/0.12,1);
+    const[sr,sg,sb]=orange;[tr,tg,tb]=red;
+    tr=sr+(tr-sr)*t;tg=sg+(tg-sg)*t;tb=sb+(tb-sb)*t;
+    return`rgb(${Math.round(tr)},${Math.round(tg)},${Math.round(tb)})`;
   }
-
-  // Blend base→target
-  const r2 = Math.round(br+(tr-br)*t);
-  const g2 = Math.round(bg+(tg-bg)*t);
-  const b2 = Math.round(bb+(tb-bb)*t);
-  return `rgb(${r2},${g2},${b2})`;
+  return`rgb(${Math.round(br+(tr-br)*t)},${Math.round(bg+(tg-bg)*t)},${Math.round(bb+(tb-bb)*t)})`;
 }
 
+// ═══════════════════════════════════════════════════════════
+//  NODE VIS UPDATE
+// ═══════════════════════════════════════════════════════════
 function updateNodeVis(id){
-  const el  = nodeEls[id];
-  const ag  = agentData[id];
+  const el=nodeEls[id],ag=agentData[id];
   if(!el||!ag) return;
-  const col = el.col;
-  const st  = ag.status||'offline';
-  const pct = (ag.contextPct||0)/100;
-  const r   = nodeR(id);
-  const isActive = st==='active';
-  const isIdle   = st==='idle';
-  const isOffline= st==='offline';
+  const col=el.col,st=ag.status||'offline',pct=(ag.contextPct||0)/100,r=nodeR(id);
+  const isActive=st==='active',isIdle=st==='idle',isOffline=st==='offline';
 
-  const outerOp = isActive?'1.0':isIdle?'0.55':'0.18';
-  const innerOp = isActive?'0.30':isIdle?'0.12':'0.04';
-  const dotOp   = isActive?'1.0':isIdle?'0.5':'0.15';
-  const labelOp = isActive?'1.0':isIdle?'0.5':'0.25';
-  const arcOp   = isActive?'0.9':isIdle?'0.45':'0.15';
-  const dotColor= isActive?col:isIdle?col:'#334455';
+  el.hex.setAttribute('opacity',isActive?'1.0':isIdle?'0.55':'0.18');
+  el.fill.setAttribute('opacity',isActive?'0.30':isIdle?'0.12':'0.04');
+  el.dot.setAttribute('opacity',isActive?'1.0':isIdle?'0.5':'0.15');
+  el.dot.setAttribute('fill',isActive?col:isIdle?col:'#334455');
+  el.label.setAttribute('opacity',isActive?'1.0':isIdle?'0.55':'0.28');
 
-  el.hex.setAttribute('opacity', outerOp);
-  el.fill.setAttribute('opacity', innerOp);
-  el.dot.setAttribute('opacity', dotOp);
-  el.dot.setAttribute('fill', dotColor);
-  el.label.setAttribute('opacity', labelOp);
-
-  // Context arc (main + glow behind) — heat color only for active/idle (not offline stale data)
   if(pct>0){
-    const ap = arcPath(0,0,r+6,pct);
-    const arcColor = isOffline ? el.col : ctxArcColor(el.col, pct);
-    el.ctxArc.setAttribute('d', ap);
-    el.ctxArc.setAttribute('stroke', arcColor);
-    el.ctxArc.setAttribute('opacity', arcOp);
-    // Thicken + pulse at critical threshold
-    if(pct >= 0.88){
-      el.ctxArc.setAttribute('stroke-width','4');
-      el.ctxArc.style.animation='ctx-alarm 1.2s ease-in-out infinite';
-    } else if(pct >= 0.75){
-      el.ctxArc.setAttribute('stroke-width','3.5');
-      el.ctxArc.style.animation='';
-    } else {
-      el.ctxArc.setAttribute('stroke-width','3');
-      el.ctxArc.style.animation='';
-    }
-    el.ctxArcGlow.setAttribute('d', ap);
-    el.ctxArcGlow.setAttribute('stroke', arcColor);
-    el.ctxArcGlow.setAttribute('opacity', pct>=0.88?(isActive?'0.45':'0.20'):isActive?'0.28':isIdle?'0.10':'0.05');
+    const ap=arcPath(0,0,r+6,pct);
+    const arcColor=isOffline?el.col:ctxArcColor(el.col,pct);
+    el.ctxArc.setAttribute('d',ap);
+    el.ctxArc.setAttribute('stroke',arcColor);
+    el.ctxArc.setAttribute('opacity',isActive?'0.9':isIdle?'0.45':'0.15');
+    if(pct>=0.88){el.ctxArc.setAttribute('stroke-width','4');el.ctxArc.style.animation='ctx-alarm 1.2s ease-in-out infinite';}
+    else if(pct>=0.75){el.ctxArc.setAttribute('stroke-width','3.5');el.ctxArc.style.animation='';}
+    else{el.ctxArc.setAttribute('stroke-width','3');el.ctxArc.style.animation='';}
+    el.ctxArcGlow.setAttribute('d',ap);
+    el.ctxArcGlow.setAttribute('stroke',arcColor);
+    el.ctxArcGlow.setAttribute('opacity',pct>=0.88?(isActive?'0.45':'0.20'):isActive?'0.28':isIdle?'0.10':'0.05');
   } else {
     el.ctxArc.setAttribute('d','');
     el.ctxArcGlow.setAttribute('d','');
   }
 
-  // Glow filter on hex group (active gets double-blur glow)
-  if(isActive){
-    el.g.setAttribute('filter','url(#glow-active)');
-  } else if(isIdle){
-    el.g.setAttribute('filter','url(#glow-idle)');
-  } else {
-    el.g.removeAttribute('filter');
-  }
+  if(isActive) el.g.setAttribute('filter','url(#glow-active)');
+  else if(isIdle) el.g.setAttribute('filter','url(#glow-idle)');
+  else el.g.removeAttribute('filter');
 
-  // Task label + pill
-  const task = ag.pbTask;
-  if(task && isActive){
-    const txt = task.length>18?task.slice(0,17)+'…':task;
-    el.taskLabel.textContent = txt;
+  const task=ag.pbTask;
+  if(task&&isActive){
+    const txt=task.length>18?task.slice(0,17)+'…':task;
+    el.taskLabel.textContent=txt;
     el.taskLabel.setAttribute('opacity','0.75');
     if(el.taskPill) el.taskPill.setAttribute('opacity','0.82');
   } else {
@@ -732,151 +869,114 @@ function updateNodeVis(id){
     if(el.taskPill) el.taskPill.setAttribute('opacity','0');
   }
 
-  // Name label brightness
-  el.label.setAttribute('opacity', isActive?'1.0':isIdle?'0.55':'0.28');
+  // Refresh inspect panel if this agent is open
+  if(inspectId===id) openInspect(id);
 }
 
 // ═══════════════════════════════════════════════════════════
 //  PACKET ANIMATION
 // ═══════════════════════════════════════════════════════════
-const activePackets = [];
-
+const activePackets=[];
 function spawnPackets(from,to){
-  const path=bfs(from,to);
-  if(!path||path.length<2) return;
-  const col = AGENT_COLOR[from]||'#00F0FF';
+  const path=bfs(from,to);if(!path||path.length<2)return;
+  const col=AGENT_COLOR[from]||'#00F0FF';
   for(let i=0;i<path.length-1;i++){
-    const a=path[i],b=path[i+1];
-    const d=pcbPath(a,b);
-    if(!d) continue;
-    // Create a temp path to measure
+    const a=path[i],b=path[i+1],d=pcbPath(a,b);if(!d)continue;
     const tmpPath=svgEl('path',{d,fill:'none'});
     document.getElementById('packets').appendChild(tmpPath);
     const totalLen=tmpPath.getTotalLength();
     document.getElementById('packets').removeChild(tmpPath);
-
-    // The visible packet: small diamond
-    const pkt=svgEl('polygon',{
-      points:'-4,0 0,-4 4,0 0,4',
-      fill:col, opacity:'0.95',
-      filter:'url(#glow-strong)'
-    });
+    const pkt=svgEl('polygon',{points:'-4,0 0,-4 4,0 0,4',fill:col,opacity:'0.95',filter:'url(#glow-strong)'});
     document.getElementById('packets').appendChild(pkt);
-
-    activePackets.push({
-      el:pkt, pathD:d, totalLen,
-      t:0, speed:180, delay:i*0.18,
-      col
-    });
+    activePackets.push({el:pkt,pathD:d,totalLen,t:0,speed:180,delay:i*0.18,col});
   }
 }
-
 function animatePackets(dt){
-  const pg = document.getElementById('packets');
+  const pg=document.getElementById('packets');
   for(let i=activePackets.length-1;i>=0;i--){
     const p=activePackets[i];
     if(p.delay>0){p.delay-=dt;continue;}
     p.t+=dt*p.speed;
-    if(p.t>=p.totalLen){
-      pg.removeChild(p.el);
-      activePackets.splice(i,1);
-      continue;
-    }
-    // getPointAtLength on a real path
-    if(!p._svgPath){
-      p._svgPath=svgEl('path',{d:p.pathD,fill:'none'});
-      // add offscreen so it can be measured
-      p._svgPath.style.display='none';
-      pg.appendChild(p._svgPath);
-    }
+    if(p.t>=p.totalLen){pg.removeChild(p.el);if(p._svgPath)pg.removeChild(p._svgPath);activePackets.splice(i,1);continue;}
+    if(!p._svgPath){p._svgPath=svgEl('path',{d:p.pathD,fill:'none'});p._svgPath.style.display='none';pg.appendChild(p._svgPath);}
     const pt=p._svgPath.getPointAtLength(p.t);
     p.el.setAttribute('transform',`translate(${pt.x.toFixed(1)},${pt.y.toFixed(1)})`);
-  }
-  // Clean up hidden measurement paths
-  for(const p of activePackets){
-    if(p._svgPath && p.t>=p.totalLen){
-      pg.removeChild(p._svgPath);
-      p._svgPath=null;
-    }
   }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  TRACE PULSE ANIMATION
 // ═══════════════════════════════════════════════════════════
-let _tracePaths = {}; // key → measured SVG path element
-
+let _tracePaths={};
 function ensureTracePath(key){
   if(_tracePaths[key]) return _tracePaths[key];
-  const[a,b]=key.split('|');
-  const d=pcbPath(a,b);
-  if(!d) return null;
-  const p=svgEl('path',{d,fill:'none'});
-  p.style.display='none';
+  const[a,b]=key.split('|');const d=pcbPath(a,b);if(!d)return null;
+  const p=svgEl('path',{d,fill:'none'});p.style.display='none';
   document.getElementById('traces').appendChild(p);
-  _tracePaths[key]=p;
-  return p;
+  _tracePaths[key]=p;return p;
 }
-
-const PULSE_SPEED = 120; // px/sec
-
+const PULSE_SPEED=120;
 function animateTraces(dt){
   for(const key of Object.keys(traceEls)){
-    const te  = traceEls[key];
-    const ps  = pulseState[key];
-    const isDispatched = activeDispatchEdges.has(key);
-
-    // Update base trace brightness
+    const te=traceEls[key],ps=pulseState[key];
+    const isDispatched=activeDispatchEdges.has(key);
     const[a,b]=key.split('|');
     const aActive=(agentData[a]||{}).status==='active';
     const bActive=(agentData[b]||{}).status==='active';
-    const baseBright=(aActive&&bActive)?0.18:(aActive||bActive)?0.10:0.05;
-    te.base.setAttribute('opacity',baseBright);
-    te.j1.setAttribute('opacity',(aActive||bActive)?0.25:0.07);
-    te.j2.setAttribute('opacity',(aActive||bActive)?0.25:0.07);
-
-    if(isDispatched && !ps.active){
-      ps.active=true; ps.completing=false; ps.phase=0;
-      te.pulse.setAttribute('stroke', te.colA);
-    } else if(!isDispatched && ps.active && !ps.completing){
-      ps.completing=true; ps.completingT=1.5;
+    // Edge highlight takes priority over base opacity
+    if(!te._highlighted){
+      const baseBright=(aActive&&bActive)?0.18:(aActive||bActive)?0.10:0.05;
+      te.base.setAttribute('opacity',baseBright);
     }
-
+    if(isDispatched&&!ps.active){ps.active=true;ps.completing=false;ps.phase=0;te.pulse.setAttribute('stroke',te.colA);}
+    else if(!isDispatched&&ps.active&&!ps.completing){ps.completing=true;ps.completingT=1.5;}
     if(ps.completing){
       ps.completingT-=dt;
-      if(ps.completingT<=0){ ps.active=false; ps.completing=false; te.pulse.setAttribute('opacity','0'); continue; }
-      te.pulse.setAttribute('opacity', (ps.completingT/1.5*0.9).toFixed(3));
+      if(ps.completingT<=0){ps.active=false;ps.completing=false;te.pulse.setAttribute('opacity','0');continue;}
+      te.pulse.setAttribute('opacity',(ps.completingT/1.5*0.9).toFixed(3));
     }
-
     if(ps.active){
-      const tp = ensureTracePath(key);
-      if(!tp){te.pulse.setAttribute('opacity','0');continue;}
-      const totalLen = tp.getTotalLength();
-      ps.phase = (ps.phase + PULSE_SPEED*dt) % (totalLen+60);
-      // stroke-dasharray: "60 BIG", offset marches backward = forward travel
-      te.pulse.setAttribute('stroke-dasharray', `60 ${Math.max(totalLen,200)}`);
-      te.pulse.setAttribute('stroke-dashoffset', (-(ps.phase)).toFixed(1));
+      const tp=ensureTracePath(key);if(!tp){te.pulse.setAttribute('opacity','0');continue;}
+      const totalLen=tp.getTotalLength();
+      ps.phase=(ps.phase+PULSE_SPEED*dt)%(totalLen+60);
+      te.pulse.setAttribute('stroke-dasharray',`60 ${Math.max(totalLen,200)}`);
+      te.pulse.setAttribute('stroke-dashoffset',(-(ps.phase)).toFixed(1));
       if(!ps.completing) te.pulse.setAttribute('opacity','0.9');
     }
   }
 }
 
 // ═══════════════════════════════════════════════════════════
+//  FEED FILTERS (#7)
+// ═══════════════════════════════════════════════════════════
+let activeFeedFilter='ALL';
+function setFeedFilter(filter,chip){
+  activeFeedFilter=filter;
+  document.querySelectorAll('.ff-chip').forEach(c=>{
+    c.classList.remove('active');
+    c.style.background='transparent';
+    c.style.color='#4a6080';
+    c.style.borderColor='#0d2040';
+  });
+  chip.classList.add('active');
+  const fc=chip.style.getPropertyValue('--fc')||'#7bd4e8';
+  chip.style.background=fc+'22';
+  chip.style.color=fc;
+  chip.style.borderColor=fc+'66';
+  renderFeed();
+}
+
+// ═══════════════════════════════════════════════════════════
 //  POCKETBASE AUTH + POLLING
 // ═══════════════════════════════════════════════════════════
-function pbHeaders(){
-  return PB_TOKEN ? {Authorization: PB_TOKEN} : {};
-}
+function pbHeaders(){return PB_TOKEN?{Authorization:PB_TOKEN}:{};}
 
 async function pbAuth(){
   try{
-    const r=await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({identity:PB_EMAIL,password:PB_PASS})
-    });
+    const r=await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identity:PB_EMAIL,password:PB_PASS})});
     if(!r.ok) return;
     const d=await r.json();
-    if(d.token){ PB_TOKEN=d.token; pbOnline=true; }
+    if(d.token){PB_TOKEN=d.token;pbOnline=true;}
   }catch{}
 }
 
@@ -885,36 +985,24 @@ async function hydratePB(){
     const r=await fetch(`${PB_URL}/api/collections/agent_jobs/records?perPage=50&sort=-dispatched_at`,{headers:pbHeaders()});
     if(!r.ok) return;
     const d=await r.json();
-    const runningAgents=new Set();
-    const seenNames=new Set();
+    const runningAgents=new Set();const seenNames=new Set();
     for(const job of(d.items||[])){
       const name=canonicalName(job.agent_name);
-      if(!seenNames.has(name)){
-        seenNames.add(name);
-        pbJobs[name]={status:job.status,task_summary:job.task_summary,session_id:job.session_id,trello_card_url:job.trello_card_url};
-      }
-      if(job.status==='running'){
-        runningAgents.add(name);
-        activateDispatchPath('manager',name);
-      }
+      if(!seenNames.has(name)){seenNames.add(name);pbJobs[name]={status:job.status,task_summary:job.task_summary,session_id:job.session_id,trello_card_url:job.trello_card_url};}
+      if(job.status==='running'){runningAgents.add(name);activateDispatchPath('manager',name);}
     }
     const toRemove=[...activeDispatchEdges].filter(k=>!runningAgents.has(k.split('|')[1]));
-    for(const key of toRemove){ activeDispatchEdges.delete(key); clearDispatchToAgent(key.split('|')[1]); }
+    for(const key of toRemove){activeDispatchEdges.delete(key);clearDispatchToAgent(key.split('|')[1]);}
     pbOnline=true;
   }catch{}
 }
 
 async function pollLog(){
   try{
-    // Sort newest-first from PB, process oldest-first for chronological dedup,
-    // but push to END of activityLog so newest ends up at index 0 after reverse render
     const r=await fetch(`${PB_URL}/api/collections/manager_log/records?sort=-created&perPage=50`,{headers:pbHeaders()});
     if(!r.ok) return;
     const d=await r.json();
-    // Items arrive newest-first (sort=-created).
-    // Process oldest→newest so each unshift puts the newer item at index 0.
-    // Final result: activityLog[0] = most recent entry.
-    const items=(d.items||[]).slice().reverse(); // reverse newest-first → oldest-first
+    const items=(d.items||[]).slice().reverse();
     for(const item of items){
       if(_logSeenIds.has(item.id)) continue;
       _logSeenIds.add(item.id);
@@ -923,48 +1011,68 @@ async function pollLog(){
   }catch{}
 }
 
-function applyLog(rec){
-  const col = ACTION_COLOR[rec.action_type]||'#4a6080';
-  let ctx = null;
-  try{ if(rec.context) ctx = typeof rec.context==='string'?JSON.parse(rec.context):rec.context; }catch{}
+// Load older feed entries (#9)
+async function loadOlderFeed(){
+  _pbLogPage++;
+  try{
+    const r=await fetch(`${PB_URL}/api/collections/manager_log/records?sort=-created&perPage=25&page=${_pbLogPage}`,{headers:pbHeaders()});
+    if(!r.ok){_pbLogPage--;return;}
+    const d=await r.json();
+    if(!d.items?.length){_pbLogPage--;document.getElementById('load-older').textContent='◼ NO MORE';return;}
+    const divider={msg:'── earlier ──',color:'#1a3050',time:'',ctx:null,actionType:'',hasRealTs:false,isDivider:true};
+    // Check if we need a divider
+    const needsDivider=!activityLog.find(e=>e.isDivider);
+    if(needsDivider) activityLog.push(divider);
+    for(const item of d.items){
+      if(_logSeenIds.has(item.id)) continue;
+      _logSeenIds.add(item.id);
+      const col=ACTION_COLOR[item.action_type]||'#4a6080';
+      let ctx=null;
+      try{if(item.context) ctx=typeof item.context==='string'?JSON.parse(item.context):item.context;}catch{}
+      let timeStr='—';let hasRealTs=false;
+      if(item.created?.trim()){
+        const dd=new Date(item.created.trim().replace(' ','T'));
+        if(!isNaN(dd)){timeStr=dd.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});hasRealTs=true;}
+      }
+      activityLog.push({msg:item.description||'',color:col,time:timeStr,ctx,actionType:item.action_type,hasRealTs});
+    }
+    renderFeed();
+  }catch{_pbLogPage--;}
+}
 
-  // Tool use → update agent icon
-  if(rec.action_type==='tool_call' && ctx?.tool){
-    const icon = toolIcon(ctx.tool);
-    // Try to extract agent from description (e.g. "claude: spawned Coder on...")
-    const desc = (rec.description||'').toLowerCase();
+function applyLog(rec){
+  const col=ACTION_COLOR[rec.action_type]||'#4a6080';
+  let ctx=null;
+  try{if(rec.context) ctx=typeof rec.context==='string'?JSON.parse(rec.context):rec.context;}catch{}
+  if(rec.action_type==='tool_call'&&ctx?.tool){
+    const icon=toolIcon(ctx.tool);
+    const desc=(rec.description||'').toLowerCase();
     for(const id of Object.keys(NODE_POS)){
       if(desc.includes(id.replace('-',' '))||desc.includes(id)){
-        agentLastTool[id] = {icon, ts: Date.now()};
-        updateToolIcon(id);
-        break;
+        agentLastTool[id]={icon,ts:Date.now()};updateToolIcon(id);break;
       }
     }
-    // Also tag manager since it's the one calling tools
-    agentLastTool['manager'] = {icon, ts: Date.now()};
-    updateToolIcon('manager');
+    agentLastTool['manager']={icon,ts:Date.now()};updateToolIcon('manager');
   }
-
-  // CI / deploy stats
   if(rec.action_type==='ci_check'){
     const v=document.getElementById('s-ci');
-    if(v){ const txt=rec.description||''; v.textContent=txt.includes('fail')||txt.includes('FAIL')?'FAIL':'OK'; v.className='stat-val '+(txt.toLowerCase().includes('fail')?'err':''); }
+    if(v){const txt=rec.description||'';v.textContent=txt.includes('fail')||txt.includes('FAIL')?'FAIL':'OK';v.className='stat-val '+(txt.toLowerCase().includes('fail')?'err':'');}
   }
   if(rec.action_type==='deploy'){
     const v=document.getElementById('s-deploy');
-    if(v){ const t=(rec.description||'').slice(0,14); v.textContent=t; }
+    if(v){const t=(rec.description||'').slice(0,14);v.textContent=t;}
   }
-  pushActivity(rec.description||'', col, ctx, rec.action_type, rec.created);
+  pushActivity(rec.description||'',col,ctx,rec.action_type,rec.created);
 }
 
 // ═══════════════════════════════════════════════════════════
 //  ACTIVITY FEED
 // ═══════════════════════════════════════════════════════════
-let activityLog = [];
-let expandedIdx = null;
+let activityLog=[];
+let expandedIdx=null;
 
 function pushActivity(msg,color,ctx,actionType,ts){
-  let timeStr; let hasRealTs=false;
+  let timeStr;let hasRealTs=false;
   if(ts&&ts.trim()){
     const d=new Date(ts.trim().replace(' ','T'));
     if(!isNaN(d)){
@@ -984,7 +1092,11 @@ function pushActivity(msg,color,ctx,actionType,ts){
 function renderFeed(){
   const feed=document.getElementById('activity-feed');
   if(!feed) return;
-  feed.innerHTML=activityLog.map((e,i)=>{
+  const filtered=activeFeedFilter==='ALL'
+    ?activityLog
+    :activityLog.filter(e=>e.isDivider||e.actionType===activeFeedFilter);
+  feed.innerHTML=filtered.map((e,i)=>{
+    if(e.isDivider) return`<div style="text-align:center;color:#1a3050;font-size:7px;letter-spacing:2px;padding:6px 0">${e.msg}</div>`;
     const col=e.color||'#4a6080';
     const hasCtx=e.ctx&&typeof e.ctx==='object'&&Object.keys(e.ctx).length>0;
     const isExp=expandedIdx===i;
@@ -1008,6 +1120,34 @@ function renderFeed(){
 }
 
 // ═══════════════════════════════════════════════════════════
+//  MOBILE LIST VIEW (#1)
+// ═══════════════════════════════════════════════════════════
+function renderMobileList(agents){
+  if(window.innerWidth>640) return;
+  const list=document.getElementById('mobile-list');
+  const sorted=[...agents].sort((a,b)=>{
+    const order={active:0,idle:1,offline:2};
+    return(order[a.status]||2)-(order[b.status]||2);
+  });
+  list.innerHTML=sorted.map(ag=>{
+    const col=AGENT_COLOR[ag.id]||'#00F0FF';
+    const pct=ag.contextPct||0;
+    const barCol=ag.status!=='offline'?ctxArcColor(col,pct/100):col;
+    const statusCol=ag.status==='active'?'#00FF88':ag.status==='idle'?'#FFD700':'#445566';
+    const dotGlow=ag.status==='active'?`box-shadow:0 0 6px ${col}`:'';
+    return`<div class="ml-agent" style="border-color:${ag.status==='active'?col+'44':'#0d2040'};background:${ag.status==='active'?col+'08':'transparent'}" onclick="void(0)">
+      <div class="ml-dot" style="background:${ag.status==='offline'?'#334455':col};${dotGlow}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="ml-name" style="color:${col}">${ag.id.toUpperCase()}</div>
+        ${ag.pbTask?`<div class="ml-task">${ag.pbTask}</div>`:`<div class="ml-task" style="color:${statusCol}">${ag.status.toUpperCase()}</div>`}
+      </div>
+      <div class="ml-bar-wrap"><div class="ml-bar" style="width:${pct}%;background:${barCol};opacity:${ag.status==='offline'?'0.25':'1'}"></div></div>
+      <div class="ml-ctx" style="color:${pct>=88?'#FF3030':pct>=75?'#FF6400':pct>=65?'#FFD200':col}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
 //  TOWER CARDS
 // ═══════════════════════════════════════════════════════════
 function fmt(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n);}
@@ -1015,8 +1155,7 @@ function rel(ms){if(!ms)return'–';const s=Math.floor((Date.now()-ms)/1000);if(
 function setT(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
 
 function updateCard(id,ag){
-  const pct=ag.contextPct||0;
-  const st=ag.status||'offline';
+  const pct=ag.contextPct||0,st=ag.status||'offline';
   const isOffline=st==='offline';
   const baseCol=AGENT_COLOR[id]||'#FF6600';
   const barCol=isOffline?baseCol:ctxArcColor(baseCol,pct/100);
@@ -1044,8 +1183,8 @@ async function fetchData(){
     document.getElementById('offline').classList.remove('show');
     document.getElementById('sync').style.color='#00FF8877';
 
-    const gwMC = data.gateways?.mc?.online!==false;
-    const gwZO = data.gateways?.zeusops?.online!==false;
+    const gwMC=data.gateways?.mc?.online!==false;
+    const gwZO=data.gateways?.zeusops?.online!==false;
     document.getElementById('dot-mc').className='gw-dot '+(gwMC?'gw-online':'gw-offline');
     document.getElementById('dot-zo').className='gw-dot '+(gwZO?'gw-online':'gw-offline');
     document.getElementById('badge').textContent=(gwMC||gwZO)?'ONLINE':'OFFLINE';
@@ -1054,32 +1193,23 @@ async function fetchData(){
     for(const ag of(data.agents||[])){
       const id=canonicalName(ag.id)||ag.id;
       combined[id]=ag;
+      // Store meta for inspect panel
+      agentMeta[id]={sessionCount:ag.sessionCount,gateway:ag.gateway,model:ag.model};
     }
-    // PB overrides for ZeusOps agents
     for(const id of Object.keys(NODE_POS)){
-      if(pbJobs[id]?.status==='running'){
-        combined[id]={...combined[id]||{},status:'active',pbTask:pbJobs[id].task_summary};
-      }
+      if(pbJobs[id]?.status==='running') combined[id]={...combined[id]||{},status:'active',pbTask:pbJobs[id].task_summary};
     }
 
-    // Update ZeusOps grid nodes
+    const allAgents=[];
     for(const id of Object.keys(NODE_POS)){
       const ag=combined[id]||{};
-      agentData[id]={
-        status:ag.status||'offline',
-        contextPct:ag.contextPct||0,
-        lastActive:ag.lastActive||null,
-        pbTask:(combined[id]?.pbTask)||null
-      };
+      agentData[id]={status:ag.status||'offline',contextPct:ag.contextPct||0,lastActive:ag.lastActive||null,pbTask:combined[id]?.pbTask||null};
       updateNodeVis(id);
+      allAgents.push({id,...agentData[id]});
     }
 
-    // Tower cards
-    for(const id of ['main','mctravis','zeus','obr']){
-      if(combined[id]) updateCard(id,combined[id]);
-    }
+    for(const id of['main','mctravis','zeus','obr']) if(combined[id]) updateCard(id,combined[id]);
 
-    // Stats
     const activeCount=Object.values(agentData).filter(a=>a.status==='active').length;
     setT('s-active',activeCount);
     const s=data.stats||{};
@@ -1088,12 +1218,11 @@ async function fetchData(){
     if(s.totalTokensBurned!=null) setT('s-tokens',fmt(s.totalTokensBurned));
     if(s.hottestAgent) setT('s-hot',s.hottestAgent.toUpperCase());
 
-    // Occasional demo packet (visual only — does not touch dispatch state)
+    // Mobile list view
+    renderMobileList(allAgents);
+
     const demoPairs=[['manager','architect'],['architect','coder'],['sre','devops-automator'],['coder','tester'],['tester','releaser']];
-    if(Math.random()<0.2){
-      const[a,b]=demoPairs[Math.floor(Math.random()*demoPairs.length)];
-      launch(a,b);
-    }
+    if(Math.random()<0.2){const[a,b]=demoPairs[Math.floor(Math.random()*demoPairs.length)];launch(a,b);}
 
   }catch{
     document.getElementById('offline').classList.add('show');
@@ -1112,18 +1241,16 @@ function startSSE(){
 
   evtSrc.addEventListener('PB_CONNECT',(e)=>{
     try{
-      const d=JSON.parse(e.data);
-      const clientId=d.clientId;
+      const d=JSON.parse(e.data);const clientId=d.clientId;
       if(!clientId||subscribed) return;
       subscribed=true;
-      fetch(`${PB_URL}/api/realtime`,{method:'POST',headers:{...pbHeaders(),'Content-Type':'application/json'},
-        body:JSON.stringify({clientId,subscriptions:['agent_jobs','manager_log']})}).catch(()=>{});
+      fetch(`${PB_URL}/api/realtime`,{method:'POST',headers:{...pbHeaders(),'Content-Type':'application/json'},body:JSON.stringify({clientId,subscriptions:['agent_jobs','manager_log']})}).catch(()=>{});
     }catch{}
   });
 
   evtSrc.addEventListener('agent_jobs',(e)=>{
     try{
-      const d=JSON.parse(e.data); const rec=d.record||d;
+      const d=JSON.parse(e.data);const rec=d.record||d;
       const name=canonicalName(rec.agent_name);
       const prev=pbJobs[name]||{};
       pbJobs[name]={status:rec.status,task_summary:rec.task_summary,session_id:rec.session_id,trello_card_url:rec.trello_card_url};
@@ -1132,9 +1259,7 @@ function startSSE(){
         const ctx={agent:name,task:rec.task_summary,trello_card_url:rec.trello_card_url};
         pushActivity(`DISPATCH → ${name.toUpperCase()}: ${rec.task_summary||''}`,col,ctx,'dispatch',new Date().toISOString());
         dispatch('manager',name);
-        // Show spawn icon on the dispatched agent
-        agentLastTool[name] = {icon:'SPN', ts: Date.now()};
-        updateToolIcon(name);
+        agentLastTool[name]={icon:'SPN',ts:Date.now()};updateToolIcon(name);
       } else if(rec.status!=='running'&&prev.status==='running'){
         clearDispatchToAgent(name);
       }
@@ -1143,14 +1268,13 @@ function startSSE(){
 
   evtSrc.addEventListener('manager_log',(e)=>{
     try{
-      const d=JSON.parse(e.data); const rec=d.record||d;
+      const d=JSON.parse(e.data);const rec=d.record||d;
       if(!rec.id||_logSeenIds.has(rec.id)) return;
-      _logSeenIds.add(rec.id);
-      applyLog(rec);
+      _logSeenIds.add(rec.id);applyLog(rec);
     }catch{}
   });
 
-  evtSrc.onerror=()=>{ subscribed=false; setTimeout(startSSE,8000); evtSrc.close(); };
+  evtSrc.onerror=()=>{subscribed=false;setTimeout(startSSE,8000);evtSrc.close();};
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1185,18 +1309,15 @@ buildNodes();
 tickClock();
 setInterval(tickClock,1000);
 
-pbAuth().then(()=>{ hydratePB(); pollLog(); startSSE(); });
-setInterval(()=>{ if(!PB_TOKEN) pbAuth(); },60000);
+pbAuth().then(()=>{hydratePB();pollLog();startSSE();});
+setInterval(()=>{if(!PB_TOKEN)pbAuth();},60000);
 setInterval(hydratePB,8000);
 setInterval(pollLog,8000);
 
 fetchData();
 setInterval(fetchData,8000);
 
-requestAnimationFrame(ts=>{ lastRaf=ts; requestAnimationFrame(rafLoop); });
-
-// Resize observer — SVG scales itself via viewBox/preserveAspectRatio
-// no manual resize needed
+requestAnimationFrame(ts=>{lastRaf=ts;requestAnimationFrame(rafLoop);});
 </script>
 </body>
 </html>
