@@ -400,31 +400,40 @@ function updateTimers(){
     // Sort by dispatched time (oldest first = longest running first)
     jobs.sort((a,b)=>a.dispatchedAt-b.dispatchedAt);
 
+    // Pill width: H:MM:SS = 7 chars needs more room than MM:SS = 5 chars
+    function timerPillW(ms, fontSize){ const over1h = ms>=3600000; return over1h ? fontSize*4.8 : fontSize*3.8; }
     if(jobs.length===1){
-      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
-      el.timer1.setAttribute('font-size','9');
+      const t1ms = now - jobs[0].dispatchedAt;
+      el.timer1.textContent = fmtElapsed(t1ms);
+      el.timer1.setAttribute('font-size','11');
       el.timer1.setAttribute('opacity','1');
-      if(el.timerBg1){ el.timerBg1.setAttribute('width','36'); el.timerBg1.setAttribute('opacity','0.92'); }
+      const w1 = timerPillW(t1ms,11).toFixed(0);
+      if(el.timerBg1){ el.timerBg1.setAttribute('width',w1); el.timerBg1.setAttribute('x',(-(w1/2)).toFixed(0)); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.setAttribute('opacity','0');
       if(el.timerBg2) el.timerBg2.setAttribute('opacity','0');
     } else if(jobs.length===2){
-      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
-      el.timer1.setAttribute('font-size','8');
+      const t1ms = now - jobs[0].dispatchedAt, t2ms = now - jobs[1].dispatchedAt;
+      el.timer1.textContent = fmtElapsed(t1ms);
+      el.timer1.setAttribute('font-size','10');
       el.timer1.setAttribute('opacity','1');
-      if(el.timerBg1){ el.timerBg1.setAttribute('width','34'); el.timerBg1.setAttribute('opacity','0.92'); }
-      el.timer2.textContent = fmtElapsed(now - jobs[1].dispatchedAt);
-      el.timer2.setAttribute('font-size','7');
-      el.timer2.setAttribute('opacity','0.85');
-      if(el.timerBg2){ el.timerBg2.setAttribute('width','30'); el.timerBg2.setAttribute('opacity','0.88'); }
+      const w1 = timerPillW(t1ms,10).toFixed(0);
+      if(el.timerBg1){ el.timerBg1.setAttribute('width',w1); el.timerBg1.setAttribute('x',(-(w1/2)).toFixed(0)); el.timerBg1.setAttribute('opacity','0.92'); }
+      el.timer2.textContent = fmtElapsed(t2ms);
+      el.timer2.setAttribute('font-size','9');
+      el.timer2.setAttribute('opacity','0.75');
+      const w2 = timerPillW(t2ms,9).toFixed(0);
+      if(el.timerBg2){ el.timerBg2.setAttribute('width',w2); el.timerBg2.setAttribute('x',(-(w2/2)).toFixed(0)); el.timerBg2.setAttribute('opacity','0.85'); }
     } else {
-      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
-      el.timer1.setAttribute('font-size','8');
+      const t1ms = now - jobs[0].dispatchedAt;
+      el.timer1.textContent = fmtElapsed(t1ms);
+      el.timer1.setAttribute('font-size','10');
       el.timer1.setAttribute('opacity','1');
-      if(el.timerBg1){ el.timerBg1.setAttribute('width','34'); el.timerBg1.setAttribute('opacity','0.92'); }
+      const w1 = timerPillW(t1ms,10).toFixed(0);
+      if(el.timerBg1){ el.timerBg1.setAttribute('width',w1); el.timerBg1.setAttribute('x',(-(w1/2)).toFixed(0)); el.timerBg1.setAttribute('opacity','0.92'); }
       el.timer2.textContent = `+${jobs.length-1} more`;
-      el.timer2.setAttribute('font-size','6.5');
-      el.timer2.setAttribute('opacity','0.6');
-      if(el.timerBg2){ el.timerBg2.setAttribute('width','28'); el.timerBg2.setAttribute('opacity','0.85'); }
+      el.timer2.setAttribute('font-size','8');
+      el.timer2.setAttribute('opacity','0.55');
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','32'); el.timerBg2.setAttribute('x','-16'); el.timerBg2.setAttribute('opacity','0.85'); }
     }
   }
 }
@@ -833,23 +842,23 @@ function buildNodes(){
     const taskLabel=svgEl('text',{x:'0',y:(labelY+13).toFixed(1),'text-anchor':'middle','font-family':'Share Tech Mono,monospace','font-size':'6.5',fill:col,opacity:'0','letter-spacing':'0.3'});
 
     // ── Timer display (center of triangle, below inner hex) ──
-    // Dark pill background keeps text crisp against node glow
-    const timerY1 = (r * 0.38).toFixed(1);
-    const timerY2 = (r * 0.60).toFixed(1);
-    // Pill bg for timer1 (sized for "00:00:00" = ~36px wide at font-size 9)
-    const timerBg1 = svgEl('rect',{x:'-18',y:(r*0.38-9).toFixed(1),
-      width:'36',height:'12',rx:'2',
-      fill:'#000810',stroke:col,'stroke-width':'0.5',opacity:'0'});
+    // Spaced further apart, slightly larger font, generous pill padding
+    const timerY1 = (r * 0.32).toFixed(1);   // primary — higher up, more air above
+    const timerY2 = (r * 0.62).toFixed(1);   // secondary — more gap between rows
+    // Pill bg for timer1: font-size 11, ~44px wide, 15px tall
+    const timerBg1 = svgEl('rect',{x:'-22',y:(r*0.32-11).toFixed(1),
+      width:'44',height:'15',rx:'3',
+      fill:'#000810',stroke:col,'stroke-width':'0.6',opacity:'0'});
     const timer1 = svgEl('text',{x:'0',y:timerY1,'text-anchor':'middle',
-      'font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'9',
-      fill:col,opacity:'0','letter-spacing':'1'});
-    // Pill bg for timer2
-    const timerBg2 = svgEl('rect',{x:'-16',y:(r*0.60-8).toFixed(1),
-      width:'32',height:'10',rx:'2',
-      fill:'#000810',stroke:col,'stroke-width':'0.4',opacity:'0'});
+      'font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'11',
+      fill:col,opacity:'0','letter-spacing':'1.5'});
+    // Pill bg for timer2: font-size 9, ~36px wide, 13px tall
+    const timerBg2 = svgEl('rect',{x:'-18',y:(r*0.62-10).toFixed(1),
+      width:'36',height:'13',rx:'3',
+      fill:'#000810',stroke:col,'stroke-width':'0.5',opacity:'0'});
     const timer2 = svgEl('text',{x:'0',y:timerY2,'text-anchor':'middle',
-      'font-family':'Orbitron,sans-serif','font-weight':'400','font-size':'7',
-      fill:col,opacity:'0','letter-spacing':'0.5'});
+      'font-family':'Orbitron,sans-serif','font-weight':'400','font-size':'9',
+      fill:col,opacity:'0','letter-spacing':'1'});
 
     lg_g.appendChild(toolBadgeBg);
     lg_g.appendChild(toolIconEl);
