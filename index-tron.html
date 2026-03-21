@@ -91,7 +91,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 #load-older:hover{color:#4a8090;}
 
 /* ── INSPECT PANEL ── */
-#inspect{position:fixed;top:64px;right:175px;bottom:0;width:240px;background:#000c1a;border-left:2px solid #0d2040;border-right:2px solid #0d2040;display:flex;flex-direction:column;transform:translateX(calc(100% + 175px));transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:30;pointer-events:none;}
+#inspect{position:fixed;top:64px;right:0;bottom:0;width:240px;background:#000c1a;border-left:2px solid #0d2040;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:50;pointer-events:none;overflow-y:auto;}
 #inspect.open{transform:translateX(0);pointer-events:all;}
 /* stats bar is 36+28=64px from top */
 #inspect-close{position:absolute;top:8px;right:10px;background:none;border:none;color:#4a8090;font-size:14px;cursor:pointer;font-family:'Orbitron',sans-serif;}
@@ -208,11 +208,25 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
         </svg>
       </div>
       <div id="inspect-body">
+        <!-- Running jobs / timers -->
+        <div id="ib-jobs-section" style="display:none;margin-bottom:6px">
+          <div style="color:#4a6080;font-size:7px;letter-spacing:1.5px;margin-bottom:4px">◈ RUNNING JOBS</div>
+          <div id="ib-jobs"></div>
+        </div>
+        <!-- Core stats -->
+        <div class="ib-row"><span class="ib-label">STATUS</span><span class="ib-val" id="ib-status">—</span></div>
+        <div class="ib-row"><span class="ib-label">CTX</span><span class="ib-val" id="ib-ctx">—</span></div>
+        <div class="ib-row"><span class="ib-label">TOKENS</span><span class="ib-val" id="ib-tokens">—</span></div>
         <div class="ib-row"><span class="ib-label">SESSIONS</span><span class="ib-val" id="ib-sessions">—</span></div>
-        <div class="ib-row"><span class="ib-label">LAST TOOL</span><span class="ib-val" id="ib-tool">—</span></div>
-        <div class="ib-row"><span class="ib-label">LAST ACTIVE</span><span class="ib-val" id="ib-active">—</span></div>
         <div class="ib-row"><span class="ib-label">GATEWAY</span><span class="ib-val" id="ib-gateway">—</span></div>
-        <div class="ib-row" id="ib-task-row"><span class="ib-label">TASK</span><span class="ib-val" id="ib-task" style="white-space:normal;word-break:break-word;max-width:150px">—</span></div>
+        <div class="ib-row"><span class="ib-label">MODEL</span><span class="ib-val" id="ib-model">—</span></div>
+        <div class="ib-row"><span class="ib-label">LAST ACTIVE</span><span class="ib-val" id="ib-active">—</span></div>
+        <!-- Tool history -->
+        <div id="ib-tools-section" style="display:none;margin-top:6px;margin-bottom:4px">
+          <div style="color:#4a6080;font-size:7px;letter-spacing:1.5px;margin-bottom:4px">◈ RECENT TOOLS</div>
+          <div id="ib-tools-dots" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center"></div>
+        </div>
+        <!-- Activity feed -->
         <div id="inspect-feed">
           <div id="inspect-feed-title">◈ RECENT ACTIVITY</div>
           <div id="inspect-entries"></div>
@@ -994,24 +1008,72 @@ function openInspect(id){
   document.getElementById('ia-pct').textContent=(ag.contextPct||0)+'%';
   document.getElementById('ia-pct').setAttribute('fill',arcColor);
 
-  // Body rows
-  document.getElementById('ib-sessions').textContent=meta.sessionCount!=null?meta.sessionCount:'—';
-  document.getElementById('ib-tool').textContent=agentLastTool[id]?.icon||'—';
-  document.getElementById('ib-active').textContent=ag.lastActive?rel(ag.lastActive):'—';
-  document.getElementById('ib-gateway').textContent=meta.gateway||'—';
-  const taskEl=document.getElementById('ib-task');
-  taskEl.textContent=ag.pbTask||'—';
-  taskEl.style.color=ag.pbTask?col:'#4a6080';
+  // ── Running jobs / timers ──
+  const jobs = agentTimers[id]||[];
+  const jobsSection = document.getElementById('ib-jobs-section');
+  const jobsDiv = document.getElementById('ib-jobs');
+  if(jobs.length>0){
+    jobsSection.style.display='block';
+    jobsDiv.innerHTML = jobs.map(j=>{
+      const elapsed = fmtElapsed(Date.now()-j.dispatchedAt);
+      const task = j.taskSummary?(j.taskSummary.length>36?j.taskSummary.slice(0,35)+'…':j.taskSummary):'—';
+      const sid = j.sessionId?j.sessionId.slice(0,20):'';
+      return `<div style="padding:5px 0;border-bottom:1px solid #0d2040">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="color:${col};font-family:Orbitron,sans-serif;font-weight:700;font-size:12px;letter-spacing:1px">${elapsed}</span>
+          <span style="color:#3a5070;font-size:7px">${sid}</span>
+        </div>
+        <div style="color:#7bd4e8;font-size:8px;margin-top:2px">${task}</div>
+      </div>`;
+    }).join('');
+  } else { jobsSection.style.display='none'; }
 
-  // Filtered feed entries
+  // ── Core stats ──
+  const statusEl=document.getElementById('ib-status');
+  statusEl.textContent=st.toUpperCase();
+  statusEl.style.color=st==='active'?'#00FF88':st==='idle'?'#FFD700':'#445566';
+
+  const ctxEl=document.getElementById('ib-ctx');
+  ctxEl.textContent=(ag.contextPct||0)+'%';
+  ctxEl.style.color=arcColor;
+
+  const tokEl=document.getElementById('ib-tokens');
+  tokEl.textContent=ag.totalTokens!=null
+    ?(ag.totalTokens>=1000000?(ag.totalTokens/1000000).toFixed(2)+'M'
+      :ag.totalTokens>=1000?(ag.totalTokens/1000).toFixed(1)+'K'
+      :String(ag.totalTokens))
+    :'—';
+
+  document.getElementById('ib-sessions').textContent=meta.sessionCount!=null?meta.sessionCount:'—';
+  document.getElementById('ib-gateway').textContent=meta.gateway||'—';
+  const modelRaw=ag.model||'';
+  document.getElementById('ib-model').textContent=modelRaw
+    ?modelRaw.split('/').pop().replace('claude-','').replace('-latest','')
+    :'—';
+  document.getElementById('ib-active').textContent=ag.lastActive?rel(ag.lastActive):'—';
+
+  // ── Tool dot history ──
+  const toolStack = agentToolStack[id]||[];
+  const toolsSection = document.getElementById('ib-tools-section');
+  const toolsDots = document.getElementById('ib-tools-dots');
+  if(toolStack.length>0){
+    toolsSection.style.display='block';
+    toolsDots.innerHTML=[...toolStack].reverse().map(d=>
+      `<span style="display:inline-flex;align-items:center;gap:3px;background:#000c1a;border:0.5px solid ${d.color};border-radius:3px;padding:2px 6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:${d.color};flex-shrink:0"></span>
+        <span style="color:${d.color};font-family:Orbitron,sans-serif;font-size:6.5px;font-weight:700">${d.icon}</span>
+      </span>`).join('');
+  } else { toolsSection.style.display='none'; }
+
+  // ── Filtered activity feed ──
   const entries=activityLog.filter(e=>{
     const m=(e.msg||'').toLowerCase();
     return m.includes(id.replace('-',' '))||m.includes(id);
-  }).slice(0,8);
+  }).slice(0,10);
   const ef=document.getElementById('inspect-entries');
   ef.innerHTML=entries.map(e=>`<div class="ie" style="border-color:${e.color||'#4a6080'}">
     <span style="color:#4a6080;font-size:7px">${e.time}</span>
-    <div style="color:${e.color||'#7bd4e8'};margin-top:2px">${e.msg.slice(0,80)}</div>
+    <div style="color:${e.color||'#7bd4e8'};margin-top:2px">${e.msg.slice(0,90)}</div>
   </div>`).join('')||`<div style="color:#2a4060;font-size:8px">No recent activity</div>`;
 
   document.getElementById('inspect').classList.add('open');
@@ -1075,7 +1137,7 @@ setInterval(()=>{
     }
   }
   // Refresh inspect panel if open
-  if(inspectId) document.getElementById('ib-tool').textContent=agentLastTool[inspectId]?.icon||'—';
+  if(inspectId) openInspect(inspectId); // refresh inspect panel live
 },200);
 
 // ═══════════════════════════════════════════════════════════
