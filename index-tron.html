@@ -1075,16 +1075,13 @@ function buildNodes(){
     // BOX_W: width of each box; both stacked on the left side of the triangle
     const BOX_W = 130, BOX_H = 88;
     const triHalfW = r;
-    const boxGap   = 10; // horizontal gap from triangle left edge
-    const boxStack  = 6;  // vertical gap between box 1 and box 2
-    const boxX = (-triHalfW - boxGap - BOX_W).toFixed(1);
-    const boxY0 = (-r*0.58).toFixed(1);                          // job 1: top-aligned with triangle top
-    const boxY1 = (parseFloat(boxY0) + BOX_H + boxStack).toFixed(1); // job 2: directly below
+    const boxGap   = 10; // horizontal gap from triangle edges
+    const boxY = (-r*0.58).toFixed(1); // both boxes top-aligned with triangle top edge
 
-    // Left box (Job 1) — always on left, top position
+    // Left box (Job 1) — left side of triangle
     const foLeft = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
-    foLeft.setAttribute('x', boxX);
-    foLeft.setAttribute('y', boxY0);
+    foLeft.setAttribute('x', (-triHalfW - boxGap - BOX_W).toFixed(1));
+    foLeft.setAttribute('y', boxY);
     foLeft.setAttribute('width', BOX_W);
     foLeft.setAttribute('height', BOX_H);
     foLeft.setAttribute('opacity', '0');
@@ -1102,10 +1099,10 @@ function buildNodes(){
     divLeft.appendChild(entriesLeft);
     foLeft.appendChild(divLeft);
 
-    // Right box (Job 2) — same X, stacked below job 1
+    // Right box (Job 2) — right side of triangle, stays put even if job 1 ends
     const foRight = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
-    foRight.setAttribute('x', boxX);
-    foRight.setAttribute('y', boxY1);
+    foRight.setAttribute('x', (triHalfW + boxGap).toFixed(1));
+    foRight.setAttribute('y', boxY);
     foRight.setAttribute('width', BOX_W);
     foRight.setAttribute('height', BOX_H);
     foRight.setAttribute('opacity', '0');
@@ -1760,13 +1757,18 @@ async function hydratePB(){
         _toolStreamRR[name]=0;
       }
     }
-    // Clear timers for agents no longer running
+    // Clear timers for agents no longer running; collapse only freed slots
     for(const name of Object.keys(agentTimers)){
       if(!runningAgents.has(name)){
         delete agentTimers[name];
-        // Collapse both boxes when agent goes idle
         collapseToolStream(name,0);
         collapseToolStream(name,1);
+      } else {
+        // Agent still running — collapse slots for jobs that dropped off
+        const prev = agentTimers[name]||[];
+        const curr = freshTimers[name]||[];
+        if(prev.length > 1 && curr.length <= 1) collapseToolStream(name,1); // job 2 done
+        if(prev.length > 0 && curr.length === 0) collapseToolStream(name,0); // job 1 done
       }
     }
     const toRemove=[...activeDispatchEdges].filter(k=>!runningAgents.has(k.split('|')[1]));
