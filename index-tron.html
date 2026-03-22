@@ -118,10 +118,10 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 #grid-svg{width:100%;height:100%;}
 
 /* ── TABLET/MOBILE: hide panels, make grid scrollable ── */
-@media(max-width:900px){
+@media(max-width:1200px){
   #tower,#feed-panel{display:none;}
   #grid-wrap{flex:1;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;}
-  #grid-svg{width:900px;height:720px;min-width:900px;}
+  #grid-svg{width:1200px;height:800px;min-width:1200px;}
 }
 #mobile-list{display:none;}
 .ml-agent{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #0d2040;border-radius:3px;margin-bottom:6px;}
@@ -235,7 +235,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
       </div>
     </div>
 
-    <svg id="grid-svg" viewBox="0 0 900 760" preserveAspectRatio="xMidYMid meet">
+    <svg id="grid-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet">
       <defs>
         <filter id="glow-active" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
@@ -263,15 +263,19 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
       <g id="bg-dots"></g>
 
       <!-- Sector dividers -->
-      <line x1="20" y1="162" x2="880" y2="162" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
-      <line x1="20" y1="435" x2="880" y2="435" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
-      <line x1="20" y1="570" x2="880" y2="570" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <line x1="20" y1="162" x2="1180" y2="162" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <line x1="20" y1="435" x2="1180" y2="435" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <line x1="20" y1="570" x2="1180" y2="570" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
 
       <!-- Tier labels with collapse targets -->
       <text class="sector-label" x="24" y="20" data-tier="COMMAND" style="cursor:pointer" onclick="toggleTier('COMMAND')">COMMAND</text>
       <text class="sector-label" x="24" y="176" data-tier="ENGINEERING" style="cursor:pointer" onclick="toggleTier('ENGINEERING')">ENGINEERING</text>
       <text class="sector-label" x="24" y="449" data-tier="OPS" style="cursor:pointer" onclick="toggleTier('OPS')">OPS</text>
       <text class="sector-label" x="24" y="584" data-tier="INTEL" style="cursor:pointer" onclick="toggleTier('INTEL')">INTEL</text>
+      <text class="sector-label" x="1100" y="20" data-tier="COMMAND" style="cursor:pointer;text-anchor:end" onclick="toggleTier('COMMAND')">COMMAND</text>
+      <text class="sector-label" x="1100" y="176" data-tier="ENGINEERING" style="cursor:pointer" onclick="toggleTier('ENGINEERING')">ENGINEERING</text>
+      <text class="sector-label" x="1100" y="449" data-tier="OPS" style="cursor:pointer" onclick="toggleTier('OPS')">OPS</text>
+      <text class="sector-label" x="1100" y="584" data-tier="INTEL" style="cursor:pointer" onclick="toggleTier('INTEL')">INTEL</text>
 
       <g id="traces"></g>
       <g id="pulse-overlays"></g>
@@ -644,19 +648,39 @@ const ACTION_COLOR = {
 
 // ── Fixed 2D node positions ───────────────────────────────
 const NODE_POS = {
-  manager:             {x:450, y:95},
-  architect:           {x:220, y:245},
-  pm:                  {x:680, y:245},
-  coder:               {x:145, y:360},
-  reviewer:            {x:330, y:360},
-  tester:              {x:530, y:360},
-  releaser:            {x:720, y:360},
-  sre:                 {x:210, y:498},
-  'incident-manager':  {x:400, y:498},
-  'devops-automator':  {x:590, y:498},
-  researcher:          {x:190, y:645},
-  security:            {x:420, y:645},
-  'workflow-architect':{x:660, y:645},
+  // 1200px wide — nodes spread across x:100–1100, center at 600
+  manager:             {x:600, y:95},
+  architect:           {x:280, y:255},
+  pm:                  {x:920, y:255},
+  coder:               {x:100, y:370},
+  reviewer:            {x:340, y:370},
+  tester:              {x:600, y:370},
+  releaser:            {x:860, y:370},
+  sre:                 {x:180, y:505},
+  'incident-manager':  {x:480, y:505},
+  'devops-automator':  {x:780, y:505},
+  researcher:          {x:160, y:650},
+  security:            {x:500, y:650},
+  'workflow-architect':{x:840, y:650},
+};
+
+// Which side each agent's tool stream boxes appear on
+// 'left' = boxes to the left of triangle; 'right' = boxes to the right
+// Outward-facing: left-column nodes get left boxes, right-column nodes get right boxes
+const STREAM_SIDE = {
+  manager:            'left',   // centered — default left for job1
+  architect:          'left',   // left column
+  pm:                 'right',  // right column
+  coder:              'left',   // leftmost
+  reviewer:           'left',   // left-center
+  tester:             'left',   // center — job1 left
+  releaser:           'right',  // right column
+  sre:                'left',   // left column
+  'incident-manager': 'left',   // left-center
+  'devops-automator': 'right',  // right-center
+  researcher:         'left',   // leftmost
+  security:           'left',   // center-left
+  'workflow-architect':'right',  // right column
 };
 
 // Agent → tier mapping (for tier collapse)
@@ -813,7 +837,7 @@ function pcbPath(a,b){
 // ═══════════════════════════════════════════════════════════
 function buildDotGrid(){
   const g=document.getElementById('bg-dots');
-  for(let x=0;x<=900;x+=40) for(let y=0;y<=720;y+=40)
+  for(let x=0;x<=1200;x+=40) for(let y=0;y<=800;y+=40)
     g.appendChild(svgEl('circle',{cx:x,cy:y,r:'1',fill:'#0a1628'}));
 }
 
@@ -1075,12 +1099,21 @@ function buildNodes(){
     // BOX_W: width of each box; both stacked on the left side of the triangle
     const BOX_W = 130, BOX_H = 88;
     const triHalfW = r;
-    const boxGap   = 10; // horizontal gap from triangle edges
+    const boxGap   = 12; // horizontal gap from triangle edges
     const boxY = (-r*0.58).toFixed(1); // both boxes top-aligned with triangle top edge
+    const side = STREAM_SIDE[id] || 'left'; // outward-facing primary side
 
-    // Left box (Job 1) — left side of triangle
+    // Primary box (Job 1) — outward-facing side
+    const job1X = side==='left'
+      ? (-triHalfW - boxGap - BOX_W).toFixed(1)
+      : (triHalfW + boxGap).toFixed(1);
+    // Secondary box (Job 2) — opposite side, stays put when job 1 ends
+    const job2X = side==='left'
+      ? (triHalfW + boxGap).toFixed(1)
+      : (-triHalfW - boxGap - BOX_W).toFixed(1);
+
     const foLeft = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
-    foLeft.setAttribute('x', (-triHalfW - boxGap - BOX_W).toFixed(1));
+    foLeft.setAttribute('x', job1X);
     foLeft.setAttribute('y', boxY);
     foLeft.setAttribute('width', BOX_W);
     foLeft.setAttribute('height', BOX_H);
@@ -1099,9 +1132,9 @@ function buildNodes(){
     divLeft.appendChild(entriesLeft);
     foLeft.appendChild(divLeft);
 
-    // Right box (Job 2) — right side of triangle, stays put even if job 1 ends
+    // Secondary box (Job 2) — opposite side, stays put even if job 1 ends
     const foRight = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
-    foRight.setAttribute('x', (triHalfW + boxGap).toFixed(1));
+    foRight.setAttribute('x', job2X);
     foRight.setAttribute('y', boxY);
     foRight.setAttribute('width', BOX_W);
     foRight.setAttribute('height', BOX_H);
