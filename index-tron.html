@@ -1072,15 +1072,19 @@ function buildNodes(){
     lg.appendChild(lg_g);
 
     // ── Tool stream boxes (left + right, in label layer via foreignObject) ──
-    // BOX_W: width of each box; positioned outside triangle edges
-    const BOX_W = 130, BOX_H = 90;
-    const triHalfW = r; // triangle half-width at top edge
-    const boxGap   = 10; // gap from triangle edge
+    // BOX_W: width of each box; both stacked on the left side of the triangle
+    const BOX_W = 130, BOX_H = 88;
+    const triHalfW = r;
+    const boxGap   = 10; // horizontal gap from triangle left edge
+    const boxStack  = 6;  // vertical gap between box 1 and box 2
+    const boxX = (-triHalfW - boxGap - BOX_W).toFixed(1);
+    const boxY0 = (-r*0.58).toFixed(1);                          // job 1: top-aligned with triangle top
+    const boxY1 = (parseFloat(boxY0) + BOX_H + boxStack).toFixed(1); // job 2: directly below
 
-    // Left box: right edge touches left side of triangle
+    // Left box (Job 1) — always on left, top position
     const foLeft = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
-    foLeft.setAttribute('x', (-triHalfW - boxGap - BOX_W).toFixed(1));
-    foLeft.setAttribute('y', (-r*0.58).toFixed(1));
+    foLeft.setAttribute('x', boxX);
+    foLeft.setAttribute('y', boxY0);
     foLeft.setAttribute('width', BOX_W);
     foLeft.setAttribute('height', BOX_H);
     foLeft.setAttribute('opacity', '0');
@@ -1098,10 +1102,10 @@ function buildNodes(){
     divLeft.appendChild(entriesLeft);
     foLeft.appendChild(divLeft);
 
-    // Right box: left edge touches right side of triangle
+    // Right box (Job 2) — same X, stacked below job 1
     const foRight = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
-    foRight.setAttribute('x', (triHalfW + boxGap).toFixed(1));
-    foRight.setAttribute('y', (-r*0.58).toFixed(1));
+    foRight.setAttribute('x', boxX);
+    foRight.setAttribute('y', boxY1);
     foRight.setAttribute('width', BOX_W);
     foRight.setAttribute('height', BOX_H);
     foRight.setAttribute('opacity', '0');
