@@ -440,6 +440,30 @@ class GridHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             except BrokenPipeError:
                 pass
+        elif path == "/check-pid":
+            from urllib.parse import urlparse, parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            pid_list = qs.get("pid", [])
+            result = {}
+            for pid_str in pid_list:
+                try:
+                    pid = int(pid_str)
+                    os.kill(pid, 0)
+                    result[pid_str] = True
+                except (ProcessLookupError, ValueError):
+                    result[pid_str] = False
+                except PermissionError:
+                    result[pid_str] = True  # exists but not owned by us
+            body = json.dumps(result).encode("utf-8")
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+            except BrokenPipeError:
+                pass
         elif path == "/tools":
             global _tool_seen_ts
             try:

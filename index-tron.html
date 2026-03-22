@@ -388,6 +388,8 @@ function toolDotColor(icon){ return TOOL_DOT_COLOR[icon]||'#4a8090'; }
 // Returns: 'active'|'stale'|'likely-done'|null (null = no running job)
 function stalenessFor(id){
   if(!pbJobs[id]||pbJobs[id].status!=='running') return null;
+  // PID confirmed dead = most reliable signal — use immediately
+  if(agentPidDead[id]) return 'likely-done';
   const lastLog = agentLastLogTime[id];
   if(!lastLog) return null; // no log data yet — can't judge
   const age = Date.now() - lastLog;
@@ -461,6 +463,7 @@ function updateTimers(){
 setInterval(updateTimers, 1000);
 // Re-check staleness every 2 minutes
 setInterval(checkStaleness, 2 * 60 * 1000);
+setInterval(checkPids, 30 * 1000);
 
 function pushToolDot(agentId, icon){
   const el = nodeEls[agentId];
@@ -575,6 +578,48 @@ const agentLastLogTime = {};
 const STALE_WARN_MS  = 30 * 60 * 1000;  // 30 min → STALE?
 const STALE_DONE_MS  = 2  * 60 * 60 * 1000; // 2h   → LIKELY DONE
 const ADJ = {};
+
+// PID liveness: agentPidDead[agentId] = true if ALL running job PIDs are confirmed dead
+const agentPidDead = {};
+
+async function checkPids(){
+  const pidMap = {}; // pid -> [agentId, ...]
+  for(const [id, jobs] of Object.entries(agentTimers)){
+    for(const j of jobs){
+      if(j.pid){
+        if(!pidMap[j.pid]) pidMap[j.pid]=[];
+        pidMap[j.pid].push(id);
+      }
+    }
+  }
+  const pids = Object.keys(pidMap);
+  if(!pids.length) return;
+  try{
+    const qs = pids.map(p=>`pid=${p}`).join('&');
+    const r = await fetch(`http://${location.hostname}:8877/check-pid?${qs}`);
+    if(!r.ok) return;
+    const alive = await r.json();
+    const agentCounts = {};
+    for(const [pid, ids] of Object.entries(pidMap)){
+      for(const id of ids){
+        if(!agentCounts[id]) agentCounts[id]={total:0,dead:0};
+        agentCounts[id].total++;
+        if(alive[pid]===false) agentCounts[id].dead++;
+      }
+    }
+    for(const [id, counts] of Object.entries(agentCounts)){
+      const wasDead = agentPidDead[id];
+      agentPidDead[id] = counts.dead === counts.total;
+      if(agentPidDead[id] !== wasDead){
+        updateNodeVis(id);
+        if(inspectId===id) refreshInspect(id);
+      }
+    }
+    for(const id of Object.keys(agentPidDead)){
+      if(!agentTimers[id]||agentTimers[id].length===0) delete agentPidDead[id];
+    }
+  }catch{}
+}
 for(const[a,b]of EDGES){(ADJ[a]=ADJ[a]||[]).push(b);(ADJ[b]=ADJ[b]||[]).push(a);}
 
 function bfs(start,end){
@@ -1041,12 +1086,19 @@ function openInspect(id){
       const elapsed = fmtElapsed(Date.now()-j.dispatchedAt);
       const task = j.taskSummary?(j.taskSummary.length>36?j.taskSummary.slice(0,35)+'…':j.taskSummary):'—';
       const sid = j.sessionId?j.sessionId.slice(0,20):'';
+      let pidBadge='';
+      if(j.pid){
+        const dead=agentPidDead[id];
+        pidBadge=`<span style="font-family:monospace;font-size:7px;color:${dead?'#FF4444':'#00FF88'};border:1px solid ${dead?'#FF4444':'#00FF88'};padding:0 3px;border-radius:2px;margin-left:4px">${dead?'DEAD':'LIVE'} ${j.pid}</span>`;
+      }
       return `<div style="padding:5px 0;border-bottom:1px solid #0d2040">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
           <span style="color:${col};font-family:Orbitron,sans-serif;font-weight:700;font-size:12px;letter-spacing:1px">${elapsed}</span>
           <span style="color:#3a5070;font-size:7px">${sid}</span>
         </div>
-        <div style="color:#7bd4e8;font-size:8px;margin-top:2px">${task}</div>
+        <div style="display:flex;align-items:center;margin-top:2px">
+          <span style="color:#7bd4e8;font-size:8px">${task}</span>${pidBadge}
+        </div>
       </div>`;
     }).join('');
   } else { jobsSection.style.display='none'; }
@@ -1126,12 +1178,19 @@ function refreshInspect(id){
       const elapsed=fmtElapsed(now-j.dispatchedAt);
       const task=j.taskSummary?(j.taskSummary.length>36?j.taskSummary.slice(0,35)+'…':j.taskSummary):'—';
       const sid=j.sessionId?j.sessionId.slice(0,20):'';
+      let pidBadge='';
+      if(j.pid){
+        const dead=agentPidDead[id];
+        pidBadge=`<span style="font-family:monospace;font-size:7px;color:${dead?'#FF4444':'#00FF88'};border:1px solid ${dead?'#FF4444':'#00FF88'};padding:0 3px;border-radius:2px;margin-left:4px">${dead?'DEAD':'LIVE'} ${j.pid}</span>`;
+      }
       return `<div style="padding:5px 0;border-bottom:1px solid #0d2040">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
           <span style="color:${col};font-family:Orbitron,sans-serif;font-weight:700;font-size:12px;letter-spacing:1px">${elapsed}</span>
           <span style="color:#3a5070;font-size:7px">${sid}</span>
         </div>
-        <div style="color:#7bd4e8;font-size:8px;margin-top:2px">${task}</div>
+        <div style="display:flex;align-items:center;margin-top:2px">
+          <span style="color:#7bd4e8;font-size:8px">${task}</span>${pidBadge}
+        </div>
       </div>`;
     }).join('');
   } else { jobsSection.style.display='none'; }
@@ -1499,7 +1558,7 @@ async function hydratePB(){
         // Build timer entry
         const dispatchedAt = job.dispatched_at ? new Date(job.dispatched_at).getTime() : Date.now();
         if(!freshTimers[name]) freshTimers[name]=[];
-        freshTimers[name].push({dispatchedAt, sessionId:job.session_id, taskSummary:job.task_summary});
+        freshTimers[name].push({dispatchedAt, sessionId:job.session_id, taskSummary:job.task_summary, pid:job.pid||null, pbId:job.id});
         // Seed a SPN dot if no stack exists yet for this agent
         if(!agentToolStack[name]||agentToolStack[name].length===0){
           agentLastTool[name]={icon:'SPN',ts:Date.now()};
@@ -1859,7 +1918,7 @@ buildNodes();
 tickClock();
 setInterval(tickClock,1000);
 
-pbAuth().then(()=>{hydratePB();pollLog();startSSE();});
+pbAuth().then(()=>{hydratePB().then(()=>checkPids());pollLog();startSSE();});
 setInterval(()=>{if(!PB_TOKEN)pbAuth();},60000);
 setInterval(hydratePB,8000);
 setInterval(pollLog,8000);
