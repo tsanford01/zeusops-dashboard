@@ -367,11 +367,7 @@ function toolIcon(toolName){
   return 'RUN';
 }
 
-const agentLastTool = {}; // kept for inspect panel compat (last tool)
-// Tool dot stacks: agentToolStack[id] = [{icon, color, ts, svgDot, svgLabel}]
-const agentToolStack = {};
-const MAX_TOOL_DOTS = 5;
-const TOOL_DOT_LIFE = 15000; // ms before fully gone
+const agentLastTool = {}; // last tool per agent (used for icon tracking)
 
 // ── Tool stream box state ─────────────────────────────────────────────────────
 // agentToolStream[id] = { left: {entries:[], lastTs, fadeTimer}, right: {...} }
@@ -446,7 +442,7 @@ function pushToolStream(agentId, toolName, args, slot=0){
 
   // Prepend (newest at top), trim to max
   div.insertBefore(row, div.firstChild);
-  state.entries.unshift({ el: row, ts: Date.now() });
+  state.entries.unshift({ el: row, ts: Date.now(), tool: toolName, args: args||{} });
   while(state.entries.length > MAX_STREAM_ENTRIES){
     const old = state.entries.pop();
     if(old.el.parentNode) old.el.parentNode.removeChild(old.el);
@@ -495,21 +491,7 @@ function slotForSession(agentId, sessionId){
   }
   return 0;
 }
-const TOOL_DOT_FADE_START = 8000; // ms before fade begins
 
-// Tool category → dot color
-const TOOL_DOT_COLOR = {
-  EXC:'#FF6B35', SH:'#FF6B35',          // exec/shell → orange
-  RD:'#4a8090',  WR:'#00CED1', ED:'#00CED1', // file ops → teal/dim
-  SRC:'#9B6BFF', GET:'#9B6BFF', WEB:'#9B6BFF', // web → purple
-  MSG:'#FFD700', SPN:'#FFD700', SND:'#FFD700', // comms/spawn → gold
-  MEM:'#7B68EE',                          // memory → indigo
-  GIT:'#00FF88', TRL:'#00BFFF',           // git/trello → green/blue
-  DEP:'#00FF88', CI:'#00F0FF',            // deploy/ci → green/cyan
-  AI:'#FF69B4',                           // AI calls → pink
-  TOOL:'#98FF98', RUN:'#4a8090',          // generic
-};
-function toolDotColor(icon){ return TOOL_DOT_COLOR[icon]||'#4a8090'; }
 
 // ── Staleness detection ───────────────────────────────────────────────────
 // Returns: 'active'|'stale'|'likely-done'|null (null = no running job)
@@ -592,53 +574,7 @@ setInterval(updateTimers, 1000);
 setInterval(checkStaleness, 2 * 60 * 1000);
 setInterval(checkPids, 30 * 1000);
 
-function pushToolDot(agentId, icon){
-  const el = nodeEls[agentId];
-  if(!el) return;
-  const r = nodeR(agentId);
-  const col = toolDotColor(icon);
-  const stack = agentToolStack[agentId] || (agentToolStack[agentId] = []);
 
-  // Right side of triangle: anchor just outside right vertex
-  // Triangle right vertex is at (r, -r*0.58); sit 6px outside
-  const dotX = r + 6;
-  const dotY = -r * 0.25; // center of right side vertically
-
-  // Shift existing dots down
-  for(const d of stack){
-    const cy = parseFloat(d.svgDot.getAttribute('cy'));
-    d.svgDot.setAttribute('cy', (cy + 8).toFixed(1));
-    if(d.svgLabel) d.svgLabel.setAttribute('y', (cy + 8 + 3).toFixed(1));
-  }
-
-  // Create new dot (in label layer group for this agent)
-  const lg = document.getElementById('labels');
-  const lg_g = lg.children[Object.keys(NODE_POS).indexOf(agentId)];
-
-  const dot = svgEl('circle',{
-    cx: dotX.toFixed(1), cy: dotY.toFixed(1),
-    r:'4', fill:col, opacity:'0.95',
-    filter:'url(#glow-arc)'
-  });
-  const lbl = svgEl('text',{
-    x:(dotX+7).toFixed(1), y:(dotY+3).toFixed(1),
-    'font-family':'Orbitron,sans-serif','font-weight':'700',
-    'font-size':'5.5', fill:col, opacity:'0.9',
-    'letter-spacing':'0.5'
-  });
-  lbl.textContent = icon;
-
-  if(lg_g){ lg_g.appendChild(dot); lg_g.appendChild(lbl); }
-
-  stack.unshift({icon, color:col, ts:Date.now(), svgDot:dot, svgLabel:lbl});
-
-  // Cap stack size
-  while(stack.length > MAX_TOOL_DOTS){
-    const old = stack.pop();
-    if(old.svgDot && old.svgDot.parentNode) old.svgDot.parentNode.removeChild(old.svgDot);
-    if(old.svgLabel && old.svgLabel.parentNode) old.svgLabel.parentNode.removeChild(old.svgLabel);
-  }
-}
 
 const ACTION_COLOR = {
   dispatch:'#FFD700',ci_check:'#00F0FF',deploy:'#00FF88',trello_update:'#9B6BFF',
@@ -1342,17 +1278,24 @@ function openInspect(id){
     :'—';
   document.getElementById('ib-active').textContent=ag.lastActive?rel(ag.lastActive):'—';
 
-  // ── Tool dot history ──
-  const toolStack = agentToolStack[id]||[];
+  // ── Recent tools (from stream state) ──
   const toolsSection = document.getElementById('ib-tools-section');
   const toolsDots = document.getElementById('ib-tools-dots');
-  if(toolStack.length>0){
+  const streamState = agentToolStream[id];
+  const allEntries = [
+    ...(streamState?.left?.entries||[]),
+    ...(streamState?.right?.entries||[])
+  ].sort((a,b)=>b.ts-a.ts).slice(0,6);
+  if(allEntries.length>0){
     toolsSection.style.display='block';
-    toolsDots.innerHTML=[...toolStack].reverse().map(d=>
-      `<span style="display:inline-flex;align-items:center;gap:3px;background:#000c1a;border:0.5px solid ${d.color};border-radius:3px;padding:2px 6px">
-        <span style="width:6px;height:6px;border-radius:50%;background:${d.color};flex-shrink:0"></span>
-        <span style="color:${d.color};font-family:Orbitron,sans-serif;font-size:6.5px;font-weight:700">${d.icon}</span>
-      </span>`).join('');
+    const col2=AGENT_COLOR[id]||'#00F0FF';
+    toolsDots.innerHTML=allEntries.map(e=>{
+      const {label,detail}=toolStreamDetail(e.tool||'',e.args||{});
+      return `<span style="display:inline-flex;align-items:center;gap:3px;background:#000c1a;border:0.5px solid ${col2}55;border-radius:3px;padding:2px 6px">
+        <span style="color:${col2};font-family:Orbitron,sans-serif;font-size:6px;font-weight:700">${label}</span>
+        <span style="color:#4a8090;font-family:Share Tech Mono,monospace;font-size:6px">${(detail||'').slice(0,24)}</span>
+      </span>`;
+    }).join('');
   } else { toolsSection.style.display='none'; }
 
   // ── Filtered activity feed ──
@@ -1451,41 +1394,11 @@ function updateToolIcon(id){
   const el=nodeEls[id];
   if(el?.toolIcon) el.toolIcon.setAttribute('opacity','0');
   if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0');
-  // Push a new dot for the latest tool
-  const t=agentLastTool[id];
-  if(t) pushToolDot(id, t.icon);
 }
 
 setInterval(()=>{
-  const now=Date.now();
-  // Fade and expire tool dots — but freeze fade while agent is active
-  for(const[id,stack]of Object.entries(agentToolStack)){
-    const isActive=(agentData[id]?.status==='active');
-    for(let i=stack.length-1;i>=0;i--){
-      const d=stack[i];
-      const age=now-d.ts;
-      if(isActive){
-        // Agent active — keep dots fully visible, reset their timestamp so
-        // fade only starts counting after agent goes idle
-        d.ts=now;
-        if(d.svgDot) d.svgDot.setAttribute('opacity','0.95');
-        if(d.svgLabel) d.svgLabel.setAttribute('opacity','0.9');
-      } else {
-        // Agent idle/offline — count down and fade
-        if(age>TOOL_DOT_LIFE){
-          if(d.svgDot?.parentNode) d.svgDot.parentNode.removeChild(d.svgDot);
-          if(d.svgLabel?.parentNode) d.svgLabel.parentNode.removeChild(d.svgLabel);
-          stack.splice(i,1);
-        } else if(age>TOOL_DOT_FADE_START){
-          const op=((1-(age-TOOL_DOT_FADE_START)/(TOOL_DOT_LIFE-TOOL_DOT_FADE_START))*0.95).toFixed(2);
-          if(d.svgDot) d.svgDot.setAttribute('opacity',op);
-          if(d.svgLabel) d.svgLabel.setAttribute('opacity',op);
-        }
-      }
-    }
-  }
   // Refresh inspect panel if open
-  if(inspectId) refreshInspect(inspectId); // refresh content without toggling open/close
+  if(inspectId) refreshInspect(inspectId);
 },200);
 
 // ═══════════════════════════════════════════════════════════
@@ -1768,11 +1681,8 @@ async function hydratePB(){
         const dispatchedAt = job.dispatched_at ? new Date(job.dispatched_at).getTime() : Date.now();
         if(!freshTimers[name]) freshTimers[name]=[];
         freshTimers[name].push({dispatchedAt, sessionId:job.session_id, taskSummary:job.task_summary, pid:job.pid||null, pbId:job.id});
-        // Seed a SPN dot if no stack exists yet for this agent
-        if(!agentToolStack[name]||agentToolStack[name].length===0){
-          agentLastTool[name]={icon:'SPN',ts:Date.now()};
-          pushToolDot(name,'SPN');
-        }
+        // Seed last tool as SPN on first dispatch (stream box will show real calls as they come in)
+        if(!agentLastTool[name]) agentLastTool[name]={icon:'SPN',ts:Date.now()};
       }
     }
     // Commit fresh timers (only update, don't clobber if same jobs)
