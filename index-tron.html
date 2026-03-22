@@ -471,11 +471,25 @@ function collapseToolStream(agentId, slot){
 
 // Determine which slot to use for an agent based on current jobs
 // slot 0 = left (job 1), slot 1 = right (job 2)
+// Round-robin counters for agents with 2+ jobs (since we can't attribute tool calls to a specific job)
+const _toolStreamRR = {}; // agentId -> call count
+
 function slotForSession(agentId, sessionId){
   const jobs = agentTimers[agentId]||[];
   if(!jobs.length) return 0;
-  const idx = jobs.findIndex(j=>j.sessionId===sessionId||j.sessionId?.includes(sessionId));
-  return idx <= 0 ? 0 : 1;
+  // If session ID provided and matches a specific job, use positional slot
+  if(sessionId){
+    const idx = jobs.findIndex(j=>j.sessionId===sessionId||j.sessionId?.includes(sessionId));
+    if(idx >= 0) return idx <= 0 ? 0 : 1;
+  }
+  // Multiple jobs but no session match → round-robin between slots
+  if(jobs.length >= 2){
+    if(!_toolStreamRR[agentId]) _toolStreamRR[agentId] = 0;
+    const slot = _toolStreamRR[agentId] % 2;
+    _toolStreamRR[agentId]++;
+    return slot;
+  }
+  return 0;
 }
 const TOOL_DOT_FADE_START = 8000; // ms before fade begins
 
@@ -1730,10 +1744,26 @@ async function hydratePB(){
     // Commit fresh timers (only update, don't clobber if same jobs)
     for(const[name,jobs] of Object.entries(freshTimers)){
       agentTimers[name]=jobs;
+      // Update box headers with actual session names
+      const el=nodeEls[name];
+      if(el){
+        const j0=jobs[0], j1=jobs[1];
+        const label0 = j0 ? ('◈ '+(j0.sessionId||'JOB 1').split('-').slice(0,2).join('-').toUpperCase()) : '◈ JOB 1';
+        const label1 = j1 ? ('◈ '+(j1.sessionId||'JOB 2').split('-').slice(0,2).join('-').toUpperCase()) : '◈ JOB 2';
+        if(el.hdrLeft)  el.hdrLeft.textContent  = label0;
+        if(el.hdrRight) el.hdrRight.textContent = label1;
+        // Reset RR counter when jobs change
+        _toolStreamRR[name]=0;
+      }
     }
     // Clear timers for agents no longer running
     for(const name of Object.keys(agentTimers)){
-      if(!runningAgents.has(name)) delete agentTimers[name];
+      if(!runningAgents.has(name)){
+        delete agentTimers[name];
+        // Collapse both boxes when agent goes idle
+        collapseToolStream(name,0);
+        collapseToolStream(name,1);
+      }
     }
     const toRemove=[...activeDispatchEdges].filter(k=>!runningAgents.has(k.split('|')[1]));
     for(const key of toRemove){activeDispatchEdges.delete(key);clearDispatchToAgent(key.split('|')[1]);}
