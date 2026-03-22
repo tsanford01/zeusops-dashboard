@@ -62,6 +62,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 .active-pulse{animation:pulse-name 2s ease-in-out infinite;}
 @keyframes pulse-name{0%,100%{opacity:1;}50%{opacity:.6;}}
 @keyframes ctx-alarm{0%,100%{opacity:.85;stroke-width:4;}50%{opacity:.4;stroke-width:2.5;}}
+@keyframes stale-pulse{0%,100%{opacity:0.55;}50%{opacity:0.20;}}
 
 /* ── SVG GRID ── */
 #grid-wrap{flex:1;position:relative;overflow:hidden;}
@@ -383,6 +384,20 @@ const TOOL_DOT_COLOR = {
 };
 function toolDotColor(icon){ return TOOL_DOT_COLOR[icon]||'#4a8090'; }
 
+// ── Staleness detection ───────────────────────────────────────────────────
+// Returns: 'active'|'stale'|'likely-done'|null (null = no running job)
+function stalenessFor(id){
+  if(!pbJobs[id]||pbJobs[id].status!=='running') return null;
+  const lastLog = agentLastLogTime[id];
+  if(!lastLog) return null; // no log data yet — can't judge
+  const age = Date.now() - lastLog;
+  if(age >= STALE_DONE_MS)  return 'likely-done';
+  if(age >= STALE_WARN_MS)  return 'stale';
+  return 'active';
+}
+const STALE_COLOR      = '#FF8C00'; // amber — uncertain, not failed
+const LIKELY_DONE_COLOR= '#556070'; // dim blue-grey — probably finished
+
 // ── Elapsed timer helpers ──────────────────────────────────────────────────
 function fmtElapsed(ms){
   if(ms<0) ms=0;
@@ -444,6 +459,8 @@ function updateTimers(){
   }
 }
 setInterval(updateTimers, 1000);
+// Re-check staleness every 2 minutes
+setInterval(checkStaleness, 2 * 60 * 1000);
 
 function pushToolDot(agentId, icon){
   const el = nodeEls[agentId];
@@ -551,6 +568,12 @@ const EDGES = [
 //  DISPATCH EDGE TRACKING
 // ═══════════════════════════════════════════════════════════
 const activeDispatchEdges = new Set();
+
+// ── Staleness tracking ────────────────────────────────────────────────────
+// Tracks most recent manager_log `created` timestamp per agent (ms)
+const agentLastLogTime = {};
+const STALE_WARN_MS  = 30 * 60 * 1000;  // 30 min → STALE?
+const STALE_DONE_MS  = 2  * 60 * 60 * 1000; // 2h   → LIKELY DONE
 const ADJ = {};
 for(const[a,b]of EDGES){(ADJ[a]=ADJ[a]||[]).push(b);(ADJ[b]=ADJ[b]||[]).push(a);}
 
@@ -1030,8 +1053,14 @@ function openInspect(id){
 
   // ── Core stats ──
   const statusEl=document.getElementById('ib-status');
-  statusEl.textContent=st.toUpperCase();
-  statusEl.style.color=st==='active'?'#00FF88':st==='idle'?'#FFD700':'#445566';
+  const staleState2 = stalenessFor(id);
+  const statusText = staleState2==='likely-done'?'LIKELY DONE'
+                   : staleState2==='stale'?'STALE?'
+                   : st.toUpperCase();
+  statusEl.textContent=statusText;
+  statusEl.style.color=staleState2==='likely-done'?LIKELY_DONE_COLOR
+                      :staleState2==='stale'?STALE_COLOR
+                      :st==='active'?'#00FF88':st==='idle'?'#FFD700':'#445566';
 
   const ctxEl=document.getElementById('ib-ctx');
   ctxEl.textContent=(ag.contextPct||0)+'%';
@@ -1227,43 +1256,70 @@ function updateNodeVis(id){
   const col=el.col,st=ag.status||'offline',pct=(ag.contextPct||0)/100,r=nodeR(id);
   const isActive=st==='active',isIdle=st==='idle',isOffline=st==='offline';
 
+  // ── Staleness overlay ──────────────────────────────────────────────────
+  // Check if a "running" PB job has gone quiet — overrides active display
+  const staleState = stalenessFor(id); // 'active'|'stale'|'likely-done'|null
+  const isStale      = staleState==='stale';
+  const isLikelyDone = staleState==='likely-done';
+  // Effective color: agent color → amber (stale) → dim grey (likely-done)
+  const effCol = isLikelyDone ? LIKELY_DONE_COLOR : isStale ? STALE_COLOR : col;
+
   // ── Active: expand outer triangle, light up all layers ──
+  // ── Stale:  active size but amber, slow pulse ──
   // ── Idle:   normal size, dim glow ──
   // ── Offline: collapsed, very dim ──
-  const expand = isActive ? r*0.12 : 0; // outer triangle expands when active
+  const expand = (isActive||isStale||isLikelyDone) ? r*0.12 : 0;
 
   // Update outer triangle shape (expand on active)
   el.hex.setAttribute('points', tronOuterTriangle(r, expand));
   el.fill.setAttribute('points', tronOuterTriangle(r, expand));
-  if(el.outerGlow) el.outerGlow.setAttribute('points', tronOuterTriangle(r, expand));
+  if(el.outerGlow){ el.outerGlow.setAttribute('points', tronOuterTriangle(r, expand)); el.outerGlow.setAttribute('stroke', effCol); }
 
-  // Update tick marks (expand with outer)
+  // Update tick marks (expand with outer) + apply effCol
   if(el.tickGroup){
     const ticks = tronTicks(r, expand);
     const paths = el.tickGroup.querySelectorAll('path');
-    ticks.forEach((d,i)=>{ if(paths[i]) paths[i].setAttribute('d',d); });
+    ticks.forEach((d,i)=>{ if(paths[i]){ paths[i].setAttribute('d',d); paths[i].setAttribute('stroke',effCol); } });
   }
+
+  // Apply effCol to outer + inner frames
+  el.hex.setAttribute('stroke', effCol);
+  if(el.innerHex) el.innerHex.setAttribute('stroke', effCol);
+  if(el.innerGlow) el.innerGlow.setAttribute('stroke', effCol);
+
+  // showActive = truly active (not stale/likely-done override)
+  const showActive = isActive && !isStale && !isLikelyDone;
+  const showBusy   = showActive || isStale || isLikelyDone; // expanded states
 
   // Opacity layers
-  el.hex.setAttribute('stroke-width', isActive?'2.5':isIdle?'1.8':'1');
-  el.hex.setAttribute('opacity', isActive?'1.0':isIdle?'0.55':'0.15');
-  el.fill.setAttribute('opacity', '0.85'); // always dark fill so triangle reads
+  el.hex.setAttribute('stroke-width', showBusy?'2.5':isIdle?'1.8':'1');
+  el.hex.setAttribute('opacity', showBusy?'1.0':isIdle?'0.55':'0.15');
+  el.fill.setAttribute('opacity', '0.85');
 
-  if(el.outerGlow) el.outerGlow.setAttribute('opacity', isActive?'0.55':isIdle?'0.15':'0');
+  if(el.outerGlow) el.outerGlow.setAttribute('opacity', showActive?'0.55':isStale?'0.30':isLikelyDone?'0.10':isIdle?'0.15':'0');
   if(el.innerHex){
-    el.innerHex.setAttribute('opacity', isActive?'0.9':isIdle?'0.45':'0.12');
-    el.innerHex.setAttribute('stroke-width', isActive?'2':'1.5');
+    el.innerHex.setAttribute('opacity', showBusy?'0.9':isIdle?'0.45':'0.12');
+    el.innerHex.setAttribute('stroke-width', showBusy?'2':'1.5');
   }
-  if(el.innerGlow) el.innerGlow.setAttribute('opacity', isActive?'0.45':isIdle?'0.10':'0');
-  if(el.innerFill) el.innerFill.setAttribute('opacity', isActive?'0.9':isIdle?'0.85':'0.7');
-  if(el.tickGroup) el.tickGroup.setAttribute('opacity', isActive?'0.75':isIdle?'0.35':'0.10');
+  if(el.innerGlow) el.innerGlow.setAttribute('opacity', showActive?'0.45':isStale?'0.20':isLikelyDone?'0.08':isIdle?'0.10':'0');
+  if(el.innerFill) el.innerFill.setAttribute('opacity', showBusy?'0.9':isIdle?'0.85':'0.7');
+  if(el.tickGroup) el.tickGroup.setAttribute('opacity', showBusy?'0.75':isIdle?'0.35':'0.10');
 
-  el.dot.setAttribute('opacity', isActive?'1.0':isIdle?'0.5':'0.12');
-  el.dot.setAttribute('fill', isActive?col:isIdle?col:'#334455');
+  el.dot.setAttribute('opacity', showBusy?'1.0':isIdle?'0.5':'0.12');
+  el.dot.setAttribute('fill', showBusy?effCol:isIdle?col:'#334455');
   el.dot.setAttribute('cx','0');
   el.dot.setAttribute('cy',((r+expand)*1.15).toFixed(1));
 
-  el.label.setAttribute('opacity', isActive?'1.0':isIdle?'0.55':'0.25');
+  el.label.setAttribute('opacity', showBusy?'1.0':isIdle?'0.55':'0.25');
+  el.label.setAttribute('fill', effCol);
+
+  // Glow filter
+  if(showActive) el.g.setAttribute('filter','url(#glow-active)');
+  else if(isStale||isLikelyDone||isIdle) el.g.setAttribute('filter','url(#glow-idle)');
+  else el.g.removeAttribute('filter');
+
+  // Stale pulse on outer triangle frame
+  el.hex.style.animation = isStale ? 'stale-pulse 2.5s ease-in-out infinite' : '';
 
   // Context bar — flat across top edge of triangle
   // Top edge width = 2*(r+expand), bar y = -(r+expand)*0.58 - 5
@@ -1476,7 +1532,15 @@ async function pollLog(){
       _logSeenIds.add(item.id);
       applyLog(item);
     }
+    // After initial poll, trigger staleness check on all running agents
+    checkStaleness();
   }catch{}
+}
+
+function checkStaleness(){
+  for(const id of Object.keys(NODE_POS)){
+    if(agentData[id]) updateNodeVis(id);
+  }
 }
 
 // Load older feed entries (#9)
@@ -1512,6 +1576,20 @@ function applyLog(rec){
   const col=ACTION_COLOR[rec.action_type]||'#4a6080';
   let ctx=null;
   try{if(rec.context) ctx=typeof rec.context==='string'?JSON.parse(rec.context):rec.context;}catch{}
+
+  // Update last-log timestamp for staleness tracking
+  if(rec.created){
+    const ts = new Date(rec.created).getTime();
+    if(!isNaN(ts)){
+      const desc=(rec.description||'').toLowerCase();
+      for(const id of Object.keys(NODE_POS)){
+        if(desc.includes(id.replace('-',' '))||desc.includes(id)){
+          if(!agentLastLogTime[id]||ts>agentLastLogTime[id]) agentLastLogTime[id]=ts;
+          break;
+        }
+      }
+    }
+  }
   if(rec.action_type==='tool_call'&&ctx?.tool){
     const icon=toolIcon(ctx.tool);
     const desc=(rec.description||'').toLowerCase();
