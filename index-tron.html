@@ -368,6 +368,115 @@ const agentLastTool = {}; // kept for inspect panel compat (last tool)
 const agentToolStack = {};
 const MAX_TOOL_DOTS = 5;
 const TOOL_DOT_LIFE = 15000; // ms before fully gone
+
+// ── Tool stream box state ─────────────────────────────────────────────────────
+// agentToolStream[id] = { left: {entries:[], lastTs, fadeTimer}, right: {...} }
+const agentToolStream = {};
+const STREAM_ENTRY_LIFE = 90_000;  // 90s per entry before fade
+const STREAM_BOX_IDLE   = 120_000; // 2min no activity → collapse box
+const MAX_STREAM_ENTRIES = 5;
+
+// Map tool names to short display labels + detail extractor
+const TOOL_DISPLAY = {
+  exec:          { label:'EXC', detail: a => (a.command||'').slice(0,38) },
+  sessions_spawn:{ label:'SPN', detail: a => (a.task||'').slice(0,38) },
+  web_fetch:     { label:'GET', detail: a => { try{return new URL(a.url).hostname;}catch{return (a.url||'').slice(0,38);} } },
+  web_search:    { label:'SRC', detail: a => (a.query||'').slice(0,38) },
+  browser:       { label:'WEB', detail: a => `${a.action||''} ${(a.url||a.targetUrl||'')}`.trim().slice(0,38) },
+  read:          { label:'RD',  detail: a => fname(a.path||a.file_path||'') },
+  write:         { label:'WR',  detail: a => fname(a.path||a.file_path||'') },
+  edit:          { label:'ED',  detail: a => fname(a.path||a.file_path||'') },
+  message:       { label:'MSG', detail: a => (a.message||'').slice(0,38) },
+  sessions_send: { label:'SND', detail: a => (a.message||'').slice(0,38) },
+  memory_search: { label:'MEM', detail: a => (a.query||'').slice(0,38) },
+};
+function fname(p){ return p ? p.split('/').pop().slice(0,38) : ''; }
+
+function toolStreamDetail(toolName, args){
+  const k = (toolName||'').toLowerCase();
+  for(const [key, cfg] of Object.entries(TOOL_DISPLAY)){
+    if(k === key || k.startsWith(key)){
+      try{ return { label: cfg.label, detail: cfg.detail(args||{}) }; }
+      catch{ return { label: cfg.label, detail: '' }; }
+    }
+  }
+  return { label: 'RUN', detail: '' };
+}
+
+function pushToolStream(agentId, toolName, args, slot=0){
+  // slot 0 = left box, slot 1 = right box
+  const el = nodeEls[agentId];
+  if(!el) return;
+  const col = AGENT_COLOR[agentId]||'#00F0FF';
+  const { label, detail } = toolStreamDetail(toolName, args);
+  const fo  = slot===0 ? el.foLeft  : el.foRight;
+  const div = slot===0 ? el.entriesLeft : el.entriesRight;
+  if(!fo || !div) return;
+
+  // Init state
+  if(!agentToolStream[agentId]) agentToolStream[agentId] = {};
+  const key = slot===0 ? 'left' : 'right';
+  if(!agentToolStream[agentId][key]) agentToolStream[agentId][key] = { entries:[], lastTs:0 };
+  const state = agentToolStream[agentId][key];
+  state.lastTs = Date.now();
+
+  // Materialize box if hidden
+  if(parseFloat(fo.getAttribute('opacity')||'0') < 0.1){
+    // Flash border then settle
+    fo.setAttribute('opacity','0');
+    fo.style.transition = 'opacity 0.15s ease';
+    requestAnimationFrame(()=>{ fo.setAttribute('opacity','1'); });
+  }
+
+  // Build entry element
+  const row = document.createElement('div');
+  row.style.cssText = `display:flex;gap:3px;align-items:flex-start;opacity:1;transition:opacity 1s ease;`;
+  const badge = document.createElement('span');
+  badge.style.cssText = `font-family:Orbitron,sans-serif;font-size:6px;font-weight:700;color:${col};letter-spacing:0.5px;white-space:nowrap;padding-top:1px;min-width:22px;`;
+  badge.textContent = label;
+  const txt = document.createElement('span');
+  txt.style.cssText = `font-family:'Share Tech Mono',monospace;font-size:7px;color:#7bd4e8;line-height:1.3;word-break:break-all;`;
+  txt.textContent = detail || '—';
+  row.appendChild(badge);
+  row.appendChild(txt);
+
+  // Prepend (newest at top), trim to max
+  div.insertBefore(row, div.firstChild);
+  state.entries.unshift({ el: row, ts: Date.now() });
+  while(state.entries.length > MAX_STREAM_ENTRIES){
+    const old = state.entries.pop();
+    if(old.el.parentNode) old.el.parentNode.removeChild(old.el);
+  }
+
+  // Clear any pending collapse timer
+  if(state.fadeTimer){ clearTimeout(state.fadeTimer); state.fadeTimer=null; }
+
+  // Schedule collapse after idle
+  state.fadeTimer = setTimeout(()=>collapseToolStream(agentId, slot), STREAM_BOX_IDLE);
+}
+
+function collapseToolStream(agentId, slot){
+  const el = nodeEls[agentId];
+  if(!el) return;
+  const fo  = slot===0 ? el.foLeft  : el.foRight;
+  const div = slot===0 ? el.entriesLeft : el.entriesRight;
+  if(!fo) return;
+  fo.style.transition = 'opacity 2s ease';
+  fo.setAttribute('opacity','0');
+  // Clear entries after fade
+  setTimeout(()=>{ if(div) div.innerHTML=''; }, 2100);
+  const key = slot===0 ? 'left' : 'right';
+  if(agentToolStream[agentId]?.[key]) agentToolStream[agentId][key].entries=[];
+}
+
+// Determine which slot to use for an agent based on current jobs
+// slot 0 = left (job 1), slot 1 = right (job 2)
+function slotForSession(agentId, sessionId){
+  const jobs = agentTimers[agentId]||[];
+  if(!jobs.length) return 0;
+  const idx = jobs.findIndex(j=>j.sessionId===sessionId||j.sessionId?.includes(sessionId));
+  return idx <= 0 ? 0 : 1;
+}
 const TOOL_DOT_FADE_START = 8000; // ms before fade begins
 
 // Tool category → dot color
@@ -948,6 +1057,57 @@ function buildNodes(){
     lg_g.appendChild(taskLabel);
     lg.appendChild(lg_g);
 
+    // ── Tool stream boxes (left + right, in label layer via foreignObject) ──
+    // BOX_W: width of each box; positioned outside triangle edges
+    const BOX_W = 130, BOX_H = 90;
+    const triHalfW = r; // triangle half-width at top edge
+    const boxGap   = 10; // gap from triangle edge
+
+    // Left box: right edge touches left side of triangle
+    const foLeft = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
+    foLeft.setAttribute('x', (-triHalfW - boxGap - BOX_W).toFixed(1));
+    foLeft.setAttribute('y', (-r*0.58).toFixed(1));
+    foLeft.setAttribute('width', BOX_W);
+    foLeft.setAttribute('height', BOX_H);
+    foLeft.setAttribute('opacity', '0');
+    foLeft.style.transition = 'opacity 0.3s ease';
+    foLeft.style.overflow = 'visible';
+    const divLeft = document.createElement('div');
+    divLeft.className = 'tool-stream-box';
+    divLeft.style.cssText = `width:${BOX_W}px;height:${BOX_H}px;border:1px solid ${col};border-radius:3px;background:#000810ee;box-shadow:0 0 8px ${col}44;overflow:hidden;display:flex;flex-direction:column;padding:3px 4px;box-sizing:border-box;`;
+    const hdrLeft = document.createElement('div');
+    hdrLeft.style.cssText = `font-family:Orbitron,sans-serif;font-size:6px;color:${col};letter-spacing:1.5px;opacity:0.6;margin-bottom:2px;border-bottom:1px solid ${col}33;padding-bottom:2px;`;
+    hdrLeft.textContent = '◈ JOB 1';
+    const entriesLeft = document.createElement('div');
+    entriesLeft.style.cssText = 'flex:1;overflow:hidden;display:flex;flex-direction:column;gap:2px;';
+    divLeft.appendChild(hdrLeft);
+    divLeft.appendChild(entriesLeft);
+    foLeft.appendChild(divLeft);
+
+    // Right box: left edge touches right side of triangle
+    const foRight = document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
+    foRight.setAttribute('x', (triHalfW + boxGap).toFixed(1));
+    foRight.setAttribute('y', (-r*0.58).toFixed(1));
+    foRight.setAttribute('width', BOX_W);
+    foRight.setAttribute('height', BOX_H);
+    foRight.setAttribute('opacity', '0');
+    foRight.style.transition = 'opacity 0.3s ease';
+    foRight.style.overflow = 'visible';
+    const divRight = document.createElement('div');
+    divRight.className = 'tool-stream-box';
+    divRight.style.cssText = `width:${BOX_W}px;height:${BOX_H}px;border:1px solid ${col};border-radius:3px;background:#000810ee;box-shadow:0 0 8px ${col}44;overflow:hidden;display:flex;flex-direction:column;padding:3px 4px;box-sizing:border-box;`;
+    const hdrRight = document.createElement('div');
+    hdrRight.style.cssText = `font-family:Orbitron,sans-serif;font-size:6px;color:${col};letter-spacing:1.5px;opacity:0.6;margin-bottom:2px;border-bottom:1px solid ${col}33;padding-bottom:2px;`;
+    hdrRight.textContent = '◈ JOB 2';
+    const entriesRight = document.createElement('div');
+    entriesRight.style.cssText = 'flex:1;overflow:hidden;display:flex;flex-direction:column;gap:2px;';
+    divRight.appendChild(hdrRight);
+    divRight.appendChild(entriesRight);
+    foRight.appendChild(divRight);
+
+    lg_g.appendChild(foLeft);
+    lg_g.appendChild(foRight);
+
     nodeEls[id]={
       g,
       hex:outerTri, fill:outerFill,
@@ -955,7 +1115,8 @@ function buildNodes(){
       ctxArc, ctxArcGlow, ctxBarBg, r,
       dot, toolIcon:toolIconEl, toolBadgeBg, hoverPct, hoverPctBg,
       label, taskLabel, taskPill, pill, col,
-      timer1, timer2, timerBg1, timerBg2
+      timer1, timer2, timerBg1, timerBg2,
+      foLeft, foRight, entriesLeft, entriesRight, hdrLeft, hdrRight
     };
 
     // Hover ctx% show/hide
@@ -1654,7 +1815,11 @@ function applyLog(rec){
     const desc=(rec.description||'').toLowerCase();
     for(const id of Object.keys(NODE_POS)){
       if(desc.includes(id.replace('-',' '))||desc.includes(id)){
-        agentLastTool[id]={icon,ts:Date.now()};updateToolIcon(id);break;
+        agentLastTool[id]={icon,ts:Date.now()};updateToolIcon(id);
+        // Push to tool stream box
+        const slot = slotForSession(id, ctx.session_id||'');
+        pushToolStream(id, ctx.tool, ctx.args||{}, slot);
+        break;
       }
     }
     agentLastTool['manager']={icon,ts:Date.now()};updateToolIcon('manager');
@@ -1925,6 +2090,33 @@ setInterval(pollLog,8000);
 
 fetchData();
 setInterval(fetchData,8000);
+
+// ── /tools poll — feeds tool stream boxes in real-time ───────────────────────
+let _toolsLastTs = 0;
+async function pollToolStream(){
+  try{
+    const r = await fetch(`${GS_URL}/tools`);
+    if(!r.ok) return;
+    const calls = await r.json();
+    if(!Array.isArray(calls)||!calls.length) return;
+    // Only process calls newer than last seen
+    const fresh = calls.filter(c=>c.ts > _toolsLastTs);
+    if(!fresh.length) return;
+    _toolsLastTs = Math.max(...fresh.map(c=>c.ts));
+    // Sort oldest→newest so boxes fill in order
+    fresh.sort((a,b)=>a.ts-b.ts);
+    for(const c of fresh){
+      const id = canonicalName(c.agent)||c.agent;
+      if(!NODE_POS[id]) continue;
+      const slot = slotForSession(id, '');
+      agentLastTool[id]={icon:toolIcon(c.tool),ts:Date.now()};
+      updateToolIcon(id);
+      pushToolStream(id, c.tool, c.args||{}, slot);
+    }
+  }catch{}
+}
+setInterval(pollToolStream, 4000); // faster than main poll for responsiveness
+pollToolStream();
 
 requestAnimationFrame(ts=>{lastRaf=ts;requestAnimationFrame(rafLoop);});
 </script>

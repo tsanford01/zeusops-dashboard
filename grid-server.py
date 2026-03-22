@@ -408,6 +408,7 @@ def tail_tool_calls(state_dir: str, since_ms: float) -> list:
                         'agent': agent_name,
                         'tool': tool_name,
                         'summary': summary,
+                        'args': args,  # full args for rich detail in tool stream boxes
                         'ts': ts,
                     })
         except Exception:
