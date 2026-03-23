@@ -460,6 +460,7 @@ def tail_tool_calls(state_dir: str, since_ms: float) -> list:
             continue
     return results
 
+_tools_lock = threading.Lock()
 _tool_seen_ts = 0.0
 _mc_tool_seen_ts = 0.0
 
@@ -532,12 +533,14 @@ class GridHandler(BaseHTTPRequestHandler):
         elif path == "/tools":
             global _tool_seen_ts
             try:
-                since = _tool_seen_ts
+                with _tools_lock:
+                    since = _tool_seen_ts
                 # Scan both gateways for tool calls
                 # Only scan ZeusOps gateway — MC agents are not on this grid
                 calls = tail_tool_calls("/home/travis/.openclaw-zmc-dev-ops/agents/", since * 1000)
                 if calls:
-                    _tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
+                    with _tools_lock:
+                        _tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
                 body = json.dumps(calls).encode("utf-8")
             except Exception as e:
                 body = json.dumps([]).encode("utf-8")
@@ -553,10 +556,12 @@ class GridHandler(BaseHTTPRequestHandler):
         elif path == "/tools-mc":
             global _mc_tool_seen_ts
             try:
-                since = _mc_tool_seen_ts
+                with _tools_lock:
+                    since = _mc_tool_seen_ts
                 calls = tail_tool_calls("/home/travis/.openclaw/agents/", since * 1000)
                 if calls:
-                    _mc_tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
+                    with _tools_lock:
+                        _mc_tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
                 body = json.dumps(calls).encode("utf-8")
             except Exception as e:
                 body = json.dumps([]).encode("utf-8")

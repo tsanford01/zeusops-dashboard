@@ -125,14 +125,6 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 @media(max-width:768px){
   #tower,#feed-panel{display:none;}
 }
-#mobile-list{display:none;}
-.ml-agent{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #0d2040;border-radius:3px;margin-bottom:6px;}
-.ml-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.ml-name{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:1px;flex:1;}
-.ml-task{font-size:8px;color:#4a6080;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
-.ml-ctx{font-size:8px;min-width:30px;text-align:right;}
-.ml-bar-wrap{width:60px;height:4px;background:#0d2040;border-radius:2px;overflow:hidden;}
-.ml-bar{height:100%;border-radius:2px;}
 </style>
 </head>
 <body>
@@ -341,9 +333,6 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
   </div>
 </div>
 
-<!-- MOBILE LIST VIEW (< 640px) -->
-<div id="mobile-list"></div>
-
 <div id="offline">GRID OFFLINE</div>
 
 <script>
@@ -406,7 +395,7 @@ function switchGrid(which){
     viewZO.style.opacity='0'; viewZO.style.pointerEvents='none';
     btnMC.classList.add('gw-active'); btnZO.classList.remove('gw-active');
     // Build MC grid on first switch
-    if(!mcGridBuilt){ buildMCGrid(); mcGridBuilt=true; }
+    if(!mcGridBuilt){ buildMCGrid(); mcGridBuilt = Object.keys(mcNodeEls).length > 0; }
   }
 }
 let mcGridBuilt = false;
@@ -1633,16 +1622,6 @@ document.getElementById('grid-svg').addEventListener('click',e=>{
   closeInspect();
 });
 
-// ═══════════════════════════════════════════════════════════
-//  TOOL BADGES
-// ═══════════════════════════════════════════════════════════
-function updateToolIcon(id){
-  // Legacy badge hidden — dots are used now
-  const el=nodeEls[id];
-  if(el?.toolIcon) el.toolIcon.setAttribute('opacity','0');
-  if(el?.toolBadgeBg) el.toolBadgeBg.setAttribute('opacity','0');
-}
-
 setInterval(()=>{
   // Refresh inspect panel if open
   if(inspectId) refreshInspect(inspectId);
@@ -2041,14 +2020,14 @@ function applyLog(rec){
     const desc=(rec.description||'').toLowerCase();
     for(const id of Object.keys(NODE_POS)){
       if(desc.includes(id.replace('-',' '))||desc.includes(id)){
-        agentLastTool[id]={icon,ts:Date.now()};updateToolIcon(id);
+        agentLastTool[id]={icon,ts:Date.now()};
         // Push to tool stream box
         const slot = slotForSession(id, ctx.session_id||'');
         pushToolStream(id, ctx.tool, ctx.args||{}, slot);
         break;
       }
     }
-    agentLastTool['manager']={icon,ts:Date.now()};updateToolIcon('manager');
+    agentLastTool['manager']={icon,ts:Date.now()};
   }
   if(rec.action_type==='ci_check'){
     const v=document.getElementById('s-ci');
@@ -2112,34 +2091,6 @@ function renderFeed(){
         ${hasCtx?`<div style="color:${col};font-size:8px;opacity:.6">${isExp?'▲':'▼'}</div>`:''}
       </div>
       <div style="color:${col};margin-top:2px;font-size:9px;line-height:1.4">${e.msg}</div>${detail}</div>`;
-  }).join('');
-}
-
-// ═══════════════════════════════════════════════════════════
-//  MOBILE LIST VIEW (#1)
-// ═══════════════════════════════════════════════════════════
-function renderMobileList(agents){
-  // Always render — CSS media query controls visibility
-  const list=document.getElementById('mobile-list');
-  const sorted=[...agents].sort((a,b)=>{
-    const order={active:0,idle:1,offline:2};
-    return(order[a.status]||2)-(order[b.status]||2);
-  });
-  list.innerHTML=sorted.map(ag=>{
-    const col=AGENT_COLOR[ag.id]||'#00F0FF';
-    const pct=ag.contextPct||0;
-    const barCol=ag.status!=='offline'?ctxArcColor(col,pct/100):col;
-    const statusCol=ag.status==='active'?'#00FF88':ag.status==='idle'?'#FFD700':'#445566';
-    const dotGlow=ag.status==='active'?`box-shadow:0 0 6px ${col}`:'';
-    return`<div class="ml-agent" style="border-color:${ag.status==='active'?col+'44':'#0d2040'};background:${ag.status==='active'?col+'08':'transparent'}" onclick="void(0)">
-      <div class="ml-dot" style="background:${ag.status==='offline'?'#334455':col};${dotGlow}"></div>
-      <div style="flex:1;min-width:0">
-        <div class="ml-name" style="color:${col}">${ag.id.toUpperCase()}</div>
-        ${ag.pbTask?`<div class="ml-task">${ag.pbTask}</div>`:`<div class="ml-task" style="color:${statusCol}">${ag.status.toUpperCase()}</div>`}
-      </div>
-      <div class="ml-bar-wrap"><div class="ml-bar" style="width:${pct}%;background:${barCol};opacity:${ag.status==='offline'?'0.25':'1'}"></div></div>
-      <div class="ml-ctx" style="color:${pct>=88?'#FF3030':pct>=75?'#FF6400':pct>=65?'#FFD200':col}">${pct}%</div>
-    </div>`;
   }).join('');
 }
 
@@ -2232,16 +2183,6 @@ async function fetchData(){
     if(s.totalTokensBurned!=null) setT('s-tokens',fmt(s.totalTokensBurned));
     if(s.hottestAgent) setT('s-hot',s.hottestAgent.toUpperCase());
 
-    // Mobile list view — include MC faction agents too
-    const mcAgents=['main','mctravis','zeus','obr'].map(id=>{
-      const ag=combined[id]||{};
-      return{id,status:ag.status||'offline',contextPct:ag.contextPct||0,lastActive:ag.lastActive||null,pbTask:null};
-    });
-    renderMobileList([...allAgents,...mcAgents]);
-
-    const demoPairs=[['manager','architect'],['architect','coder'],['sre','devops-automator'],['coder','tester'],['tester','releaser']];
-    if(Math.random()<0.2){const[a,b]=demoPairs[Math.floor(Math.random()*demoPairs.length)];launch(a,b);}
-
   }catch{
     document.getElementById('offline').classList.add('show');
     document.getElementById('badge').textContent='OFFLINE';
@@ -2277,7 +2218,7 @@ function startSSE(){
         const ctx={agent:name,task:rec.task_summary,trello_card_url:rec.trello_card_url};
         pushActivity(`DISPATCH → ${name.toUpperCase()}: ${rec.task_summary||''}`,col,ctx,'dispatch',new Date().toISOString());
         dispatch('manager',name);
-        agentLastTool[name]={icon:'SPN',ts:Date.now()};updateToolIcon(name);
+        agentLastTool[name]={icon:'SPN',ts:Date.now()};
       } else if(rec.status!=='running'&&prev.status==='running'){
         clearDispatchToAgent(name);
       }
@@ -2328,6 +2269,7 @@ const TIER_XRANGE = {COMMAND:[600,600], ENGINEERING:[200,980], OPS:[260,880], IN
 // Palette for auto-discovered agents (cycles through)
 const DISCO_COLORS = ['#FF9933','#33FF99','#FF33CC','#33CCFF','#FFCC33','#CC33FF','#33FFCC','#FF6633'];
 let _discoColorIdx = 0;
+const NODE_DISCOVERED = {}; // id → true if auto-discovered (not in agents.json)
 
 // Infer tier from agent name heuristics
 function inferTier(id){
@@ -2420,8 +2362,6 @@ function mergeDiscoveredAgent(id, cfg={}){
   }
 }
 
-const NODE_DISCOVERED = {}; // id → true if auto-discovered (not in agents.json)
-
 async function loadAgentConfig(){
   try{
     const r = await fetch(`${GS_URL}/agents`);
@@ -2473,7 +2413,6 @@ async function pollToolStream(){
       if(!NODE_POS[id]) continue;
       const slot = slotForSession(id, '');
       agentLastTool[id]={icon:toolIcon(c.tool),ts:Date.now()};
-      updateToolIcon(id);
       pushToolStream(id, c.tool, c.args||{}, slot);
     }
   }catch{}

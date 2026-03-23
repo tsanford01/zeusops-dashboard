@@ -12,6 +12,6 @@ fi
 # Clean up stale PID file
 rm -f "$PIDFILE"
 
-nohup python3 /mnt/c/MC/workspace/clawd/projects/zeusops-grid/grid-server.py > "$LOGFILE" 2>&1 &
+nohup python3 /home/travis/projects/zeusops-grid/grid-server.py > "$LOGFILE" 2>&1 &
 echo $! > "$PIDFILE"
 echo "ZeusOps Grid Server started (PID $!, log: $LOGFILE)"
