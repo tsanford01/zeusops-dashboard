@@ -29,7 +29,11 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 .gw-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
 .gw-online{background:#00FF88;box-shadow:0 0 6px #00FF88;}
 .gw-offline{background:#333;box-shadow:none;}
-#gw-mc,#gw-zo{font-size:9px;color:var(--text);}
+#gw-mc,#gw-zo{font-size:9px;color:var(--text);cursor:pointer;padding:3px 8px;border-radius:3px;border:1px solid transparent;transition:border-color .2s,background .2s;user-select:none;}
+#gw-mc:hover,#gw-zo:hover{background:#0d2040;}
+#gw-mc.gw-active,#gw-zo.gw-active{border-color:#00F0FF44;background:#001830;color:#00F0FF;}
+#gw-mc.gw-active .gw-dot,#gw-zo.gw-active .gw-dot{box-shadow:0 0 8px currentColor;}
+.grid-view{position:absolute;inset:0;transition:opacity .25s ease;}
 #hdr-right{margin-left:auto;font-size:11px;color:var(--text);letter-spacing:1px;}
 #clock{color:#00F0FF;font-size:11px;}
 
@@ -140,8 +144,8 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
   <span id="logo">⚡ ZEUS<span>OPS</span> GRID</span>
   <span id="badge" class="online">ONLINE</span>
   <span id="sync" class="ok" style="font-size:9px;color:#00FF8877;">◉</span>
-  <span id="gw-mc"><span class="gw-dot gw-offline" id="dot-mc"></span>MC GATEWAY</span>
-  <span id="gw-zo"><span class="gw-dot gw-offline" id="dot-zo"></span>ZEUSOPS GATEWAY</span>
+  <span id="gw-zo" class="gw-active" onclick="switchGrid('zo')"><span class="gw-dot gw-offline" id="dot-zo"></span>ZEUSOPS GATEWAY</span>
+  <span id="gw-mc" onclick="switchGrid('mc')"><span class="gw-dot gw-offline" id="dot-mc"></span>MC GATEWAY</span>
   <span id="hdr-right"><span id="clock">--:--:--</span></span>
 </div>
 
@@ -235,6 +239,8 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
       </div>
     </div>
 
+    <!-- ZeusOps grid (default active) -->
+    <div id="view-zo" class="grid-view" style="opacity:1;pointer-events:auto;">
     <svg id="grid-svg" viewBox="0 0 1200 850" preserveAspectRatio="xMidYMid meet">
       <defs>
         <filter id="glow-active" x="-60%" y="-60%" width="220%" height="220%">
@@ -287,6 +293,38 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
       <g id="nodes"></g>
       <g id="labels"></g>
     </svg>
+    </div><!-- /view-zo -->
+
+    <!-- MC grid (hidden by default) -->
+    <div id="view-mc" class="grid-view" style="opacity:0;pointer-events:none;">
+    <svg id="mc-grid-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+      <defs>
+        <filter id="mc-glow-active" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b2"/>
+          <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="mc-glow-arc" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g id="mc-bg-dots"></g>
+      <!-- Sector dividers -->
+      <line x1="20" y1="200" x2="1180" y2="200" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <line x1="20" y1="380" x2="1180" y2="380" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <!-- Tier labels -->
+      <text class="sector-label" x="24" y="20">COMMAND</text>
+      <text class="sector-label" x="24" y="214">FIELD</text>
+      <text class="sector-label" x="24" y="394">SUPPORT</text>
+      <text class="sector-label" x="1100" y="20">COMMAND</text>
+      <text class="sector-label" x="1100" y="214">FIELD</text>
+      <text class="sector-label" x="1100" y="394">SUPPORT</text>
+      <g id="mc-traces"></g>
+      <g id="mc-nodes"></g>
+      <g id="mc-labels"></g>
+    </svg>
+    </div><!-- /view-mc -->
   </div>
 
   <!-- ACTIVITY FEED -->
@@ -351,6 +389,146 @@ const AGENT_COLOR = {
   security:'#FF4DFF',
   main:'#FF6600',zeus:'#FF4500',mctravis:'#FF8C00',obr:'#FF7F50',
 };
+
+// ── Active grid state ────────────────────────────────────────────────────────
+let activeGrid = 'zo'; // 'zo' | 'mc'
+
+function switchGrid(which){
+  activeGrid = which;
+  const viewZO = document.getElementById('view-zo');
+  const viewMC = document.getElementById('view-mc');
+  const btnZO  = document.getElementById('gw-zo');
+  const btnMC  = document.getElementById('gw-mc');
+  if(which === 'zo'){
+    viewZO.style.opacity='1'; viewZO.style.pointerEvents='auto';
+    viewMC.style.opacity='0'; viewMC.style.pointerEvents='none';
+    btnZO.classList.add('gw-active'); btnMC.classList.remove('gw-active');
+  } else {
+    viewMC.style.opacity='1'; viewMC.style.pointerEvents='auto';
+    viewZO.style.opacity='0'; viewZO.style.pointerEvents='none';
+    btnMC.classList.add('gw-active'); btnZO.classList.remove('gw-active');
+    // Build MC grid on first switch
+    if(!mcGridBuilt){ buildMCGrid(); mcGridBuilt=true; }
+  }
+}
+let mcGridBuilt = false;
+
+// ── MC Grid config ───────────────────────────────────────────────────────────
+const MC_NODE_POS = {
+  // COMMAND tier
+  main:      {x:480, y:100},
+  mctravis:  {x:720, y:100},
+  // FIELD tier
+  zeus:      {x:360, y:290},
+  obr:       {x:840, y:290},
+  // SUPPORT tier (future agents land here)
+};
+const MC_EDGES = [
+  ['main','mctravis'],
+  ['main','zeus'],
+  ['main','obr'],
+  ['mctravis','zeus'],
+];
+const MC_NODE_R = { main:42, mctravis:38, zeus:34, obr:30 };
+const MC_STREAM_SIDE = { main:'left', mctravis:'right', zeus:'left', obr:'right' };
+
+const mcNodeEls = {}; // MC grid node elements
+
+function buildMCGrid(){
+  const ng = document.getElementById('mc-nodes');
+  const lg = document.getElementById('mc-labels');
+  const tg = document.getElementById('mc-traces');
+  if(!ng||!lg||!tg) return;
+
+  // Dot grid
+  const bgDots = document.getElementById('mc-bg-dots');
+  for(let x=0;x<=1200;x+=40) for(let y=0;y<=600;y+=40){
+    const c=svgEl('circle',{cx:x,cy:y,r:'1',fill:'#0d2040',opacity:'0.5'});
+    bgDots.appendChild(c);
+  }
+
+  // Edges
+  for(const[a,b] of MC_EDGES){
+    const pa=MC_NODE_POS[a], pb=MC_NODE_POS[b];
+    if(!pa||!pb) continue;
+    const col=AGENT_COLOR[a]||'#00F0FF';
+    const base=svgEl('line',{x1:pa.x,y1:pa.y,x2:pb.x,y2:pb.y,stroke:col,'stroke-width':'1',opacity:'0.06'});
+    tg.appendChild(base);
+  }
+
+  // Nodes — reuse _buildOneNode logic but targeting mc-nodes/mc-labels
+  for(const[id,pos] of Object.entries(MC_NODE_POS)){
+    const col = AGENT_COLOR[id]||'#00F0FF';
+    const r   = MC_NODE_R[id]||30;
+    const labelY = r*1.35 + 18;
+
+    const g=svgEl('g',{'data-id':'mc:'+id,transform:`translate(${pos.x},${pos.y})`,style:'cursor:pointer'});
+    g.addEventListener('click',e=>{e.stopPropagation();openInspect(id);});
+
+    // Triangle shapes (reuse same functions)
+    const outerFill=svgEl('polygon',{points:tronOuterTriangle(r,0),fill:'#000810',stroke:'none',opacity:'0.85'});
+    const outerGlow=svgEl('polygon',{points:tronOuterTriangle(r,0),fill:'none',stroke:col,'stroke-width':'6',opacity:'0',filter:'url(#mc-glow-active)'});
+    const outerTri =svgEl('polygon',{points:tronOuterTriangle(r,0),fill:'none',stroke:col,'stroke-width':'2',opacity:'0.22','stroke-linejoin':'round'});
+    const innerFill=svgEl('polygon',{points:tronInnerHex(r),fill:'#000c1a',stroke:'none',opacity:'0.9'});
+    const innerGlow=svgEl('polygon',{points:tronInnerHex(r),fill:'none',stroke:col,'stroke-width':'5',opacity:'0',filter:'url(#mc-glow-arc)'});
+    const innerHex =svgEl('polygon',{points:tronInnerHex(r),fill:'none',stroke:col,'stroke-width':'1.5',opacity:'0.4'});
+
+    // Context bar
+    const ctxBarBg=svgEl('rect',{x:(-r).toFixed(1),y:(-r*0.6-4).toFixed(1),width:(r*2).toFixed(1),height:'3',rx:'1.5',fill:'#0d2040',opacity:'0.6'});
+    const ctxArcGlow=svgEl('rect',{x:(-r).toFixed(1),y:(-r*0.6-4).toFixed(1),width:'0',height:'3',rx:'1.5',fill:col,opacity:'0',filter:'url(#mc-glow-arc)'});
+    const ctxArc   =svgEl('rect',{x:(-r).toFixed(1),y:(-r*0.6-4).toFixed(1),width:'0',height:'3',rx:'1.5',fill:col,opacity:'0.9'});
+
+    // Label
+    const pillW=Math.max(id.length*5.8,52);
+    const pill =svgEl('rect',{x:(-pillW/2).toFixed(1),y:(labelY-9).toFixed(1),width:pillW.toFixed(1),height:'13',rx:'2',fill:'#000810',opacity:'0.82'});
+    const label=svgEl('text',{x:'0',y:(labelY+2).toFixed(1),'text-anchor':'middle','font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'7.5',fill:col,opacity:'0.7','letter-spacing':'0.8'});
+    label.textContent=id.toUpperCase();
+
+    g.appendChild(outerFill); g.appendChild(outerGlow); g.appendChild(outerTri);
+    g.appendChild(innerFill); g.appendChild(innerGlow); g.appendChild(innerHex);
+    g.appendChild(ctxBarBg);  g.appendChild(ctxArcGlow); g.appendChild(ctxArc);
+    ng.appendChild(g);
+
+    const lg_g=svgEl('g',{transform:`translate(${pos.x},${pos.y})`});
+    lg_g.appendChild(pill); lg_g.appendChild(label);
+    lg.appendChild(lg_g);
+
+    mcNodeEls[id]={g, hex:outerTri, fill:outerFill, outerGlow, innerHex, innerFill, innerGlow,
+      ctxArc, ctxArcGlow, ctxBarBg, label, pill, col, r};
+  }
+}
+
+// Update a single MC node's visual state
+function updateMCNodeVis(id){
+  const el=mcNodeEls[id];
+  const ag=agentData[id]||{};
+  if(!el) return;
+  const col=el.col, st=ag.status||'offline', pct=(ag.contextPct||0)/100, r=el.r;
+  const isActive=st==='active', isIdle=st==='idle';
+  const effCol = isActive?col : isIdle?(col+'99'):'#1a3050';
+  const expand = isActive?4:isIdle?1:0;
+
+  el.hex.setAttribute('points', tronOuterTriangle(r, expand));
+  el.hex.setAttribute('stroke', effCol);
+  el.fill.setAttribute('opacity', isActive?'0.9':'0.6');
+  el.outerGlow.setAttribute('points', tronOuterTriangle(r, expand));
+  el.outerGlow.setAttribute('stroke', effCol);
+  el.outerGlow.setAttribute('opacity', isActive?'0.55':isIdle?'0.1':'0');
+  el.innerHex.setAttribute('stroke', effCol);
+  el.innerGlow.setAttribute('stroke', effCol);
+  el.innerGlow.setAttribute('opacity', isActive?'0.4':'0');
+  el.label.setAttribute('opacity', isActive?'1.0':isIdle?'0.55':'0.25');
+  el.label.setAttribute('fill', effCol);
+
+  // Context bar
+  const barW = (pct * r * 2).toFixed(1);
+  el.ctxArc.setAttribute('width', barW);
+  el.ctxArcGlow.setAttribute('width', barW);
+  el.ctxArc.setAttribute('opacity', isActive?'0.9':isIdle?'0.5':'0');
+  el.ctxArcGlow.setAttribute('opacity', isActive?'0.5':'0');
+  el.ctxArc.setAttribute('fill', effCol);
+  el.ctxArcGlow.setAttribute('fill', effCol);
+}
 
 const TOOL_ICON = {
   exec:'EXC', bash:'SH', shell:'SH',
@@ -2004,7 +2182,10 @@ async function fetchData(){
       allAgents.push({id,...agentData[id]});
     }
 
-    for(const id of['main','mctravis','zeus','obr']) if(combined[id]) updateCard(id,combined[id]);
+    for(const id of['main','mctravis','zeus','obr']){
+      if(combined[id]) updateCard(id,combined[id]);
+      if(mcGridBuilt && mcNodeEls[id]) updateMCNodeVis(id);
+    }
 
     const activeCount=Object.values(agentData).filter(a=>a.status==='active').length;
     setT('s-active',activeCount);
@@ -2240,15 +2421,14 @@ setInterval(fetchData,8000);
 let _toolsLastTs = 0;
 async function pollToolStream(){
   try{
+    // ZeusOps grid: /tools (ZeusOps gateway only)
     const r = await fetch(`${GS_URL}/tools`);
     if(!r.ok) return;
     const calls = await r.json();
     if(!Array.isArray(calls)||!calls.length) return;
-    // Only process calls newer than last seen
     const fresh = calls.filter(c=>c.ts > _toolsLastTs);
     if(!fresh.length) return;
     _toolsLastTs = Math.max(...fresh.map(c=>c.ts));
-    // Sort oldest→newest so boxes fill in order
     fresh.sort((a,b)=>a.ts-b.ts);
     for(const c of fresh){
       const id = canonicalName(c.agent)||c.agent;
@@ -2259,7 +2439,31 @@ async function pollToolStream(){
       pushToolStream(id, c.tool, c.args||{}, slot);
     }
   }catch{}
+
+  // MC grid: /tools-mc (MC gateway only) — only update MC nodes
+  try{
+    const r2 = await fetch(`${GS_URL}/tools-mc`);
+    if(!r2.ok) return;
+    const calls2 = await r2.json();
+    if(!Array.isArray(calls2)||!calls2.length) return;
+    const fresh2 = calls2.filter(c=>c.ts > _mcToolsLastTs);
+    if(!fresh2.length) return;
+    _mcToolsLastTs = Math.max(...fresh2.map(c=>c.ts));
+    fresh2.sort((a,b)=>a.ts-b.ts);
+    for(const c of fresh2){
+      const id = c.agent === 'main' ? 'main' : (canonicalName(c.agent)||c.agent);
+      if(!MC_NODE_POS[id]) continue;
+      agentLastTool[id]={icon:toolIcon(c.tool),ts:Date.now()};
+      // MC grid tool stream boxes (if grid is built)
+      if(mcGridBuilt && mcNodeEls[id]){
+        // Use agentToolStream for MC nodes too — same pushToolStream logic
+        const slot = 0; // MC agents typically single-job
+        pushToolStream(id, c.tool, c.args||{}, slot);
+      }
+    }
+  }catch{}
 }
+let _mcToolsLastTs = 0;
 setInterval(pollToolStream, 4000); // faster than main poll for responsiveness
 pollToolStream();
 

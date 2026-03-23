@@ -461,6 +461,7 @@ def tail_tool_calls(state_dir: str, since_ms: float) -> list:
     return results
 
 _tool_seen_ts = 0.0
+_mc_tool_seen_ts = 0.0
 
 class GridHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
@@ -537,6 +538,25 @@ class GridHandler(BaseHTTPRequestHandler):
                 calls = tail_tool_calls("/home/travis/.openclaw-zmc-dev-ops/agents/", since * 1000)
                 if calls:
                     _tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
+                body = json.dumps(calls).encode("utf-8")
+            except Exception as e:
+                body = json.dumps([]).encode("utf-8")
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+            except BrokenPipeError:
+                pass
+        elif path == "/tools-mc":
+            global _mc_tool_seen_ts
+            try:
+                since = _mc_tool_seen_ts
+                calls = tail_tool_calls("/home/travis/.openclaw/agents/", since * 1000)
+                if calls:
+                    _mc_tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
                 body = json.dumps(calls).encode("utf-8")
             except Exception as e:
                 body = json.dumps([]).encode("utf-8")
