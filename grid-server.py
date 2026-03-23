@@ -18,7 +18,7 @@ REFRESH_INTERVAL = 5  # seconds
 GATEWAYS = {
     "mc": {
         "state_dir": "/home/travis/.openclaw/agents/",
-        "agents": ["main", "zeus", "mctravis", "obr"],
+        "agents": ["main", "mctravis", "zeus", "obr"],
         "faction": "mc",
     },
     "zeusops": {
