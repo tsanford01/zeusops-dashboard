@@ -121,7 +121,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 @media(max-width:1200px){
   #tower,#feed-panel{display:none;}
   #grid-wrap{flex:1;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;}
-  #grid-svg{width:1200px;height:800px;min-width:1200px;}
+  #grid-svg{width:1200px;height:850px;min-width:1200px;}
 }
 #mobile-list{display:none;}
 .ml-agent{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #0d2040;border-radius:3px;margin-bottom:6px;}
@@ -235,7 +235,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
       </div>
     </div>
 
-    <svg id="grid-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet">
+    <svg id="grid-svg" viewBox="0 0 1200 850" preserveAspectRatio="xMidYMid meet">
       <defs>
         <filter id="glow-active" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
@@ -266,16 +266,20 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
       <line x1="20" y1="162" x2="1180" y2="162" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
       <line x1="20" y1="435" x2="1180" y2="435" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
       <line x1="20" y1="570" x2="1180" y2="570" stroke="#0d2040" stroke-width="1" stroke-dasharray="4,8"/>
+      <!-- OVERFLOW divider — hidden until discovered agents appear -->
+      <line id="overflow-divider" x1="20" y1="700" x2="1180" y2="700" stroke="#0d2040" stroke-width="1" stroke-dasharray="2,10" opacity="0"/>
 
       <!-- Tier labels with collapse targets -->
       <text class="sector-label" x="24" y="20" data-tier="COMMAND" style="cursor:pointer" onclick="toggleTier('COMMAND')">COMMAND</text>
       <text class="sector-label" x="24" y="176" data-tier="ENGINEERING" style="cursor:pointer" onclick="toggleTier('ENGINEERING')">ENGINEERING</text>
       <text class="sector-label" x="24" y="449" data-tier="OPS" style="cursor:pointer" onclick="toggleTier('OPS')">OPS</text>
       <text class="sector-label" x="24" y="584" data-tier="INTEL" style="cursor:pointer" onclick="toggleTier('INTEL')">INTEL</text>
+      <text id="overflow-label" class="sector-label" x="24" y="714" data-tier="OVERFLOW" style="cursor:pointer;opacity:0" onclick="toggleTier('OVERFLOW')">OVERFLOW</text>
       <text class="sector-label" x="1100" y="20" data-tier="COMMAND" style="cursor:pointer;text-anchor:end" onclick="toggleTier('COMMAND')">COMMAND</text>
       <text class="sector-label" x="1100" y="176" data-tier="ENGINEERING" style="cursor:pointer" onclick="toggleTier('ENGINEERING')">ENGINEERING</text>
       <text class="sector-label" x="1100" y="449" data-tier="OPS" style="cursor:pointer" onclick="toggleTier('OPS')">OPS</text>
       <text class="sector-label" x="1100" y="584" data-tier="INTEL" style="cursor:pointer" onclick="toggleTier('INTEL')">INTEL</text>
+      <text id="overflow-label-r" class="sector-label" x="1100" y="714" data-tier="OVERFLOW" style="cursor:pointer;opacity:0" onclick="toggleTier('OVERFLOW')">OVERFLOW</text>
 
       <g id="traces"></g>
       <g id="pulse-overlays"></g>
@@ -771,7 +775,7 @@ function pcbPath(a,b){
 // ═══════════════════════════════════════════════════════════
 function buildDotGrid(){
   const g=document.getElementById('bg-dots');
-  for(let x=0;x<=1200;x+=40) for(let y=0;y<=800;y+=40)
+  for(let x=0;x<=1200;x+=40) for(let y=0;y<=850;y+=40)
     g.appendChild(svgEl('circle',{cx:x,cy:y,r:'1',fill:'#0a1628'}));
 }
 
@@ -2113,11 +2117,12 @@ function inferTier(id){
 }
 
 // Auto-calculate x position for a new node in a tier
+// Uses evenly-spaced slots so multiple discovered agents spread across the row
 function autoSlotX(tier){
   const existing = Object.entries(NODE_POS).filter(([id])=>AGENT_TIER[id]===tier).map(([,p])=>p.x);
   const [xMin,xMax]=TIER_XRANGE[tier]||[200,1000];
   if(!existing.length) return Math.round((xMin+xMax)/2);
-  // Find biggest gap between sorted xs and insert there
+  // Find biggest gap between sorted xs and insert in the middle of it
   const xs=[xMin,...existing.sort((a,b)=>a-b),xMax];
   let bestGap=0, bestX=Math.round((xMin+xMax)/2);
   for(let i=0;i<xs.length-1;i++){
@@ -2125,6 +2130,34 @@ function autoSlotX(tier){
     if(gap>bestGap){bestGap=gap; bestX=Math.round((xs[i]+xs[i+1])/2);}
   }
   return bestX;
+}
+
+// Re-space all discovered nodes in a tier evenly after a new one is added
+function respaceDiscoveredInTier(tier){
+  const ids = Object.entries(AGENT_TIER)
+    .filter(([id,t])=>t===tier && NODE_DISCOVERED[id])
+    .map(([id])=>id);
+  if(ids.length<2) return;
+  const [xMin,xMax]=TIER_XRANGE[tier]||[200,1000];
+  // Divide range evenly, avoiding registered node positions
+  const registered = Object.entries(NODE_POS)
+    .filter(([id])=>AGENT_TIER[id]===tier && !NODE_DISCOVERED[id])
+    .map(([,p])=>p.x).sort((a,b)=>a-b);
+  // Simple even spread across full range for discovered nodes
+  const step = Math.round((xMax-xMin)/(ids.length+1));
+  ids.forEach((id,i)=>{
+    let x=xMin+step*(i+1);
+    // Nudge away from registered nodes
+    for(const rx of registered){
+      if(Math.abs(x-rx)<80) x=x<rx ? rx-100 : rx+100;
+    }
+    NODE_POS[id].x = Math.max(xMin, Math.min(xMax, x));
+    // Update stream side based on new x
+    STREAM_SIDE[id] = NODE_POS[id].x < 600 ? 'left' : 'right';
+    // Move the SVG group
+    const el=nodeEls[id];
+    if(el?.g) el.g.setAttribute('transform',`translate(${NODE_POS[id].x},${NODE_POS[id].y})`);
+  });
 }
 
 // Merge a single discovered agent into the runtime config tables
@@ -2145,6 +2178,19 @@ function mergeDiscoveredAgent(id, cfg={}){
   // Mark as auto-discovered for dashed styling
   NODE_DISCOVERED[id] = !cfg.tier; // false if from agents.json (registered), true if truly new
   agentData[id]={status:'offline',contextPct:0,lastActive:null,pbTask:null};
+  // Re-space all discovered nodes in this tier so they're evenly distributed
+  if(NODE_DISCOVERED[id]){
+    respaceDiscoveredInTier(tier);
+    // Show OVERFLOW row indicators if needed
+    if(tier==='OVERFLOW'){
+      const d=document.getElementById('overflow-divider');
+      const l=document.getElementById('overflow-label');
+      const lr=document.getElementById('overflow-label-r');
+      if(d) d.setAttribute('opacity','1');
+      if(l) l.style.opacity='1';
+      if(lr) lr.style.opacity='1';
+    }
+  }
 }
 
 const NODE_DISCOVERED = {}; // id → true if auto-discovered (not in agents.json)

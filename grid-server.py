@@ -347,25 +347,33 @@ def load_agents_config() -> dict:
     except Exception:
         return {}
 
+
+# Agents to never surface on the grid — dev artifacts, MC-only, boot stubs, etc.
+DISCOVER_BLOCKLIST = {
+    # MC-side agents (not ZeusOps)
+    "main", "zeus", "mctravis", "obr", "obr-team", "claude-code",
+    # Dev/test artifacts
+    "test", "test-minimal", "master", "sc", "system",
+    # Boot/utility stubs
+    "janitor", "reality-checker",
+}
+
 def discover_agents(known_ids: set) -> list:
-    """Scan gateway agent dirs for agent IDs not in agents.json (truly new agents)."""
-    # Build full set of all already-known IDs: agents.json + hardcoded GATEWAYS lists
-    all_known = set(known_ids)
+    """Scan ZeusOps gateway dir for agent IDs not in agents.json."""
+    all_known = set(known_ids) | DISCOVER_BLOCKLIST
     for gw_cfg in GATEWAYS.values():
         all_known.update(gw_cfg.get("agents", []))
 
     discovered = []
-    for gw_cfg in GATEWAYS.values():
-        state_dir = gw_cfg["state_dir"]
-        if not os.path.isdir(state_dir):
-            continue
-        for name in os.listdir(state_dir):
+    # Only scan ZeusOps gateway — MC agents belong to a different grid
+    zeusops_dir = GATEWAYS["zeusops"]["state_dir"]
+    if os.path.isdir(zeusops_dir):
+        for name in os.listdir(zeusops_dir):
             if name in all_known or name.startswith("."):
                 continue
-            agent_dir = os.path.join(state_dir, name)
-            if os.path.isdir(agent_dir):
+            if os.path.isdir(os.path.join(zeusops_dir, name)):
                 discovered.append(name)
-    return list(set(discovered))
+    return sorted(set(discovered))
 
 
 TOOL_FILTER = {'exec','sessions_spawn','message','web_fetch','browser','process',
