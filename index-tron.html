@@ -584,39 +584,37 @@ const ACTION_COLOR = {
 
 // ── Fixed 2D node positions ───────────────────────────────
 const NODE_POS = {
-  // 1200px wide — nodes spread across x:100–1100, center at 600
+  // 1200px wide - safe box zone: x:175-1025 (130px box + 12gap + nodeR each side)
   manager:             {x:600, y:95},
-  architect:           {x:280, y:255},
-  pm:                  {x:920, y:255},
-  coder:               {x:100, y:370},
-  reviewer:            {x:340, y:370},
-  tester:              {x:600, y:370},
-  releaser:            {x:860, y:370},
-  sre:                 {x:180, y:505},
-  'incident-manager':  {x:480, y:505},
-  'devops-automator':  {x:780, y:505},
-  researcher:          {x:160, y:650},
-  security:            {x:500, y:650},
-  'workflow-architect':{x:840, y:650},
+  architect:           {x:300, y:255},
+  pm:                  {x:900, y:255},
+  coder:               {x:200, y:370},
+  reviewer:            {x:430, y:370},
+  tester:              {x:660, y:370},
+  releaser:            {x:980, y:370},
+  sre:                 {x:260, y:505},
+  'incident-manager':  {x:560, y:505},
+  'devops-automator':  {x:880, y:505},
+  researcher:          {x:240, y:650},
+  security:            {x:560, y:650},
+  'workflow-architect':{x:940, y:650},
 };
 
 // Which side each agent's tool stream boxes appear on
-// 'left' = boxes to the left of triangle; 'right' = boxes to the right
-// Outward-facing: left-column nodes get left boxes, right-column nodes get right boxes
 const STREAM_SIDE = {
-  manager:            'left',   // centered — default left for job1
-  architect:          'left',   // left column
-  pm:                 'right',  // right column
-  coder:              'left',   // leftmost
-  reviewer:           'left',   // left-center
-  tester:             'left',   // center — job1 left
-  releaser:           'right',  // right column
-  sre:                'left',   // left column
-  'incident-manager': 'left',   // left-center
-  'devops-automator': 'right',  // right-center
-  researcher:         'left',   // leftmost
-  security:           'left',   // center-left
-  'workflow-architect':'right',  // right column
+  manager:            'left',
+  architect:          'left',
+  pm:                 'right',
+  coder:              'left',
+  reviewer:           'left',
+  tester:             'right',
+  releaser:           'right',
+  sre:                'left',
+  'incident-manager': 'left',
+  'devops-automator': 'right',
+  researcher:         'left',
+  security:           'left',
+  'workflow-architect':'right',
 };
 
 // Agent → tier mapping (for tier collapse)
