@@ -1986,8 +1986,11 @@ async function fetchData(){
     }
 
     // Dynamically inject any agents from /data not yet in NODE_POS
+    // Blocklist: MC-side agents + dev artifacts that shouldn't appear on the ZeusOps grid
+    const GRID_BLOCKLIST = new Set(['main','zeus','mctravis','obr','obr-team','claude-code',
+      'test','test-minimal','master','sc','system','janitor','reality-checker','unknown']);
     for(const id of Object.keys(combined)){
-      if(!NODE_POS[id] && id !== 'unknown'){
+      if(!NODE_POS[id] && !GRID_BLOCKLIST.has(id)){
         mergeDiscoveredAgent(id, {});
         buildSingleNode(id);
       }
