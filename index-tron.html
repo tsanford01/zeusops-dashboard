@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 #gw-mc:hover,#gw-zo:hover{background:#0d2040;}
 #gw-mc.gw-active,#gw-zo.gw-active{border-color:#00F0FF44;background:#001830;color:#00F0FF;}
 #gw-mc.gw-active .gw-dot,#gw-zo.gw-active .gw-dot{box-shadow:0 0 8px currentColor;}
-.grid-view{position:absolute;top:0;left:0;right:0;bottom:0;transition:opacity .25s ease;display:flex;flex-direction:column;}
+.grid-view{position:absolute;top:0;left:0;width:100%;height:100%;transition:opacity .25s ease;}
 #hdr-right{margin-left:auto;font-size:11px;color:var(--text);letter-spacing:1px;}
 #clock{color:#00F0FF;font-size:11px;}
 
@@ -69,7 +69,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 @keyframes stale-pulse{0%,100%{opacity:0.55;}50%{opacity:0.20;}}
 
 /* ── SVG GRID ── */
-#grid-wrap{flex:1;position:relative;overflow:hidden;min-height:0;}
+#grid-wrap{flex:1;position:relative;overflow:hidden;min-height:0;height:100%;}
 
 /* Node glow filter */
 .node-active{filter:url(#glow-active);}
