@@ -815,6 +815,7 @@ const agentMeta= {}; // id → {sessionCount, gateway, model}
 
 for(const id of Object.keys(NODE_POS))
   agentData[id]={status:'offline',contextPct:0,lastActive:null,pbTask:null};
+// Note: dynamically discovered agents get agentData entries in mergeDiscoveredAgent()
 
 function hexPoints(cx,cy,r,flat=true){
   const pts=[];
@@ -881,11 +882,25 @@ function arcPath(cx,cy,r,pct){
   return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
 }
 
+function buildSingleNode(id){
+  const ng=document.getElementById('nodes');
+  const lg=document.getElementById('labels');
+  const pos=NODE_POS[id];
+  if(!pos||!ng||!lg) return;
+  _buildOneNode(id, pos, ng, lg);
+}
+
 function buildNodes(){
   const ng=document.getElementById('nodes');
   const lg=document.getElementById('labels');
 
   for(const[id,pos]of Object.entries(NODE_POS)){
+    _buildOneNode(id, pos, ng, lg);
+  }
+}
+
+function _buildOneNode(id, pos, ng, lg){
+    if(nodeEls[id]) return; // already built
     const col=AGENT_COLOR[id]||'#00F0FF';
     const r=nodeR(id);
     const labelY = r*1.35 + 18; // label offset below triangle bottom
@@ -909,11 +924,25 @@ function buildNodes(){
     });
 
     // ── Outer triangle frame ──
+    const isDisco = NODE_DISCOVERED[id];
     const outerTri=svgEl('polygon',{
       points:tronOuterTriangle(r,0),
-      fill:'none',stroke:col,'stroke-width':'2',opacity:'0.22',
-      'stroke-linejoin':'round'
+      fill:'none',stroke:col,'stroke-width': isDisco ? '1.5' : '2',
+      opacity: isDisco ? '0.35' : '0.22',
+      'stroke-linejoin':'round',
+      ...(isDisco ? {'stroke-dasharray':'6 4'} : {})
     });
+    // Auto-discovered badge
+    if(isDisco){
+      const discoBadge=svgEl('text',{
+        x:'0', y: (-r*0.55).toFixed(1),
+        'text-anchor':'middle','font-family':'Orbitron,sans-serif',
+        'font-size':'6','font-weight':'700',fill:col,opacity:'0.7',
+        'letter-spacing':'1'
+      });
+      discoBadge.textContent='NEW';
+      g.appendChild(discoBadge);
+    }
 
     // ── Inner hex ring fill (darker cutout feel) ──
     const innerFill=svgEl('polygon',{
@@ -1118,7 +1147,6 @@ function buildNodes(){
       hoverPctBg.setAttribute('opacity','0');
       // dots handle themselves via fade interval
     });
-  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1947,6 +1975,14 @@ async function fetchData(){
       if(pbJobs[id]?.status==='running') combined[id]={...combined[id]||{},status:'active',pbTask:pbJobs[id].task_summary};
     }
 
+    // Dynamically inject any agents from /data not yet in NODE_POS
+    for(const id of Object.keys(combined)){
+      if(!NODE_POS[id] && id !== 'unknown'){
+        mergeDiscoveredAgent(id, {});
+        buildSingleNode(id);
+      }
+    }
+
     const allAgents=[];
     for(const id of Object.keys(NODE_POS)){
       const ag=combined[id]||{};
@@ -2053,9 +2089,86 @@ function rafLoop(ts){
 // ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
+// ── Auto-discovery: fetch /agents, merge config, slot new nodes ──────────────
+
+// Tier Y-centers and x-slot pools for auto-layout
+const TIER_Y  = {COMMAND:95, ENGINEERING:370, OPS:505, INTEL:650, OVERFLOW:730};
+const TIER_XRANGE = {COMMAND:[600,600], ENGINEERING:[200,980], OPS:[260,880], INTEL:[240,940], OVERFLOW:[200,1000]};
+// Palette for auto-discovered agents (cycles through)
+const DISCO_COLORS = ['#FF9933','#33FF99','#FF33CC','#33CCFF','#FFCC33','#CC33FF','#33FFCC','#FF6633'];
+let _discoColorIdx = 0;
+
+// Infer tier from agent name heuristics
+function inferTier(id){
+  const s=id.toLowerCase();
+  if(s.includes('manager')&&!s.includes('incident')) return 'COMMAND';
+  if(s.includes('code')||s.includes('develop')||s.includes('review')||
+     s.includes('test')||s.includes('build')||s.includes('release')||
+     s.includes('architect')||s.includes('pm')||s.includes('engineer')) return 'ENGINEERING';
+  if(s.includes('ops')||s.includes('deploy')||s.includes('sre')||
+     s.includes('incident')||s.includes('infra')||s.includes('monitor')) return 'OPS';
+  if(s.includes('research')||s.includes('intel')||s.includes('security')||
+     s.includes('data')||s.includes('analyt')||s.includes('workflow')) return 'INTEL';
+  return 'OVERFLOW';
+}
+
+// Auto-calculate x position for a new node in a tier
+function autoSlotX(tier){
+  const existing = Object.entries(NODE_POS).filter(([id])=>AGENT_TIER[id]===tier).map(([,p])=>p.x);
+  const [xMin,xMax]=TIER_XRANGE[tier]||[200,1000];
+  if(!existing.length) return Math.round((xMin+xMax)/2);
+  // Find biggest gap between sorted xs and insert there
+  const xs=[xMin,...existing.sort((a,b)=>a-b),xMax];
+  let bestGap=0, bestX=Math.round((xMin+xMax)/2);
+  for(let i=0;i<xs.length-1;i++){
+    const gap=xs[i+1]-xs[i];
+    if(gap>bestGap){bestGap=gap; bestX=Math.round((xs[i]+xs[i+1])/2);}
+  }
+  return bestX;
+}
+
+// Merge a single discovered agent into the runtime config tables
+function mergeDiscoveredAgent(id, cfg={}){
+  if(NODE_POS[id]) return; // already known
+  const tier  = cfg.tier || inferTier(id);
+  const color = cfg.color || DISCO_COLORS[_discoColorIdx++ % DISCO_COLORS.length];
+  const r     = cfg.r || 26;
+  const side  = cfg.stream_side || (autoSlotX(tier) < 600 ? 'left' : 'right');
+  const x     = cfg.x || autoSlotX(tier);
+  const y     = TIER_Y[tier] || TIER_Y.OVERFLOW;
+
+  NODE_POS[id]    = {x, y};
+  AGENT_COLOR[id] = color;
+  AGENT_TIER[id]  = tier;
+  STREAM_SIDE[id] = side;
+  NODE_R[id]      = r;
+  // Mark as auto-discovered for dashed styling
+  NODE_DISCOVERED[id] = !cfg.tier; // false if from agents.json (registered), true if truly new
+  agentData[id]={status:'offline',contextPct:0,lastActive:null,pbTask:null};
+}
+
+const NODE_DISCOVERED = {}; // id → true if auto-discovered (not in agents.json)
+
+async function loadAgentConfig(){
+  try{
+    const r = await fetch(`${GS_URL}/agents`);
+    if(!r.ok) return;
+    const {registered={}, discovered=[]} = await r.json();
+    // Merge registered agents (agents.json) — may override hardcoded defaults
+    for(const [id,cfg] of Object.entries(registered)){
+      if(!NODE_POS[id]) mergeDiscoveredAgent(id, cfg);
+    }
+    // Merge truly discovered (new) agents
+    for(const id of discovered){
+      mergeDiscoveredAgent(id, {});
+    }
+  } catch(e){ console.warn('loadAgentConfig failed', e); }
+}
+
 buildDotGrid();
 buildTraces();
-buildNodes();
+// Nodes built after agent config fetch
+loadAgentConfig().then(()=>buildNodes());
 
 tickClock();
 setInterval(tickClock,1000);

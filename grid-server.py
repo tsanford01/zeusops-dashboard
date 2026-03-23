@@ -336,6 +336,38 @@ def refresh_loop():
 
 # ── HTTP Handler ──────────────────────────────────────────────────────────────
 
+AGENTS_JSON_PATH = os.path.join(os.path.dirname(__file__), "agents.json")
+
+def load_agents_config() -> dict:
+    """Load agents.json; return {} on failure."""
+    try:
+        with open(AGENTS_JSON_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        return {k: v for k, v in data.items() if not k.startswith("_")}
+    except Exception:
+        return {}
+
+def discover_agents(known_ids: set) -> list:
+    """Scan gateway agent dirs for agent IDs not in agents.json (truly new agents)."""
+    # Build full set of all already-known IDs: agents.json + hardcoded GATEWAYS lists
+    all_known = set(known_ids)
+    for gw_cfg in GATEWAYS.values():
+        all_known.update(gw_cfg.get("agents", []))
+
+    discovered = []
+    for gw_cfg in GATEWAYS.values():
+        state_dir = gw_cfg["state_dir"]
+        if not os.path.isdir(state_dir):
+            continue
+        for name in os.listdir(state_dir):
+            if name in all_known or name.startswith("."):
+                continue
+            agent_dir = os.path.join(state_dir, name)
+            if os.path.isdir(agent_dir):
+                discovered.append(name)
+    return list(set(discovered))
+
+
 TOOL_FILTER = {'exec','sessions_spawn','message','web_fetch','browser','process',
                'read','write','edit','image','memory_search','web_search'}
 
@@ -456,6 +488,24 @@ class GridHandler(BaseHTTPRequestHandler):
                 except PermissionError:
                     result[pid_str] = True  # exists but not owned by us
             body = json.dumps(result).encode("utf-8")
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+            except BrokenPipeError:
+                pass
+        elif path == "/agents":
+            try:
+                cfg = load_agents_config()
+                known = set(cfg.keys())
+                new_ids = discover_agents(known)
+                result = {"registered": cfg, "discovered": new_ids}
+                body = json.dumps(result).encode("utf-8")
+            except Exception as e:
+                body = json.dumps({"registered": {}, "discovered": [], "error": str(e)}).encode("utf-8")
             try:
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
