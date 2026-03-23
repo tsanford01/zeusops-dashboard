@@ -2456,6 +2456,7 @@ setInterval(fetchData,8000);
 
 // ── /tools poll — feeds tool stream boxes in real-time ───────────────────────
 let _toolsLastTs = 0;
+let _mcToolsLastTs = 0;
 async function pollToolStream(){
   try{
     // ZeusOps grid: /tools (ZeusOps gateway only)
@@ -2500,7 +2501,6 @@ async function pollToolStream(){
     }
   }catch{}
 }
-let _mcToolsLastTs = 0;
 setInterval(pollToolStream, 4000); // faster than main poll for responsiveness
 pollToolStream();
 
