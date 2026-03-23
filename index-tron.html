@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 #gw-mc:hover,#gw-zo:hover{background:#0d2040;}
 #gw-mc.gw-active,#gw-zo.gw-active{border-color:#00F0FF44;background:#001830;color:#00F0FF;}
 #gw-mc.gw-active .gw-dot,#gw-zo.gw-active .gw-dot{box-shadow:0 0 8px currentColor;}
-.grid-view{position:absolute;inset:0;transition:opacity .25s ease;}
+.grid-view{position:absolute;inset:0;transition:opacity .25s ease;width:100%;height:100%;}
 #hdr-right{margin-left:auto;font-size:11px;color:var(--text);letter-spacing:1px;}
 #clock{color:#00F0FF;font-size:11px;}
 
@@ -119,7 +119,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 #offline.show{display:flex;}
 
 /* ── DESKTOP: SVG fills available space ── */
-#grid-svg{width:100%;height:100%;}
+#grid-svg,#mc-grid-svg{width:100%;height:100%;display:block;}
 
 /* ── MOBILE only: hide side panels ── */
 @media(max-width:768px){
@@ -239,7 +239,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 
     <!-- ZeusOps grid (default active) -->
     <div id="view-zo" class="grid-view" style="opacity:1;pointer-events:auto;">
-    <svg id="grid-svg" viewBox="0 0 1200 850" preserveAspectRatio="xMidYMid meet">
+    <svg id="grid-svg" viewBox="0 0 1200 850" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;">
       <defs>
         <filter id="glow-active" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
@@ -295,7 +295,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 
     <!-- MC grid (hidden by default) -->
     <div id="view-mc" class="grid-view" style="opacity:0;pointer-events:none;">
-    <svg id="mc-grid-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+    <svg id="mc-grid-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
       <defs>
         <filter id="mc-glow-active" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b1"/>
