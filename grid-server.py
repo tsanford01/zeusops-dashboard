@@ -24,7 +24,8 @@ GATEWAYS = {
     "zeusops": {
         "state_dir": "/home/travis/.openclaw-zmc-dev-ops/agents/",
         "agents": [
-            "manager", "architect", "pm", "sre", "releaser",
+            "manager", "main",  # 'main' is manager's session alias in ZeusOps gateway
+            "architect", "pm", "sre", "releaser",
             "coder", "tester", "reviewer", "researcher",
             "incident-manager", "workflow-architect", "devops-automator",
         ],
@@ -35,6 +36,7 @@ GATEWAYS = {
 # Agent name → canonical id (for receiver detection from jsonl)
 AGENT_NAME_MAP = {
     "manager":            "manager",
+    "main":               "manager",  # ZeusOps gateway alias for manager
     "architect":          "architect",
     "pm":                 "pm",
     "project manager":    "pm",
