@@ -436,7 +436,8 @@ function buildMCGrid(){
   const ng = document.getElementById('mc-nodes');
   const lg = document.getElementById('mc-labels');
   const tg = document.getElementById('mc-traces');
-  if(!ng||!lg||!tg) return;
+  if(!ng||!lg||!tg){ console.error('buildMCGrid: missing SVG groups',{ng,lg,tg}); return; }
+  try{
 
   // Dot grid
   const bgDots = document.getElementById('mc-bg-dots');
@@ -494,6 +495,7 @@ function buildMCGrid(){
     mcNodeEls[id]={g, hex:outerTri, fill:outerFill, outerGlow, innerHex, innerFill, innerGlow,
       ctxArc, ctxArcGlow, ctxBarBg, label, pill, col, r};
   }
+  }catch(e){ console.error('buildMCGrid error:', e); }
 }
 
 // Update a single MC node's visual state
@@ -996,6 +998,9 @@ const agentData= {};
 const agentMeta= {}; // id → {sessionCount, gateway, model}
 
 for(const id of Object.keys(NODE_POS))
+  agentData[id]={status:'offline',contextPct:0,lastActive:null,pbTask:null};
+// Also init MC agents so updateMCNodeVis has valid entries from the start
+for(const id of Object.keys(MC_NODE_POS))
   agentData[id]={status:'offline',contextPct:0,lastActive:null,pbTask:null};
 // Note: dynamically discovered agents get agentData entries in mergeDiscoveredAgent()
 
