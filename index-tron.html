@@ -488,12 +488,45 @@ function buildMCGrid(){
     g.appendChild(ctxBarBg);  g.appendChild(ctxArcGlow); g.appendChild(ctxArc);
     ng.appendChild(g);
 
+    // Tool stream boxes (same pattern as ZO nodes)
+    const BOX_W=130, BOX_H=88, boxGap=12;
+    const side = MC_STREAM_SIDE[id]||'left';
+    const boxY = (-r*0.58).toFixed(1);
+    const job1X = side==='left' ? (-r-boxGap-BOX_W).toFixed(1) : (r+boxGap).toFixed(1);
+    const job2X = side==='left' ? (r+boxGap).toFixed(1) : (-r-boxGap-BOX_W).toFixed(1);
+
+    const foLeft=svgEl('foreignObject',{x:job1X,y:boxY,width:BOX_W,height:BOX_H,opacity:'0'});
+    foLeft.style.transition='opacity 0.3s ease'; foLeft.style.overflow='visible';
+    const divLeft=document.createElement('div');
+    divLeft.style.cssText=`width:${BOX_W}px;height:${BOX_H}px;border:1px solid ${col};border-radius:3px;background:#000810ee;box-shadow:0 0 8px ${col}44;overflow:hidden;display:flex;flex-direction:column;padding:3px 4px;box-sizing:border-box;`;
+    const hdrLeft=document.createElement('div');
+    hdrLeft.style.cssText=`font-family:Orbitron,sans-serif;font-size:6px;color:${col};letter-spacing:1.5px;opacity:0.6;margin-bottom:2px;border-bottom:1px solid ${col}33;padding-bottom:2px;`;
+    hdrLeft.textContent='◈ JOB 1';
+    const entriesLeft=document.createElement('div');
+    entriesLeft.style.cssText='flex:1;overflow:hidden;display:flex;flex-direction:column;gap:2px;';
+    divLeft.appendChild(hdrLeft); divLeft.appendChild(entriesLeft);
+    foLeft.appendChild(divLeft);
+
+    const foRight=svgEl('foreignObject',{x:job2X,y:boxY,width:BOX_W,height:BOX_H,opacity:'0'});
+    foRight.style.transition='opacity 0.3s ease'; foRight.style.overflow='visible';
+    const divRight=document.createElement('div');
+    divRight.style.cssText=`width:${BOX_W}px;height:${BOX_H}px;border:1px solid ${col};border-radius:3px;background:#000810ee;box-shadow:0 0 8px ${col}44;overflow:hidden;display:flex;flex-direction:column;padding:3px 4px;box-sizing:border-box;`;
+    const hdrRight=document.createElement('div');
+    hdrRight.style.cssText=`font-family:Orbitron,sans-serif;font-size:6px;color:${col};letter-spacing:1.5px;opacity:0.6;margin-bottom:2px;border-bottom:1px solid ${col}33;padding-bottom:2px;`;
+    hdrRight.textContent='◈ JOB 2';
+    const entriesRight=document.createElement('div');
+    entriesRight.style.cssText='flex:1;overflow:hidden;display:flex;flex-direction:column;gap:2px;';
+    divRight.appendChild(hdrRight); divRight.appendChild(entriesRight);
+    foRight.appendChild(divRight);
+
     const lg_g=svgEl('g',{transform:`translate(${pos.x},${pos.y})`});
     lg_g.appendChild(pill); lg_g.appendChild(label);
+    lg_g.appendChild(foLeft); lg_g.appendChild(foRight);
     lg.appendChild(lg_g);
 
     mcNodeEls[id]={g, hex:outerTri, fill:outerFill, outerGlow, innerHex, innerFill, innerGlow,
-      ctxArc, ctxArcGlow, ctxBarBg, label, pill, col, r};
+      ctxArc, ctxArcGlow, ctxBarBg, label, pill, col, r,
+      foLeft, foRight, entriesLeft, entriesRight, hdrLeft, hdrRight};
   }
   }catch(e){ console.error('buildMCGrid error:', e); }
 }
@@ -589,7 +622,8 @@ function toolStreamDetail(toolName, args){
 
 function pushToolStream(agentId, toolName, args, slot=0){
   // slot 0 = left box, slot 1 = right box
-  const el = nodeEls[agentId];
+  // Check both ZO and MC node registries
+  const el = nodeEls[agentId] || mcNodeEls[agentId];
   if(!el) return;
   const col = AGENT_COLOR[agentId]||'#00F0FF';
   const { label, detail } = toolStreamDetail(toolName, args);
@@ -640,7 +674,7 @@ function pushToolStream(agentId, toolName, args, slot=0){
 }
 
 function collapseToolStream(agentId, slot){
-  const el = nodeEls[agentId];
+  const el = nodeEls[agentId] || mcNodeEls[agentId];
   if(!el) return;
   const fo  = slot===0 ? el.foLeft  : el.foRight;
   const div = slot===0 ? el.entriesLeft : el.entriesRight;
