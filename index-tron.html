@@ -472,9 +472,27 @@ function buildMCGrid(){
     const label=svgEl('text',{x:'0',y:(labelY+2).toFixed(1),'text-anchor':'middle','font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'7.5',fill:col,opacity:'0.7','letter-spacing':'0.8'});
     label.textContent=id.toUpperCase();
 
+    // Timer displays (mirror ZO node pattern)
+    const timerY1 = (r * 0.28).toFixed(1);
+    const timerY2 = (r * 0.64).toFixed(1);
+    const timerBg1 = svgEl('rect',{x:'-28',y:(r*0.28-12).toFixed(1),
+      width:'56',height:'16',rx:'3',
+      fill:'#000810',stroke:col,'stroke-width':'0.7',opacity:'0'});
+    const timer1 = svgEl('text',{x:'0',y:timerY1,'text-anchor':'middle',
+      'font-family':'Orbitron,sans-serif','font-weight':'700','font-size':'11',
+      fill:col,opacity:'0','letter-spacing':'1'});
+    const timerBg2 = svgEl('rect',{x:'-24',y:(r*0.64-10).toFixed(1),
+      width:'48',height:'13',rx:'3',
+      fill:'#000810',stroke:col,'stroke-width':'0.5',opacity:'0'});
+    const timer2 = svgEl('text',{x:'0',y:timerY2,'text-anchor':'middle',
+      'font-family':'Orbitron,sans-serif','font-weight':'400','font-size':'9',
+      fill:col,opacity:'0','letter-spacing':'0.8'});
+
     g.appendChild(outerFill); g.appendChild(outerGlow); g.appendChild(outerTri);
     g.appendChild(innerFill); g.appendChild(innerGlow); g.appendChild(innerHex);
     g.appendChild(ctxBarBg);  g.appendChild(ctxArcGlow); g.appendChild(ctxArc);
+    g.appendChild(timerBg1); g.appendChild(timer1);
+    g.appendChild(timerBg2); g.appendChild(timer2);
     ng.appendChild(g);
 
     // Tool stream boxes (same pattern as ZO nodes)
@@ -515,7 +533,8 @@ function buildMCGrid(){
 
     mcNodeEls[id]={g, hex:outerTri, fill:outerFill, outerGlow, innerHex, innerFill, innerGlow,
       ctxArc, ctxArcGlow, ctxBarBg, label, pill, col, r,
-      foLeft, foRight, entriesLeft, entriesRight, hdrLeft, hdrRight};
+      foLeft, foRight, entriesLeft, entriesRight, hdrLeft, hdrRight,
+      timer1, timer2, timerBg1, timerBg2};
   }
   }catch(e){ console.error('buildMCGrid error:', e); }
 }
@@ -748,6 +767,49 @@ function updateTimers(){
     jobs.sort((a,b)=>a.dispatchedAt-b.dispatchedAt);
 
     // Pills are fixed-wide (56/48px) — always fit H:MM:SS without clipping
+    if(jobs.length===1){
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
+      el.timer1.setAttribute('font-size','11');
+      el.timer1.setAttribute('opacity','1');
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','56'); el.timerBg1.setAttribute('x','-28'); el.timerBg1.setAttribute('opacity','0.92'); }
+      el.timer2.setAttribute('opacity','0');
+      if(el.timerBg2) el.timerBg2.setAttribute('opacity','0');
+    } else if(jobs.length===2){
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
+      el.timer1.setAttribute('font-size','10');
+      el.timer1.setAttribute('opacity','1');
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','52'); el.timerBg1.setAttribute('x','-26'); el.timerBg1.setAttribute('opacity','0.92'); }
+      el.timer2.textContent = fmtElapsed(now - jobs[1].dispatchedAt);
+      el.timer2.setAttribute('font-size','9');
+      el.timer2.setAttribute('opacity','0.75');
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','48'); el.timerBg2.setAttribute('x','-24'); el.timerBg2.setAttribute('opacity','0.85'); }
+    } else {
+      el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
+      el.timer1.setAttribute('font-size','10');
+      el.timer1.setAttribute('opacity','1');
+      if(el.timerBg1){ el.timerBg1.setAttribute('width','52'); el.timerBg1.setAttribute('x','-26'); el.timerBg1.setAttribute('opacity','0.92'); }
+      el.timer2.textContent = `+${jobs.length-1} more`;
+      el.timer2.setAttribute('font-size','8');
+      el.timer2.setAttribute('opacity','0.55');
+      if(el.timerBg2){ el.timerBg2.setAttribute('width','34'); el.timerBg2.setAttribute('x','-17'); el.timerBg2.setAttribute('opacity','0.85'); }
+    }
+  }
+  for(const[id, el] of Object.entries(mcNodeEls)){
+    if(!el.timer1) continue;
+    const ag = agentData[id];
+    const isActive = ag?.status==='active';
+    const jobs = agentTimers[id]||[];
+
+    if(!isActive || jobs.length===0){
+      el.timer1.setAttribute('opacity','0');
+      el.timer2.setAttribute('opacity','0');
+      if(el.timerBg1) el.timerBg1.setAttribute('opacity','0');
+      if(el.timerBg2) el.timerBg2.setAttribute('opacity','0');
+      continue;
+    }
+
+    jobs.sort((a,b)=>a.dispatchedAt-b.dispatchedAt);
+
     if(jobs.length===1){
       el.timer1.textContent = fmtElapsed(now - jobs[0].dispatchedAt);
       el.timer1.setAttribute('font-size','11');
@@ -2269,7 +2331,6 @@ const TIER_XRANGE = {COMMAND:[600,600], ENGINEERING:[200,980], OPS:[260,880], IN
 // Palette for auto-discovered agents (cycles through)
 const DISCO_COLORS = ['#FF9933','#33FF99','#FF33CC','#33CCFF','#FFCC33','#CC33FF','#33FFCC','#FF6633'];
 let _discoColorIdx = 0;
-const NODE_DISCOVERED = {}; // id → true if auto-discovered (not in agents.json)
 
 // Infer tier from agent name heuristics
 function inferTier(id){
@@ -2328,6 +2389,8 @@ function respaceDiscoveredInTier(tier){
     if(el?.g) el.g.setAttribute('transform',`translate(${NODE_POS[id].x},${NODE_POS[id].y})`);
   });
 }
+
+const NODE_DISCOVERED = {}; // id → true if auto-discovered (not in agents.json)
 
 // Merge a single discovered agent into the runtime config tables
 function mergeDiscoveredAgent(id, cfg={}){
