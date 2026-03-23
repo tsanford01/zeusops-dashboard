@@ -290,7 +290,8 @@ def compute_data() -> dict:
     hottest_name = "-"
     if all_agents:
         hottest = max(all_agents, key=lambda a: a["totalTokens"])
-        hottest_name = hottest["id"]
+        raw_id = hottest["id"]
+        hottest_name = AGENT_NAME_MAP.get(raw_id, raw_id)
 
     last_event = "no handoffs yet"
     if all_handoffs:

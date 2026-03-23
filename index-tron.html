@@ -1971,11 +1971,15 @@ async function fetchData(){
     document.getElementById('badge').textContent=(gwMC||gwZO)?'ONLINE':'OFFLINE';
 
     const combined={};
+    const STATUS_RANK={'active':2,'idle':1,'offline':0};
     for(const ag of(data.agents||[])){
       const id=canonicalName(ag.id)||ag.id;
-      combined[id]=ag;
-      // Store meta for inspect panel
-      agentMeta[id]={sessionCount:ag.sessionCount,gateway:ag.gateway,model:ag.model};
+      // Keep the highest-status entry when multiple sources map to the same canonical id
+      const existing=combined[id];
+      if(!existing || (STATUS_RANK[ag.status]||0) > (STATUS_RANK[existing.status]||0)){
+        combined[id]=ag;
+        agentMeta[id]={sessionCount:ag.sessionCount,gateway:ag.gateway,model:ag.model};
+      }
     }
     for(const id of Object.keys(NODE_POS)){
       if(pbJobs[id]?.status==='running') combined[id]={...combined[id]||{},status:'active',pbTask:pbJobs[id].task_summary};
