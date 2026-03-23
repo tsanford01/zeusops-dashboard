@@ -334,8 +334,8 @@ const AGENT_ALIAS = {
   'incident manager':'incident-manager','incident-manager':'incident-manager',
   'arch':'architect','mgr':'manager','rel':'releaser',
   'res':'researcher','rev':'reviewer','sec':'security','security-eng':'security',
-  // ZeusOps gateway registers the manager session as 'main' — map it back
-  'main':'manager',
+  // Note: do NOT alias 'main' → 'manager'
+  // MC gateway 'main' = MC agent (me); ZeusOps 'manager' = Zeus manager — separate agents
 };
 function canonicalName(n){
   if(!n) return n;

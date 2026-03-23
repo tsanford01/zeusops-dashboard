@@ -24,7 +24,7 @@ GATEWAYS = {
     "zeusops": {
         "state_dir": "/home/travis/.openclaw-zmc-dev-ops/agents/",
         "agents": [
-            "manager", "main",  # 'main' is manager's session alias in ZeusOps gateway
+            "manager",
             "architect", "pm", "sre", "releaser",
             "coder", "tester", "reviewer", "researcher",
             "incident-manager", "workflow-architect", "devops-automator",
@@ -36,7 +36,7 @@ GATEWAYS = {
 # Agent name → canonical id (for receiver detection from jsonl)
 AGENT_NAME_MAP = {
     "manager":            "manager",
-    "main":               "manager",  # ZeusOps gateway alias for manager
+    # Note: 'main' is NOT aliased to manager — MC 'main' and ZeusOps 'manager' are separate
     "architect":          "architect",
     "pm":                 "pm",
     "project manager":    "pm",
@@ -355,6 +355,8 @@ def load_agents_config() -> dict:
 DISCOVER_BLOCKLIST = {
     # MC-side agents (not ZeusOps)
     "main", "zeus", "mctravis", "obr", "obr-team", "claude-code",
+    # ZeusOps ghost sessions
+    "main",  # dead ZeusOps alias — real manager is under 'manager'
     # Dev/test artifacts
     "test", "test-minimal", "master", "sc", "system",
     # Boot/utility stubs
@@ -531,8 +533,8 @@ class GridHandler(BaseHTTPRequestHandler):
             try:
                 since = _tool_seen_ts
                 # Scan both gateways for tool calls
+                # Only scan ZeusOps gateway — MC agents are not on this grid
                 calls = tail_tool_calls("/home/travis/.openclaw-zmc-dev-ops/agents/", since * 1000)
-                calls += tail_tool_calls("/home/travis/.openclaw/agents/", since * 1000)
                 if calls:
                     _tool_seen_ts = max(c['ts'] for c in calls) / 1000.0
                 body = json.dumps(calls).encode("utf-8")
