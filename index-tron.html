@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 #gw-mc:hover,#gw-zo:hover{background:#0d2040;}
 #gw-mc.gw-active,#gw-zo.gw-active{border-color:#00F0FF44;background:#001830;color:#00F0FF;}
 #gw-mc.gw-active .gw-dot,#gw-zo.gw-active .gw-dot{box-shadow:0 0 8px currentColor;}
-.grid-view{position:absolute;inset:0;transition:opacity .25s ease;width:100%;height:100%;}
+.grid-view{position:absolute;top:0;left:0;right:0;bottom:0;transition:opacity .25s ease;display:flex;flex-direction:column;}
 #hdr-right{margin-left:auto;font-size:11px;color:var(--text);letter-spacing:1px;}
 #clock{color:#00F0FF;font-size:11px;}
 
@@ -46,7 +46,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 .stat-val.err{color:#FF2244;}
 
 /* ── MAIN ROW ── */
-#main{display:flex;flex:1;overflow:hidden;}
+#main{display:flex;flex:1;overflow:hidden;min-height:0;}
 
 /* ── MC FACTION TOWER ── */
 #tower{width:175px;flex-shrink:0;background:#00050f;border-right:1px solid #0d2040;overflow-y:auto;padding:8px 6px;}
@@ -69,7 +69,7 @@ body{background:var(--bg);color:var(--text-bright);font-family:'Share Tech Mono'
 @keyframes stale-pulse{0%,100%{opacity:0.55;}50%{opacity:0.20;}}
 
 /* ── SVG GRID ── */
-#grid-wrap{flex:1;position:relative;overflow:hidden;}
+#grid-wrap{flex:1;position:relative;overflow:hidden;min-height:0;}
 
 /* Node glow filter */
 .node-active{filter:url(#glow-active);}
