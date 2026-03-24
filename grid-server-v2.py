@@ -18,6 +18,7 @@ import threading
 import urllib.request
 import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from datetime import datetime, timezone
 from queue import Queue, Empty
 
@@ -1187,7 +1188,8 @@ def main():
         log(f"Started {name} thread")
 
     # Start HTTP server
-    class QuietHTTPServer(HTTPServer):
+    class QuietHTTPServer(ThreadingMixIn, HTTPServer):
+        daemon_threads = True
         def handle_error(self, request, client_address):
             pass  # swallow BrokenPipe and other socket noise
 
