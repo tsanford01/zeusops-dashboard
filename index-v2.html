@@ -1451,7 +1451,7 @@
     // ============================================================================
     async function pollCI() {
       try {
-        const r = await fetch("http://" + window.location.hostname + ":8880/ci");
+        const r = await fetch("http://" + window.location.hostname + ":8878/ci");
         const d = await r.json();
         const allRuns = [];
 
