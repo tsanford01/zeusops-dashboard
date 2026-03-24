@@ -13,16 +13,14 @@
       --bg-secondary: #0D0D1A;
       --bg-panel: #0F0F1F;
       --cyan: #00D4FF;
-      --cyan-dim: #004D5C;
+      --cyan-dim: rgba(0,212,255,0.15);
       --amber: #FFB000;
       --red: #FF0040;
       --green: #00FF88;
+      --purple: #9B59B6;
       --text-primary: #E0F4FF;
       --text-dim: #4A7A8A;
       --border: #1A2A3A;
-      --glow-cyan: 0 0 8px #00D4FF, 0 0 16px rgba(0,212,255,0.3);
-      --glow-amber: 0 0 8px #FFB000, 0 0 16px rgba(255,176,0,0.3);
-      --glow-red: 0 0 8px #FF0040, 0 0 16px rgba(255,0,64,0.3);
     }
 
     * {
@@ -58,361 +56,323 @@
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      50% { opacity: 0.3; }
     }
 
-    .pulse {
-      animation: pulse 2s ease-in-out infinite;
+    @keyframes dash {
+      to { stroke-dashoffset: 0; }
     }
 
-    @keyframes pulse-ring {
-      0% { r: 20; opacity: 0.8; }
-      100% { r: 28; opacity: 0; }
-    }
-
-    /* Smooth transitions for command bar updates */
-    #commandBar text, #commandBar circle, #commandBar rect {
-      transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
-    }
-
-    /* Agent tile glow intensity classes */
     .glow-hot {
-      filter: drop-shadow(0 0 8px #00D4FF) drop-shadow(0 0 16px rgba(0,212,255,0.6));
-    }
-    .glow-warm {
-      filter: drop-shadow(0 0 4px rgba(0,212,255,0.3));
-    }
-    .glow-dim {
-      filter: none;
-      opacity: 0.5;
+      filter: drop-shadow(0 0 8px var(--green)) drop-shadow(0 0 16px rgba(0,255,136,0.3));
     }
 
-    /* Agent tile smooth transitions */
-    .agent-tile use, .agent-tile circle, .agent-tile text, .agent-tile rect, .agent-tile line {
-      transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+    .glow-warm {
+      filter: drop-shadow(0 0 8px var(--amber)) drop-shadow(0 0 16px rgba(255,176,0,0.3));
+    }
+
+    .glow-dim {
+      filter: drop-shadow(0 0 4px var(--text-dim));
+    }
+
+    /* Activity Stream Scrollable Container */
+    .activity-scroll {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+      background: transparent;
+    }
+
+    .activity-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .activity-scroll::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    .activity-scroll::-webkit-scrollbar-thumb {
+      background: var(--cyan);
+      border-radius: 3px;
+    }
+
+    .event-card {
+      background: var(--bg-panel);
+      border-left: 3px solid var(--cyan);
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .event-card:hover {
+      background: var(--bg-secondary);
+      transform: translateX(2px);
+    }
+
+    .event-card.alert-card {
+      height: 110px;
+      border-left-width: 3px;
+    }
+
+    .event-card.alert-red {
+      border-left-color: var(--red);
+      background: rgba(255, 0, 64, 0.05);
+    }
+
+    .event-card.alert-amber {
+      border-left-color: var(--amber);
+      background: rgba(255, 176, 0, 0.05);
+    }
+
+    .event-card.fresh-alert {
+      animation: pulse 2s infinite;
+    }
+
+    .event-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-right: 8px;
+    }
+
+    .event-time {
+      float: right;
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    .event-desc {
+      font-size: 11px;
+      margin-top: 4px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .event-context {
+      font-size: 9px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* Tool Stream Horizontal Scroll */
+    .tool-scroll {
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      padding: 10px;
+    }
+
+    .tool-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .tool-scroll::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    .tool-scroll::-webkit-scrollbar-thumb {
+      background: var(--cyan);
+      border-radius: 3px;
+    }
+
+    .tool-card {
+      display: inline-block;
+      width: 200px;
+      height: 85px;
+      background: var(--bg-panel);
+      border-left: 2px solid var(--cyan);
+      border-radius: 4px;
+      padding: 8px;
+      margin-right: 8px;
+      vertical-align: top;
+    }
+
+    .tool-agent {
+      font-size: 8px;
+      color: var(--text-dim);
+    }
+
+    .tool-name {
+      font-size: 10px;
+      color: var(--cyan);
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    .tool-summary {
+      font-size: 9px;
+      color: var(--text-primary);
+      margin-top: 4px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .tool-ts {
+      font-size: 7px;
+      color: var(--text-dim);
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
   <svg id="dashboard" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid meet">
-    <defs>
-      <!-- TRON-style gradients and filters -->
-      <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:var(--cyan);stop-opacity:0.6" />
-        <stop offset="100%" style="stop-color:var(--cyan);stop-opacity:0.1" />
-      </linearGradient>
+    <!-- Command Bar Zone (y=0-70) -->
+    <g id="command-bar">
+      <rect x="0" y="0" width="1400" height="70" fill="var(--bg-secondary)" />
 
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
+      <!-- Panel dividers -->
+      <line x1="170" y1="10" x2="170" y2="60" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <line x1="420" y1="10" x2="420" y2="60" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <line x1="650" y1="10" x2="650" y2="60" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <line x1="850" y1="10" x2="850" y2="60" stroke="var(--cyan)" stroke-opacity="0.2" />
 
-      <!-- Hexagon path for agent tiles -->
-      <path id="hexagon" d="M 30,0 L 60,15 L 60,45 L 30,60 L 0,45 L 0,15 Z" />
-    </defs>
-
-    <!-- Handoff lines layer -->
-    <g id="handoff-lines-layer"></g>
-
-    <!-- Background -->
-    <rect width="1400" height="900" fill="var(--bg-primary)" />
-
-    <!-- Grid lines (subtle) -->
-    <g opacity="0.1">
-      <line x1="0" y1="80" x2="1400" y2="80" stroke="var(--cyan)" stroke-width="1"/>
-      <line x1="0" y1="780" x2="1400" y2="780" stroke="var(--cyan)" stroke-width="1"/>
-      <line x1="770" y1="80" x2="770" y2="780" stroke="var(--cyan)" stroke-width="1"/>
-    </g>
-
-    <!-- ZONE A: COMMAND BAR (0, 0, 1400, 80) -->
-    <g id="commandBar">
-      <rect x="0" y="0" width="1400" height="80" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
-
-      <!-- Panel 1: System Pulse (0-280) -->
-      <g id="systemPulse">
-        <line x1="280" y1="10" x2="280" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
-
-        <!-- Pulsing ring -->
-        <circle cx="80" cy="40" r="22" fill="none" stroke="var(--cyan)" stroke-width="2" opacity="0.3"/>
-        <circle cx="80" cy="40" r="20" fill="none" stroke="var(--cyan)" stroke-width="3" filter="url(#glow)">
-          <animate attributeName="r" values="20;28;20" dur="2s" repeatCount="indefinite"/>
-          <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/>
+      <!-- Panel 1: System Health -->
+      <g id="system-health">
+        <circle id="health-ring" cx="50" cy="35" r="18" fill="none" stroke="var(--green)" stroke-width="2" />
+        <circle id="health-pulse" cx="50" cy="35" r="22" fill="none" stroke="var(--green)" stroke-width="3" opacity="0.5">
+          <animate attributeName="r" from="22" to="26" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" from="0.5" to="0" dur="2s" repeatCount="indefinite" />
         </circle>
-        <circle cx="80" cy="40" r="18" fill="var(--bg-panel)" stroke="var(--cyan)" stroke-width="2"/>
-
-        <text x="80" y="48" text-anchor="middle" class="data" fill="var(--cyan)" font-size="20">87</text>
-        <text x="140" y="35" class="heading" fill="var(--text-dim)" font-size="10">SYSTEM</text>
-        <text x="140" y="50" class="heading" fill="var(--text-dim)" font-size="10">HEALTH</text>
+        <text id="health-score" x="50" y="40" text-anchor="middle" class="data" font-size="16" fill="var(--green)">87</text>
+        <text x="90" y="40" font-family="Orbitron" font-size="9" fill="var(--cyan)">SYSTEM HEALTH</text>
       </g>
 
-      <!-- Panel 2: CI Status (280-560) -->
-      <g id="ciStatus">
-        <line x1="560" y1="10" x2="560" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
-        <text x="300" y="25" class="heading" fill="var(--text-dim)" font-size="10">CI STATUS</text>
-
-        <!-- 10 status segments -->
-        <g id="ciSegments">
-          <rect x="300" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="322" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="344" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="366" y="35" width="18" height="28" fill="var(--red)" opacity="0.8"/>
-          <rect x="388" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="410" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="432" y="35" width="18" height="28" fill="var(--red)" opacity="0.8"/>
-          <rect x="454" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="476" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
-          <rect x="498" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+      <!-- Panel 2: CI Status -->
+      <g id="ci-status">
+        <g id="ci-segments">
+          <rect x="180" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="202" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="224" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="246" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="268" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="290" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="312" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="334" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="356" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
+          <rect x="378" y="25" width="20" height="20" rx="2" fill="var(--text-dim)" opacity="0.2" />
         </g>
+        <text id="ci-passrate" x="280" y="60" text-anchor="middle" font-size="9" fill="var(--text-dim)">0% (24h)</text>
+        <text x="180" y="18" font-family="Orbitron" font-size="9" fill="var(--cyan)">CI STATUS</text>
       </g>
 
-      <!-- Panel 3: PR Velocity (560-840) -->
-      <g id="prVelocity">
-        <line x1="840" y1="10" x2="840" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
-        <text x="580" y="25" class="heading" fill="var(--text-dim)" font-size="10">PR VELOCITY</text>
-        <!-- Dynamic content populated by renderCommandBar() -->
+      <!-- Panel 3: PR Velocity -->
+      <g id="pr-velocity">
+        <text id="pr-opened" x="430" y="35" font-size="12" fill="var(--text-primary)">↑ 0 opened</text>
+        <text id="pr-merged" x="510" y="35" font-size="12" fill="var(--text-primary)">← 0 merged</text>
+        <text id="pr-rate" x="530" y="55" text-anchor="middle" font-size="9" fill="var(--text-dim)">0%</text>
+        <text x="430" y="18" font-family="Orbitron" font-size="9" fill="var(--cyan)">PR VELOCITY</text>
       </g>
 
-      <!-- Panel 4: Pipeline Flow (840-1120) -->
-      <g id="pipelineSummary">
-        <line x1="1120" y1="10" x2="1120" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
-        <text x="860" y="25" class="heading" fill="var(--text-dim)" font-size="10">PIPELINE</text>
-        <!-- Dynamic bars populated by renderCommandBar() -->
+      <!-- Panel 4: Alerts -->
+      <g id="alerts">
+        <text id="alert-count" x="740" y="40" text-anchor="middle" class="data" font-size="24" fill="var(--cyan)">0</text>
+        <text id="alert-label" x="740" y="58" text-anchor="middle" font-size="10" fill="var(--text-dim)">CLEAR</text>
+        <text x="660" y="18" font-family="Orbitron" font-size="9" fill="var(--cyan)">ALERTS</text>
       </g>
 
-      <!-- Panel 5: Alert Zone (1120-1400) -->
-      <g id="alertZone">
-        <text x="1140" y="25" class="heading" fill="var(--text-dim)" font-size="10">ALERTS</text>
-        <text x="1140" y="50" class="data" fill="var(--text-dim)" font-size="18" id="alertCount">0 ALERTS</text>
-      </g>
-
-      <!-- Connection Status Indicator (top-right) -->
-      <g id="connectionStatus">
-        <circle cx="1360" cy="20" r="6" id="statusDot" fill="var(--red)" class="pulse"/>
-        <text x="1360" y="45" text-anchor="middle" id="statusText" fill="var(--red)" font-size="9">OFFLINE</text>
+      <!-- Panel 5: Connection -->
+      <g id="connection">
+        <circle id="conn-dot" cx="1350" cy="35" r="6" fill="var(--red)" />
+        <text id="conn-label" x="1365" y="40" font-size="10" fill="var(--text-dim)">OFFLINE</text>
       </g>
     </g>
 
-    <!-- ZONE B: TOOL STREAM SIDEBAR (0, 80, 120, 820) -->
-    <g id="toolStream">
-      <rect x="0" y="80" width="120" height="820" fill="var(--bg-secondary)" stroke="none"/>
-      <line x1="120" y1="80" x2="120" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.2"/>
-      <text x="60" y="100" class="heading" fill="var(--cyan)" font-size="9" text-anchor="middle">TOOLS</text>
-
-      <!-- Tool entries container -->
-      <g id="tool-sidebar-entries"></g>
+    <!-- Pipeline Zone (x=0, y=70, w=200, h=720) -->
+    <g id="pipeline-zone">
+      <rect x="0" y="70" width="200" height="720" fill="var(--bg-secondary)" />
+      <line x1="200" y1="70" x2="200" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <text x="100" y="90" text-anchor="middle" font-family="Orbitron" font-size="10" fill="var(--cyan)">PIPELINE</text>
+      <!-- Pipeline nodes will be created dynamically -->
     </g>
 
-    <!-- ZONE C: AGENT GRID (120, 80, 560, 820) -->
-    <g id="agentGrid">
-      <rect x="120" y="80" width="560" height="820" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
-      <text x="140" y="105" class="heading" fill="var(--cyan)" font-size="14">AGENT GRID</text>
+    <!-- Agent Grid Zone (x=200, y=70, w=700, h=720) -->
+    <g id="agent-grid-zone">
+      <rect x="200" y="70" width="700" height="720" fill="var(--bg-primary)" />
 
-      <!-- 3x5 grid of agent tiles (15 agents) -->
-      <g id="agentTiles">
-        <!-- Row 1 -->
-        <g id="tile-manager" class="agent-tile" data-agent="manager" transform="translate(310, 150)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MANAGER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-architect" class="agent-tile" data-agent="architect" transform="translate(470, 150)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">ARCHITECT</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-researcher" class="agent-tile" data-agent="researcher" transform="translate(630, 150)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RESEARCHER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-coder" class="agent-tile" data-agent="coder" transform="translate(310, 290)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">CODER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-tester" class="agent-tile" data-agent="tester" transform="translate(470, 290)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">TESTER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
+      <!-- ZeusOps Pipeline Section -->
+      <g id="zeusops-section">
+        <line x1="200" y1="70" x2="900" y2="70" stroke="var(--cyan)" stroke-opacity="0.3" stroke-width="1" />
+        <text x="210" y="88" font-family="Orbitron" font-size="9" fill="var(--cyan)">ZEUSOPS PIPELINE</text>
 
-        <!-- Row 2 -->
-        <g id="tile-reviewer" class="agent-tile" data-agent="reviewer" transform="translate(630, 290)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">REVIEWER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-releaser" class="agent-tile" data-agent="releaser" transform="translate(310, 430)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RELEASER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-pm" class="agent-tile" data-agent="pm" transform="translate(470, 430)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">PM</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-sre" class="agent-tile" data-agent="sre" transform="translate(630, 430)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SRE</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-incident-manager" class="agent-tile" data-agent="incident-manager" transform="translate(310, 570)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">INCIDENT</text>
-          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">MANAGER</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
+        <!-- Spawn lines layer (behind tiles) -->
+        <g id="spawn-lines"></g>
 
-        <!-- Row 3 -->
-        <g id="tile-workflow-architect" class="agent-tile" data-agent="workflow-architect" transform="translate(470, 570)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">WORKFLOW</text>
-          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">ARCHITECT</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-devops-automator" class="agent-tile" data-agent="devops-automator" transform="translate(630, 570)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">DEVOPS</text>
-          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">AUTOMATOR</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-security" class="agent-tile" data-agent="security" transform="translate(310, 710)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SECURITY</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <g id="tile-tiger-team" class="agent-tile" data-agent="tiger-team" transform="translate(470, 710)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">TIGER</text>
-          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">TEAM</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
-        </g>
-        <!-- MC Gateway strip (moved to compact status bar below) -->
+        <!-- Agent tiles will be created dynamically -->
+        <g id="agent-tiles"></g>
+      </g>
 
-        <!-- MC GATEWAY COMPACT STRIP -->
-        <g id="mc-gateway-strip" transform="translate(0, 750)">
-          <!-- Separator line -->
-          <line x1="140" y1="0" x2="660" y2="0" stroke="#9B59B6" stroke-width="1" opacity="0.5"/>
+      <!-- MC Gateway Section -->
+      <g id="mc-gateway-section">
+        <line x1="200" y1="650" x2="900" y2="650" stroke="var(--purple)" stroke-opacity="0.5" stroke-width="1" />
+        <text x="210" y="668" font-family="Orbitron" font-size="9" fill="var(--purple)">MC GATEWAY</text>
 
-          <!-- Label -->
-          <text x="140" y="18" font-family="Orbitron" font-size="8" fill="#9B59B6">MC GATEWAY</text>
+        <g id="mc-dots">
+          <!-- MC -->
+          <circle id="mc-dot-main" cx="275" cy="700" r="6" fill="var(--text-dim)" />
+          <text x="275" y="720" text-anchor="middle" font-size="9" fill="var(--text-dim)">MC</text>
 
-          <!-- Status indicators for MC agents -->
-          <g id="mc-indicators" transform="translate(140, 35)">
-            <!-- MC (main) -->
-            <g transform="translate(0, 0)">
-              <circle id="mc-dot-main" cx="0" cy="0" r="4" fill="#FF0040"/>
-              <text id="mc-label-main" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">MC</text>
-            </g>
+          <!-- ZEUS⚡ -->
+          <circle id="mc-dot-zeus" cx="450" cy="700" r="6" fill="var(--text-dim)" />
+          <text x="450" y="720" text-anchor="middle" font-size="9" fill="var(--text-dim)">ZEUS⚡</text>
 
-            <!-- ZEUS⚡ -->
-            <g transform="translate(120, 0)">
-              <circle id="mc-dot-zeus" cx="0" cy="0" r="4" fill="#FF0040"/>
-              <text id="mc-label-zeus" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">ZEUS⚡</text>
-            </g>
+          <!-- TRAVIS -->
+          <circle id="mc-dot-mctravis" cx="625" cy="700" r="6" fill="var(--text-dim)" />
+          <text x="625" y="720" text-anchor="middle" font-size="9" fill="var(--text-dim)">TRAVIS</text>
 
-            <!-- TRAVIS -->
-            <g transform="translate(240, 0)">
-              <circle id="mc-dot-mctravis" cx="0" cy="0" r="4" fill="#FF0040"/>
-              <text id="mc-label-mctravis" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">TRAVIS</text>
-            </g>
-
-            <!-- OBR -->
-            <g transform="translate(360, 0)">
-              <circle id="mc-dot-obr" cx="0" cy="0" r="4" fill="#FF0040"/>
-              <text id="mc-label-obr" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">OBR</text>
-            </g>
-          </g>
+          <!-- OBR -->
+          <circle id="mc-dot-obr" cx="800" cy="700" r="6" fill="var(--text-dim)" />
+          <text x="800" y="720" text-anchor="middle" font-size="9" fill="var(--text-dim)">OBR</text>
         </g>
       </g>
     </g>
 
-    <!-- ZONE D: ACTIVITY STREAM (680, 80, 280, 820) -->
-    <g id="activity-stream-zone">
-      <rect x="680" y="80" width="280" height="820" fill="var(--bg-panel)"/>
-      <line x1="680" y1="80" x2="680" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.3"/>
-      <line x1="960" y1="80" x2="960" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.3"/>
-      <text x="690" y="100" font-family="Orbitron" font-size="9" fill="var(--cyan)">ACTIVITY</text>
+    <!-- Activity Stream Zone (x=900, y=70, w=500, h=720) -->
+    <g id="activity-zone">
+      <rect x="900" y="70" width="500" height="720" fill="var(--bg-panel)" />
+      <line x1="900" y1="70" x2="900" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <text x="910" y="90" font-family="Orbitron" font-size="10" fill="var(--cyan)">ACTIVITY</text>
 
-      <!-- Vertical event cards container -->
-      <g id="eventCards"></g>
+      <!-- Scrollable container using foreignObject -->
+      <foreignObject x="900" y="100" width="500" height="690">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="activity-scroll" id="activity-scroll">
+          <!-- Event cards will be inserted here -->
+        </div>
+      </foreignObject>
     </g>
 
-    <!-- ZONE E: FLYWHEEL (960, 80, 440, 820) -->
-    <g id="flywheel">
-      <rect x="960" y="80" width="440" height="820" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
-      <text x="980" y="105" class="heading" fill="var(--cyan)" font-size="14">PIPELINE FLOW</text>
-      <!-- Decorative underline -->
-      <line x1="980" y1="110" x2="1110" y2="110" stroke="var(--cyan)" stroke-width="1" opacity="0.5"/>
+    <!-- Tool Stream Zone (x=0, y=790, w=1400, h=110) -->
+    <g id="tool-stream-zone">
+      <line x1="0" y1="790" x2="1400" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <text x="10" y="808" font-family="Orbitron" font-size="9" fill="var(--cyan)">TOOL STREAM</text>
 
-      <!-- Vertical pipeline visualization (dynamically built) -->
-      <g id="flywheel-zone"></g>
+      <foreignObject x="0" y="820" width="1400" height="80">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="tool-scroll" id="tool-scroll">
+          <div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 10px;">NO RECENT TOOL ACTIVITY</div>
+        </div>
+      </foreignObject>
     </g>
   </svg>
 
   <script>
     // ============================================================================
-    // DASHBOARD STATE STORE
+    // DASHBOARD STATE
     // ============================================================================
     const DashboardState = {
       agents: {},        // agent_id → {status, lastSeen, currentJob, successRate, contextPct}
@@ -424,6 +384,7 @@
         ci: { passRate1h: 0, lastRuns: [], repos: {} },
         pr: { opened24h: 0, merged24h: 0 },
         pipeline: { backlog: 0, design: 0, code: 0, review: 0, done: 0 },
+        pipelineByBoard: {},
         jobs: { completed24h: 0, successRate: 0 },
         alerts: { active: 0, escalations: [] }
       },
@@ -431,6 +392,55 @@
       connected: false,
       lastUpdate: null
     };
+
+    // ============================================================================
+    // EVENT TYPE CONFIGURATION
+    // ============================================================================
+    const EVENT_COLORS = {
+      dispatch:         "#00D4FF",  // cyan
+      agent_checkpoint: "#00FF88",  // green
+      ci_check:         null,       // green if success, red if failure (from context.result)
+      pr_event:         "#7B68EE",  // purple
+      trello_update:    "#00D4FF",  // cyan
+      deploy:           "#00FF88",  // green
+      heartbeat:        "#4A7A8A",  // dim
+      escalation:       "#FF0040",  // RED — large card
+      sre_alert:        "#FFB000",  // AMBER — large card
+      wip_violation:    "#FF0040",  // RED — large card
+      manager_alert:    "#FF0040",  // RED — large card
+      scrum_alert:      "#FFB000",  // AMBER — large card
+      scrum_check:      "#FFB000",  // amber
+      system:           "#4A7A8A",  // dim
+      tool_call:        "#4A7A8A",  // dim
+    };
+
+    const ALERT_TYPES = ["escalation", "sre_alert", "wip_violation", "manager_alert", "scrum_alert"];
+
+    // ============================================================================
+    // AGENT CONFIGURATION
+    // ============================================================================
+    const ZEUSOPS_AGENTS = [
+      // Row 1
+      { id: "manager", label: "Manager", x: 287, y: 135 },
+      { id: "architect", label: "Architect", x: 462, y: 135 },
+      { id: "researcher", label: "Researcher", x: 637, y: 135 },
+      { id: "coder", label: "Coder", x: 812, y: 135 },
+      // Row 2
+      { id: "tester", label: "Tester", x: 287, y: 265 },
+      { id: "reviewer", label: "Reviewer", x: 462, y: 265 },
+      { id: "releaser", label: "Releaser", x: 637, y: 265 },
+      { id: "pm", label: "PM", x: 812, y: 265 },
+      // Row 3
+      { id: "sre", label: "SRE", x: 287, y: 395 },
+      { id: "incident-manager", label: "Incident Mgr", x: 462, y: 395 },
+      { id: "workflow-architect", label: "Workflow Arch", x: 637, y: 395 },
+      { id: "devops-automator", label: "DevOps", x: 812, y: 395 },
+      // Row 4
+      { id: "security", label: "Security", x: 287, y: 525 },
+      { id: "tiger-team", label: "Tiger Team", x: 462, y: 525 }
+    ];
+
+    const AGENT_LOOKUP = Object.fromEntries(ZEUSOPS_AGENTS.map(a => [a.id, a]));
 
     // ============================================================================
     // HEALTH SCORE COMPUTATION
@@ -454,35 +464,218 @@
     }
 
     // ============================================================================
-    // COMMAND BAR RENDERING
+    // BOTTLENECK DETECTION
+    // ============================================================================
+    function detectBottlenecks(pipeline) {
+      const stages = ["backlog", "design", "code", "review"];
+      const next = {backlog:"design", design:"code", code:"review", review:"done"};
+      const result = new Set();
+      for (const s of stages) {
+        if (pipeline[s] > 2 && pipeline[s] > (pipeline[next[s]] || 0) * 2) {
+          result.add(s);
+        }
+      }
+      return result;
+    }
+
+    // ============================================================================
+    // BUILD FUNCTIONS (create SVG structure)
+    // ============================================================================
+    function buildPipeline() {
+      const zone = document.getElementById('pipeline-zone');
+      const stages = [
+        { key: 'backlog', label: 'BACKLOG', y: 120 },
+        { key: 'design', label: 'DESIGN', y: 240 },
+        { key: 'code', label: 'CODE', y: 360 },
+        { key: 'review', label: 'REVIEW', y: 480 },
+        { key: 'done', label: 'DONE', y: 600 }
+      ];
+
+      stages.forEach((stage, i) => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("id", `pipeline-${stage.key}`);
+
+        // Node rect
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", "20");
+        rect.setAttribute("y", stage.y);
+        rect.setAttribute("width", "160");
+        rect.setAttribute("height", "60");
+        rect.setAttribute("rx", "8");
+        rect.setAttribute("fill", "var(--bg-panel)");
+        rect.setAttribute("stroke", "var(--cyan)");
+        rect.setAttribute("stroke-width", "1");
+        g.appendChild(rect);
+
+        // Count
+        const count = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        count.setAttribute("id", `pipeline-${stage.key}-count`);
+        count.setAttribute("x", "100");
+        count.setAttribute("y", stage.y + 32);
+        count.setAttribute("text-anchor", "middle");
+        count.setAttribute("font-family", "Orbitron");
+        count.setAttribute("font-size", "24");
+        count.setAttribute("fill", "var(--cyan)");
+        count.textContent = "0";
+        g.appendChild(count);
+
+        // Label
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", "100");
+        label.setAttribute("y", stage.y + 50);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-family", "Share Tech Mono");
+        label.setAttribute("font-size", "10");
+        label.setAttribute("fill", "var(--text-dim)");
+        label.textContent = stage.label;
+        g.appendChild(label);
+
+        zone.appendChild(g);
+
+        // Connector line to next stage
+        if (i < stages.length - 1) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", "100");
+          line.setAttribute("y1", stage.y + 60);
+          line.setAttribute("x2", "100");
+          line.setAttribute("y2", stages[i + 1].y);
+          line.setAttribute("stroke", "var(--cyan)");
+          line.setAttribute("stroke-width", "1");
+          line.setAttribute("stroke-dasharray", "6,4");
+          line.setAttribute("opacity", "0.3");
+          zone.appendChild(line);
+        }
+      });
+    }
+
+    function buildAgentGrid() {
+      const tilesGroup = document.getElementById('agent-tiles');
+
+      ZEUSOPS_AGENTS.forEach(agent => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("id", `agent-${agent.id}`);
+        g.setAttribute("class", "glow-dim");
+
+        // Hexagon
+        const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        const points = createHexPoints(agent.x, agent.y, 50);
+        hex.setAttribute("points", points);
+        hex.setAttribute("fill", "var(--bg-panel)");
+        hex.setAttribute("stroke", "var(--cyan)");
+        hex.setAttribute("stroke-width", "1");
+        g.appendChild(hex);
+
+        // Agent name
+        const name = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        name.setAttribute("x", agent.x);
+        name.setAttribute("y", agent.y);
+        name.setAttribute("text-anchor", "middle");
+        name.setAttribute("font-family", "Orbitron");
+        name.setAttribute("font-size", "9");
+        name.setAttribute("fill", "var(--text-primary)");
+        name.textContent = agent.label;
+        g.appendChild(name);
+
+        // Status dot (bottom-left)
+        const statusDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        statusDot.setAttribute("id", `agent-${agent.id}-status`);
+        statusDot.setAttribute("cx", agent.x - 35);
+        statusDot.setAttribute("cy", agent.y + 30);
+        statusDot.setAttribute("r", "4");
+        statusDot.setAttribute("fill", "var(--text-dim)");
+        g.appendChild(statusDot);
+
+        // Performance badge (top-right)
+        const perfBadge = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        perfBadge.setAttribute("id", `agent-${agent.id}-perf`);
+        perfBadge.setAttribute("cx", agent.x + 35);
+        perfBadge.setAttribute("cy", agent.y - 30);
+        perfBadge.setAttribute("r", "3");
+        perfBadge.setAttribute("fill", "var(--green)");
+        g.appendChild(perfBadge);
+
+        // Context bar (bottom of hex)
+        const contextBar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        contextBar.setAttribute("id", `agent-${agent.id}-context`);
+        contextBar.setAttribute("x", agent.x - 40);
+        contextBar.setAttribute("y", agent.y + 35);
+        contextBar.setAttribute("width", "0");
+        contextBar.setAttribute("height", "2");
+        contextBar.setAttribute("fill", "var(--cyan)");
+        g.appendChild(contextBar);
+
+        // Task text (below hex)
+        const task = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        task.setAttribute("id", `agent-${agent.id}-task`);
+        task.setAttribute("x", agent.x);
+        task.setAttribute("y", agent.y + 55);
+        task.setAttribute("text-anchor", "middle");
+        task.setAttribute("font-family", "Share Tech Mono");
+        task.setAttribute("font-size", "8");
+        task.setAttribute("font-style", "italic");
+        task.setAttribute("fill", "var(--text-dim)");
+        task.textContent = "";
+        g.appendChild(task);
+
+        tilesGroup.appendChild(g);
+      });
+    }
+
+    function createHexPoints(cx, cy, size) {
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 2;
+        const x = cx + size * Math.cos(angle);
+        const y = cy + size * Math.sin(angle);
+        points.push(`${x},${y}`);
+      }
+      return points.join(' ');
+    }
+
+    function buildActivityStream() {
+      // Already created in HTML
+      console.log('[ActivityStream] Container ready');
+    }
+
+    function buildToolStream() {
+      // Already created in HTML
+      console.log('[ToolStream] Container ready');
+    }
+
+    function buildCommandBar() {
+      // Already created in HTML
+      console.log('[CommandBar] Elements ready');
+    }
+
+    // ============================================================================
+    // RENDER FUNCTIONS
     // ============================================================================
     function renderCommandBar() {
       const state = DashboardState;
       const health = state.metrics.healthScore;
 
       // Panel 1: System Health
-      const healthText = document.querySelector('#systemPulse text.data');
-      const healthRing = document.querySelector('#systemPulse circle[r="18"]');
-      const healthPulse = document.querySelector('#systemPulse circle[stroke-width="3"]');
+      const healthScore = document.getElementById('health-score');
+      const healthRing = document.getElementById('health-ring');
+      const healthPulse = document.getElementById('health-pulse');
 
-      if (healthText) healthText.textContent = health;
+      if (healthScore) healthScore.textContent = health;
 
-      // Update health color based on score
       let healthColor = 'var(--green)';
       if (health < 60) healthColor = 'var(--red)';
       else if (health < 80) healthColor = 'var(--amber)';
 
-      if (healthText) healthText.setAttribute('fill', healthColor);
+      if (healthScore) healthScore.setAttribute('fill', healthColor);
       if (healthRing) healthRing.setAttribute('stroke', healthColor);
       if (healthPulse) healthPulse.setAttribute('stroke', healthColor);
 
       // Panel 2: CI Status
       const ciRuns = state.metrics.ci.lastRuns.slice(-10);
-      const ciSegments = document.querySelectorAll('#ciSegments rect');
+      const ciSegments = document.querySelectorAll('#ci-segments rect');
 
       ciSegments.forEach((seg, i) => {
         if (i < ciRuns.length) {
-          const status = ciRuns[ciRuns.length - 1 - i]; // Reverse order (newest first)
+          const status = ciRuns[ciRuns.length - 1 - i]; // Reverse order
           let color = 'var(--text-dim)';
           let opacity = '0.2';
 
@@ -502,596 +695,330 @@
         }
       });
 
-      // Add pass rate text if not exists
-      let ciPassRateText = document.getElementById('ciPassRate');
-      if (!ciPassRateText && ciRuns.length > 0) {
-        ciPassRateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        ciPassRateText.setAttribute('id', 'ciPassRate');
-        ciPassRateText.setAttribute('x', '410');
-        ciPassRateText.setAttribute('y', '70');
-        ciPassRateText.setAttribute('text-anchor', 'middle');
-        ciPassRateText.setAttribute('fill', 'var(--text-dim)');
-        ciPassRateText.setAttribute('font-size', '9');
-        ciPassRateText.classList.add('data');
-        document.getElementById('ciStatus').appendChild(ciPassRateText);
-      }
-
-      if (ciPassRateText && ciRuns.length > 0) {
-        const passCount = ciRuns.filter(r => r === 'success').length;
-        const passRate = Math.round((passCount / ciRuns.length) * 100);
-        ciPassRateText.textContent = `${passRate}% (24h)`;
-      }
+      const successCount = ciRuns.filter(r => r === 'success').length;
+      const passRate = ciRuns.length > 0 ? Math.round((successCount / ciRuns.length) * 100) : 0;
+      const ciPassrate = document.getElementById('ci-passrate');
+      if (ciPassrate) ciPassrate.textContent = `${passRate}% (24h)`;
 
       // Panel 3: PR Velocity
-      const prOpened = state.metrics.pr.opened24h;
-      const prMerged = state.metrics.pr.merged24h;
-      const mergeRate = prOpened > 0 ? Math.round((prMerged / prOpened) * 100) : 0;
+      const prOpened = document.getElementById('pr-opened');
+      const prMerged = document.getElementById('pr-merged');
+      const prRate = document.getElementById('pr-rate');
 
-      let prOpenedText = document.getElementById('prOpenedText');
-      let prMergedText = document.getElementById('prMergedText');
-      let prMergeRateText = document.getElementById('prMergeRate');
+      if (prOpened) prOpened.textContent = `↑ ${state.metrics.pr.opened24h} opened`;
+      if (prMerged) prMerged.textContent = `← ${state.metrics.pr.merged24h} merged`;
 
-      if (!prOpenedText) {
-        // Create PR velocity texts
-        const prVelocity = document.getElementById('prVelocity');
+      const mergeRate = state.metrics.pr.opened24h > 0
+        ? Math.round((state.metrics.pr.merged24h / state.metrics.pr.opened24h) * 100)
+        : 0;
+      if (prRate) prRate.textContent = `${mergeRate}%`;
 
-        prOpenedText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        prOpenedText.setAttribute('id', 'prOpenedText');
-        prOpenedText.setAttribute('x', '580');
-        prOpenedText.setAttribute('y', '45');
-        prOpenedText.setAttribute('fill', 'var(--green)');
-        prOpenedText.setAttribute('font-size', '14');
-        prOpenedText.classList.add('data');
-        prVelocity.appendChild(prOpenedText);
+      // Panel 4: Alerts
+      const alertCount = document.getElementById('alert-count');
+      const alertLabel = document.getElementById('alert-label');
+      const activeAlerts = state.metrics.alerts.active;
 
-        prMergedText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        prMergedText.setAttribute('id', 'prMergedText');
-        prMergedText.setAttribute('x', '700');
-        prMergedText.setAttribute('y', '45');
-        prMergedText.setAttribute('fill', 'var(--cyan)');
-        prMergedText.setAttribute('font-size', '14');
-        prMergedText.classList.add('data');
-        prVelocity.appendChild(prMergedText);
-
-        prMergeRateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        prMergeRateText.setAttribute('id', 'prMergeRate');
-        prMergeRateText.setAttribute('x', '640');
-        prMergeRateText.setAttribute('y', '65');
-        prMergeRateText.setAttribute('fill', 'var(--text-dim)');
-        prMergeRateText.setAttribute('font-size', '9');
-        prMergeRateText.classList.add('data');
-        prVelocity.appendChild(prMergeRateText);
+      if (alertCount) {
+        alertCount.textContent = activeAlerts;
+        alertCount.setAttribute('fill', activeAlerts > 0 ? 'var(--red)' : 'var(--cyan)');
       }
+      if (alertLabel) alertLabel.textContent = activeAlerts === 0 ? 'CLEAR' : 'ALERTS';
 
-      if (prOpenedText) prOpenedText.textContent = `↑${prOpened} opened`;
-      if (prMergedText) prMergedText.textContent = `←${prMerged} merged`;
-      if (prMergeRateText) prMergeRateText.textContent = `${mergeRate}% merge rate`;
-
-      // Panel 4: Pipeline - Mini horizontal bars
-      const pipeline = state.metrics.pipeline;
-      const maxCount = Math.max(pipeline.backlog, pipeline.design, pipeline.code, pipeline.review, pipeline.done, 1);
-
-      // Clear existing pipeline bars and recreate
-      const pipelineSummary = document.getElementById('pipelineSummary');
-      const existingBars = pipelineSummary.querySelectorAll('.pipeline-bar, .pipeline-label');
-      existingBars.forEach(el => el.remove());
-
-      const stages = [
-        { key: 'backlog', label: 'BL', x: 860 },
-        { key: 'design', label: 'DS', x: 910 },
-        { key: 'code', label: 'CD', x: 960 },
-        { key: 'review', label: 'RV', x: 1010 },
-        { key: 'done', label: 'DN', x: 1060 }
-      ];
-
-      stages.forEach((stage, i) => {
-        const count = pipeline[stage.key] || 0;
-        const height = Math.max(4, (count / maxCount) * 30);
-        const y = 60 - height;
-
-        // Check if bottleneck (>2x next stage)
-        const nextStage = stages[i + 1];
-        const nextCount = nextStage ? (pipeline[nextStage.key] || 0) : count;
-        const isBottleneck = count > nextCount * 2;
-
-        const color = isBottleneck ? 'var(--amber)' : 'var(--cyan)';
-
-        // Bar
-        const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        bar.setAttribute('class', 'pipeline-bar');
-        bar.setAttribute('x', stage.x);
-        bar.setAttribute('y', y);
-        bar.setAttribute('width', '36');
-        bar.setAttribute('height', height);
-        bar.setAttribute('fill', color);
-        bar.setAttribute('opacity', '0.7');
-        bar.style.transition = 'all 0.3s ease';
-        pipelineSummary.appendChild(bar);
-
-        // Label
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('class', 'pipeline-label');
-        label.setAttribute('x', stage.x + 18);
-        label.setAttribute('y', '72');
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('fill', 'var(--text-dim)');
-        label.setAttribute('font-size', '8');
-        label.textContent = count;
-        pipelineSummary.appendChild(label);
-      });
-
-      // Panel 5: Alerts
-      const alertCount = state.metrics.alerts.active;
-      const alertText = document.getElementById('alertCount');
-
-      if (alertText) {
-        if (alertCount === 0) {
-          alertText.textContent = '0 CLEAR';
-          alertText.setAttribute('fill', 'var(--text-dim)');
-        } else {
-          alertText.textContent = `${alertCount} ALERT${alertCount > 1 ? 'S' : ''}`;
-          alertText.setAttribute('fill', 'var(--red)');
-          alertText.classList.add('pulse');
-        }
-      }
-
-      // Update connection indicator
+      // Panel 5: Connection
       updateConnectionIndicator();
     }
 
-    // ============================================================================
-    // CONNECTION STATUS INDICATOR
-    // ============================================================================
     function updateConnectionIndicator() {
-      const dot = document.getElementById('statusDot');
-      const text = document.getElementById('statusText');
+      const dot = document.getElementById('conn-dot');
+      const label = document.getElementById('conn-label');
 
       if (DashboardState.connected) {
-        dot.setAttribute('fill', 'var(--green)');
-        text.setAttribute('fill', 'var(--green)');
-        text.textContent = 'LIVE';
-        dot.classList.remove('pulse');
+        if (dot) dot.setAttribute('fill', 'var(--green)');
+        if (label) label.textContent = 'LIVE';
       } else {
-        dot.setAttribute('fill', 'var(--red)');
-        text.setAttribute('fill', 'var(--red)');
-        text.textContent = 'OFFLINE';
-        dot.classList.add('pulse');
+        if (dot) dot.setAttribute('fill', 'var(--red)');
+        if (label) label.textContent = 'OFFLINE';
       }
     }
 
-    // ============================================================================
-    // AGENT GRID RENDERING
-    // ============================================================================
+    function renderPipeline() {
+      const p = DashboardState.metrics.pipeline;
+      const bottlenecks = detectBottlenecks(p);
+
+      const stages = ['backlog', 'design', 'code', 'review', 'done'];
+      stages.forEach(stage => {
+        const countEl = document.getElementById(`pipeline-${stage}-count`);
+        if (countEl) {
+          countEl.textContent = p[stage] || 0;
+
+          let color = 'var(--cyan)';
+          if (stage === 'done') color = 'var(--green)';
+          else if (bottlenecks.has(stage)) color = 'var(--amber)';
+
+          countEl.setAttribute('fill', color);
+        }
+
+        const rect = document.querySelector(`#pipeline-${stage} rect`);
+        if (rect) {
+          let stroke = 'var(--cyan)';
+          if (stage === 'done') stroke = 'var(--green)';
+          else if (bottlenecks.has(stage)) stroke = 'var(--amber)';
+
+          rect.setAttribute('stroke', stroke);
+        }
+      });
+    }
+
     function renderAgentGrid() {
-      // Iterate through all agent tiles
-      const tiles = document.querySelectorAll('.agent-tile[data-agent]');
+      ZEUSOPS_AGENTS.forEach(agent => {
+        const agentData = DashboardState.agents[agent.id];
+        const stats = DashboardState.agentStats[agent.id];
 
-      tiles.forEach(tile => {
-        const agentId = tile.getAttribute('data-agent');
-        const agent = DashboardState.agents[agentId];
-        const stats = DashboardState.agentStats[agentId];
-        const tools = DashboardState.toolCalls[agentId] || [];
+        const g = document.getElementById(`agent-${agent.id}`);
+        const statusDot = document.getElementById(`agent-${agent.id}-status`);
+        const perfBadge = document.getElementById(`agent-${agent.id}-perf`);
+        const contextBar = document.getElementById(`agent-${agent.id}-context`);
+        const taskText = document.getElementById(`agent-${agent.id}-task`);
 
-        // Get tile elements
-        const hexagon = tile.querySelector('use');
-        const statusDot = tile.querySelector('.status-dot');
-        const statusText = tile.querySelector('.agent-status');
-        const taskText = tile.querySelector('.agent-task');
-        const contextBar = tile.querySelector('.context-bar');
-        const perfBadge = tile.querySelector('.perf-badge');
-
-        // Default to offline if no agent data
-        if (!agent) {
-          tile.classList.remove('glow-hot', 'glow-warm');
-          tile.classList.add('glow-dim');
-          if (statusDot) statusDot.setAttribute('fill', 'var(--red)');
-          if (statusText) {
-            statusText.textContent = 'OFFLINE';
-            statusText.setAttribute('fill', 'var(--red)');
-          }
+        if (!agentData) {
+          // Offline
+          if (g) g.setAttribute('class', 'glow-dim');
+          if (statusDot) statusDot.setAttribute('fill', 'var(--text-dim)');
+          if (perfBadge) perfBadge.setAttribute('fill', 'var(--text-dim)');
+          if (contextBar) contextBar.setAttribute('width', '0');
           if (taskText) taskText.textContent = '';
-          if (contextBar) contextBar.setAttribute('opacity', '0');
-          if (perfBadge) perfBadge.setAttribute('fill', 'var(--green)'); // Assume healthy if no data
           return;
         }
 
-        // 1. Update glow intensity based on status
-        tile.classList.remove('glow-hot', 'glow-warm', 'glow-dim');
-        if (agent.status === 'active') {
-          tile.classList.add('glow-hot');
-        } else if (agent.status === 'idle') {
-          tile.classList.add('glow-warm');
-        } else {
-          tile.classList.add('glow-dim');
+        // Status glow
+        if (g) {
+          if (agentData.status === 'active') g.setAttribute('class', 'glow-hot');
+          else if (agentData.status === 'idle') g.setAttribute('class', 'glow-warm');
+          else g.setAttribute('class', 'glow-dim');
         }
 
-        // 2. Update status dot color
-        let statusColor = 'var(--red)';
-        let statusLabel = 'OFFLINE';
-        if (agent.status === 'active') {
-          statusColor = 'var(--green)';
-          statusLabel = 'ACTIVE';
-        } else if (agent.status === 'idle') {
-          statusColor = 'var(--amber)';
-          statusLabel = 'IDLE';
-        }
-        if (statusDot) statusDot.setAttribute('fill', statusColor);
-        if (statusText) {
-          statusText.textContent = statusLabel;
-          statusText.setAttribute('fill', statusColor);
+        // Status dot
+        if (statusDot) {
+          let color = 'var(--text-dim)';
+          if (agentData.status === 'active') color = 'var(--green)';
+          else if (agentData.status === 'idle') color = 'var(--amber)';
+          statusDot.setAttribute('fill', color);
         }
 
-        // 3. Update performance badge
-        if (stats && perfBadge) {
-          const totalJobs = (stats.done7d || 0) + (stats.failed7d || 0);
-          const successRate = totalJobs > 0 ? stats.done7d / totalJobs : 1.0;
-
-          let badgeColor = 'var(--green)';
-          if (successRate < 0.7) badgeColor = 'var(--red)';
-          else if (successRate < 0.9) badgeColor = 'var(--amber)';
-
-          perfBadge.setAttribute('fill', badgeColor);
-        } else if (perfBadge) {
-          perfBadge.setAttribute('fill', 'var(--green)'); // Default to green if no data
+        // Performance badge
+        if (perfBadge && stats) {
+          const total = stats.done7d + stats.failed7d;
+          const successRate = total > 0 ? stats.done7d / total : 1;
+          let color = 'var(--green)';
+          if (successRate < 0.6) color = 'var(--red)';
+          else if (successRate < 0.8) color = 'var(--amber)';
+          perfBadge.setAttribute('fill', color);
         }
 
-        // 4. Update current task
-        if (taskText && stats && stats.runningJob) {
-          let task = stats.runningJob.task_summary || '';
-          if (task.length > 22) task = task.substring(0, 22) + '...';
+        // Context bar
+        if (contextBar) {
+          const pct = agentData.contextPct || 0;
+          const width = (pct / 100) * 80; // Max 80px
+          contextBar.setAttribute('width', width);
+
+          let color = 'var(--cyan)';
+          if (pct > 90) color = 'var(--red)';
+          else if (pct > 70) color = 'var(--amber)';
+          contextBar.setAttribute('fill', color);
+        }
+
+        // Task text
+        if (taskText && stats && stats.lastTask) {
+          const task = stats.lastTask.slice(0, 20) + (stats.lastTask.length > 20 ? '...' : '');
           taskText.textContent = task;
-        } else if (taskText) {
-          taskText.textContent = '';
-        }
-
-        // 5. Update context bar
-        if (contextBar && agent.contextPct > 5) {
-          const pct = Math.min(100, agent.contextPct);
-          const barWidth = (pct / 100) * 50; // Max width 50px (roughly the width of hexagon)
-
-          let barColor = 'var(--cyan)';
-          if (pct >= 90) barColor = 'var(--red)';
-          else if (pct >= 70) barColor = 'var(--amber)';
-
-          contextBar.setAttribute('x2', (5 + barWidth).toString());
-          contextBar.setAttribute('stroke', barColor);
-          contextBar.setAttribute('opacity', '0.8');
-        } else if (contextBar) {
-          contextBar.setAttribute('opacity', '0');
         }
       });
 
-      // Update MC gateway strip
-      const mcAgents = [
-        {id: "main", label: "MC"},
-        {id: "zeus", label: "ZEUS⚡"},
-        {id: "mctravis", label: "TRAVIS"},
-        {id: "obr", label: "OBR"}
-      ];
-      for (const mc of mcAgents) {
-        const dot = document.getElementById(`mc-dot-${mc.id}`);
-        const agent = DashboardState.agents[mc.id];
-        if (dot && agent) {
-          const color = agent.status === "active" ? "var(--green)" : agent.status === "idle" ? "var(--amber)" : "var(--red)";
-          dot.setAttribute("fill", color);
+      // MC Gateway dots
+      const mcAgents = ['main', 'zeus', 'mctravis', 'obr'];
+      mcAgents.forEach(mc => {
+        const dot = document.getElementById(`mc-dot-${mc}`);
+        const agentData = DashboardState.agents[mc];
+
+        if (dot) {
+          if (!agentData) {
+            dot.setAttribute('fill', 'var(--text-dim)');
+          } else {
+            let color = 'var(--text-dim)';
+            if (agentData.status === 'active') color = 'var(--green)';
+            else if (agentData.status === 'idle') color = 'var(--amber)';
+            dot.setAttribute('fill', color);
+          }
         }
-      }
+      });
     }
 
-    // ============================================================================
-    // TOOL STREAM SIDEBAR
-    // ============================================================================
-    function renderToolSidebar() {
-      const container = document.getElementById("tool-sidebar-entries");
-      if (!container) return;
+    function renderSpawnLines() {
+      const linesGroup = document.getElementById('spawn-lines');
+      if (!linesGroup) return;
 
-      // Get all tool calls across all agents, sorted newest first
-      const allCalls = [];
-      for (const [agentId, calls] of Object.entries(DashboardState.toolCalls || {})) {
+      linesGroup.innerHTML = '';
+
+      DashboardState.handoffs.forEach((handoff, i) => {
+        if (!handoff.active) return;
+
+        const fromAgent = AGENT_LOOKUP[handoff.from];
+        const toAgent = AGENT_LOOKUP[handoff.to];
+
+        // ONLY draw if BOTH are known agents with tiles
+        if (!fromAgent || !toAgent) return;
+
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+        // Quadratic bezier path
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const midX = (fromAgent.x + toAgent.x) / 2;
+        const midY = (fromAgent.y + toAgent.y) / 2 - 30; // Control point offset
+        const d = `M ${fromAgent.x} ${fromAgent.y} Q ${midX} ${midY} ${toAgent.x} ${toAgent.y}`;
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "var(--cyan)");
+        path.setAttribute("stroke-width", "1");
+        path.setAttribute("stroke-dasharray", "5,4");
+        path.setAttribute("opacity", "0.5");
+        g.appendChild(path);
+
+        // Animate stroke dash
+        const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+        animate.setAttribute("attributeName", "stroke-dashoffset");
+        animate.setAttribute("from", "9");
+        animate.setAttribute("to", "0");
+        animate.setAttribute("dur", "1s");
+        animate.setAttribute("repeatCount", "indefinite");
+        path.appendChild(animate);
+
+        // Traveling dot
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("r", "3");
+        dot.setAttribute("fill", "var(--cyan)");
+        g.appendChild(dot);
+
+        const animateMotion = document.createElementNS("http://www.w3.org/2000/svg", "animateMotion");
+        animateMotion.setAttribute("dur", "1.5s");
+        animateMotion.setAttribute("repeatCount", "indefinite");
+        animateMotion.setAttribute("path", d);
+        dot.appendChild(animateMotion);
+
+        linesGroup.appendChild(g);
+      });
+    }
+
+    function renderToolStream() {
+      const toolScroll = document.getElementById('tool-scroll');
+      if (!toolScroll) return;
+
+      const allTools = [];
+      for (const [agent, calls] of Object.entries(DashboardState.toolCalls)) {
         for (const call of calls) {
-          allCalls.push({...call, agentId});
+          allTools.push({ ...call, agent });
         }
       }
-      allCalls.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-      const recent = allCalls.slice(0, 8);
 
-      container.innerHTML = "";
-
-      if (recent.length === 0) {
-        const noActivity = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        noActivity.setAttribute("x", "60");
-        noActivity.setAttribute("y", "200");
-        noActivity.setAttribute("text-anchor", "middle");
-        noActivity.setAttribute("fill", "var(--text-dim)");
-        noActivity.setAttribute("font-size", "8");
-        noActivity.setAttribute("font-family", "Share Tech Mono, monospace");
-        noActivity.textContent = "NO ACTIVITY";
-        container.appendChild(noActivity);
+      if (allTools.length === 0) {
+        toolScroll.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 10px;">NO RECENT TOOL ACTIVITY</div>';
         return;
       }
 
-      recent.forEach((call, i) => {
-        const y = 115 + (i * 90);
-        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      // Sort newest first
+      allTools.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
 
-        // Agent name
-        const agentText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        agentText.setAttribute("x", "8"); agentText.setAttribute("y", String(y));
-        agentText.setAttribute("fill", "var(--text-dim)"); agentText.setAttribute("font-size", "7");
-        agentText.setAttribute("font-family", "Share Tech Mono, monospace");
-        agentText.textContent = call.agentId?.toUpperCase().slice(0,10) || "?";
-        g.appendChild(agentText);
+      toolScroll.innerHTML = allTools.map(tool => {
+        const ts = tool.ts ? new Date(tool.ts).toLocaleTimeString('en-US', { hour12: false }) : '';
+        const summary = (tool.summary || '').slice(0, 75);
 
-        // Tool name
-        const toolText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        toolText.setAttribute("x", "8"); toolText.setAttribute("y", String(y + 12));
-        toolText.setAttribute("fill", "var(--cyan)"); toolText.setAttribute("font-size", "9");
-        toolText.setAttribute("font-weight", "bold");
-        toolText.setAttribute("font-family", "Share Tech Mono, monospace");
-        toolText.textContent = call.tool?.slice(0, 12) || "?";
-        g.appendChild(toolText);
-
-        // Summary line 1
-        const sum1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        sum1.setAttribute("x", "8"); sum1.setAttribute("y", String(y + 24));
-        sum1.setAttribute("fill", "var(--text-primary)"); sum1.setAttribute("font-size", "8");
-        sum1.setAttribute("font-family", "Share Tech Mono, monospace");
-        sum1.textContent = (call.summary || "").slice(0, 14);
-        g.appendChild(sum1);
-
-        // Summary line 2
-        if ((call.summary || "").length > 14) {
-          const sum2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          sum2.setAttribute("x", "8"); sum2.setAttribute("y", String(y + 34));
-          sum2.setAttribute("fill", "var(--text-primary)"); sum2.setAttribute("font-size", "8");
-          sum2.setAttribute("font-family", "Share Tech Mono, monospace");
-          sum2.textContent = (call.summary || "").slice(14, 28);
-          g.appendChild(sum2);
-        }
-
-        // Separator line
-        const sep = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        sep.setAttribute("x1", "4"); sep.setAttribute("y1", String(y + 44));
-        sep.setAttribute("x2", "116"); sep.setAttribute("y2", String(y + 44));
-        sep.setAttribute("stroke", "var(--border)"); sep.setAttribute("stroke-width", "0.5");
-        g.appendChild(sep);
-
-        container.appendChild(g);
-      });
+        return `
+          <div class="tool-card">
+            <div class="tool-agent">${tool.agent}</div>
+            <div class="tool-name">${tool.tool || 'unknown'}</div>
+            <div class="tool-summary">${summary}</div>
+            <div class="tool-ts">${ts}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     // ============================================================================
-    // EVENT STREAM HANDLING
+    // ACTIVITY STREAM
     // ============================================================================
-    let eventCardCount = 0;
-
-    // Event type configuration
-    const EVENT_TYPES = {
-      dispatch: { color: '#00D4FF', label: 'DISPATCH' },
-      agent_checkpoint: { color: '#00FF88', label: 'CHECKPOINT' },
-      ci_check: { color: '#00FF88', label: 'CI ✓' }, // Will be overridden based on context
-      pr_event: { color: '#7B68EE', label: 'PR' },
-      trello_update: { color: '#00D4FF', label: 'TRELLO' },
-      deploy: { color: '#00FF88', label: 'DEPLOY' },
-      heartbeat: { color: '#4A7A8A', label: 'HEARTBEAT' },
-      escalation: { color: '#FF0040', label: 'ESCALATION' },
-      sre_alert: { color: '#FFB000', label: 'SRE ALERT' },
-      tool_call: { color: '#4A7A8A', label: 'TOOL' },
-      system: { color: '#4A7A8A', label: 'SYSTEM' }
-    };
-
-    function appendToEventStream(event) {
-      // Add to ring buffer
-      DashboardState.events.push(event);
-      if (DashboardState.events.length > 100) {
-        DashboardState.events.shift();
+    function contextPreview(action_type, ctx) {
+      if (!ctx || Object.keys(ctx).length === 0) return "";
+      switch(action_type) {
+        case "dispatch":   return `agent: ${ctx.agent} | task: ${(ctx.task||"").slice(0,30)}`;
+        case "ci_check":   return `${ctx.repo} | branch: ${ctx.branch} | ${ctx.duration_s}s`;
+        case "pr_event":   return `${ctx.repo} PR#${ctx.pr_number} | ${ctx.action}`;
+        case "escalation": return `severity: ${ctx.severity} | ${JSON.stringify(ctx).slice(0,60)}`;
+        case "wip_violation": return `doing: ${ctx.current_wip||ctx.doing_count} | limit: ${ctx.limit||2}`;
+        case "sre_alert":  return `${ctx.severity} | ${ctx.issue||ctx.service}`;
+        case "deploy":     return `${ctx.environment} | ${ctx.service} | ${ctx.result}`;
+        default: return Object.entries(ctx).slice(0,2).map(([k,v])=>`${k}: ${v}`).join(" | ");
       }
-
-      if (!event) return;
-
-      const record = event.record || event;
-      const actionType = record.action_type || 'system';
-      const description = record.description || record.task_summary || 'Event';
-      const created = record.created || new Date().toISOString();
-
-      // Parse context
-      let context = {};
-      try {
-        context = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
-      } catch (e) {
-        context = {};
-      }
-
-      // Determine event type config
-      let typeConfig = EVENT_TYPES[actionType] || EVENT_TYPES.system;
-
-      // Special handling for ci_check
-      if (actionType === 'ci_check') {
-        if (context.result === 'failure' || context.result === 'failed') {
-          typeConfig = { color: '#FF0040', label: 'CI ✗' };
-        } else {
-          typeConfig = { color: '#00FF88', label: 'CI ✓' };
-        }
-      }
-
-      // Determine if critical (for glow effect)
-      const isCritical = actionType === 'escalation' || actionType === 'sre_alert';
-
-      // Extract time
-      const time = new Date(created).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-
-      // Truncate description to fit in card
-      const maxLength = 28;
-      const truncatedDesc = description.length > maxLength
-        ? description.substring(0, maxLength - 3) + '...'
-        : description;
-
-      // Create card (pass full event record for modal)
-      createEventCard(typeConfig, time, truncatedDesc, isCritical, record);
     }
 
-    function createEventCard(typeConfig, time, description, isCritical, eventRecord) {
-      const container = document.getElementById('eventCards');
+    function appendToEventStream(record) {
+      const container = document.getElementById('activity-scroll');
       if (!container) return;
 
-      // Clear container and rebuild from DashboardState.events (last 10)
-      container.innerHTML = '';
+      // Add to state (ring buffer)
+      DashboardState.events.unshift(record);
+      if (DashboardState.events.length > 100) DashboardState.events.pop();
 
-      const recentEvents = DashboardState.events.slice(-10).reverse(); // newest first
+      const action_type = record.action_type || record.status || 'system';
+      const isAlert = ALERT_TYPES.includes(action_type);
 
-      recentEvents.forEach((evt, index) => {
-        const evtRecord = evt.record || evt;
-        const actionType = evtRecord.action_type || 'system';
-        const evtDescription = evtRecord.description || evtRecord.task_summary || 'Event';
-        const created = evtRecord.created || new Date().toISOString();
+      let ctx = {};
+      try {
+        ctx = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
+      } catch(e) {
+        ctx = {};
+      }
 
-        // Parse context
-        let context = {};
-        try {
-          context = typeof evtRecord.context === "string" ? JSON.parse(evtRecord.context || "{}") : (evtRecord.context || {});
-        } catch (e) {
-          context = {};
-        }
+      let color = EVENT_COLORS[action_type] || 'var(--cyan)';
 
-        // Determine event type config
-        let evtTypeConfig = EVENT_TYPES[actionType] || EVENT_TYPES.system;
+      // Special case: ci_check color depends on result
+      if (action_type === 'ci_check') {
+        color = ctx.result === 'success' ? 'var(--green)' : 'var(--red)';
+      }
 
-        // Special handling for ci_check
-        if (actionType === 'ci_check') {
-          if (context.result === 'failure' || context.result === 'failed') {
-            evtTypeConfig = { color: '#FF0040', label: 'CI ✗' };
-          } else {
-            evtTypeConfig = { color: '#00FF88', label: 'CI ✓' };
-          }
-        }
+      const ts = record.created ? new Date(record.created).toLocaleTimeString('en-US', { hour12: false }) : '';
+      const desc = record.description || record.task_summary || 'No description';
+      const preview = contextPreview(action_type, ctx);
 
-        // Determine if critical
-        const evtIsCritical = actionType === 'escalation' || actionType === 'sre_alert';
+      // Check if fresh (< 60s old)
+      const isFresh = record.created && (Date.now() - new Date(record.created).getTime()) < 60000;
 
-        // Extract time
-        const evtTime = new Date(created).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      if (isAlert) {
+        card.classList.add('alert-card');
+        if (color === 'var(--red)' || color === '#FF0040') card.classList.add('alert-red');
+        else card.classList.add('alert-amber');
+        if (isFresh) card.classList.add('fresh-alert');
+      }
+      card.style.borderLeftColor = color;
 
-        // Truncate description to 2 lines max (~30 chars per line)
-        const maxLength = 60;
-        const truncatedDesc = evtDescription.length > maxLength
-          ? evtDescription.substring(0, maxLength - 3) + '...'
-          : evtDescription;
+      card.innerHTML = `
+        <div>
+          <span class="event-badge" style="background-color: ${color}; color: #000;">${action_type.toUpperCase()}</span>
+          <span class="event-time">${ts}</span>
+        </div>
+        <div class="event-desc">${desc}</div>
+        <div class="event-context">${preview}</div>
+      `;
 
-        // Card dimensions and position
-        const cardX = 690;
-        const cardY = 110 + (index * 80);
-        const cardWidth = 260;
-        const cardHeight = 72;
-
-        // Card group
-        const card = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        card.setAttribute('class', 'event-card');
-        card.setAttribute('data-event-id', evtRecord.id || index);
-        card.style.cursor = 'pointer';
-
-        if (evtIsCritical) {
-          card.style.filter = 'drop-shadow(0 0 6px rgba(255,0,64,0.5))';
-        }
-
-        // Background rect
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', cardX.toString());
-        rect.setAttribute('y', cardY.toString());
-        rect.setAttribute('width', cardWidth.toString());
-        rect.setAttribute('height', cardHeight.toString());
-        rect.setAttribute('rx', '4');
-        rect.setAttribute('fill', 'var(--bg-panel)');
-        rect.setAttribute('stroke', 'var(--border)');
-        rect.setAttribute('stroke-width', '1');
-        card.appendChild(rect);
-
-        // Left border (colored by event type)
-        const leftBorder = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        leftBorder.setAttribute('x', cardX.toString());
-        leftBorder.setAttribute('y', cardY.toString());
-        leftBorder.setAttribute('width', '3');
-        leftBorder.setAttribute('height', cardHeight.toString());
-        leftBorder.setAttribute('rx', '4');
-        leftBorder.setAttribute('fill', evtTypeConfig.color);
-        card.appendChild(leftBorder);
-
-        // Type badge
-        const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        badge.setAttribute('x', (cardX + 8).toString());
-        badge.setAttribute('y', (cardY + 15).toString());
-        badge.setAttribute('font-family', 'Share Tech Mono');
-        badge.setAttribute('font-size', '9');
-        badge.setAttribute('fill', evtTypeConfig.color);
-        badge.setAttribute('font-weight', 'bold');
-        badge.textContent = evtTypeConfig.label;
-        card.appendChild(badge);
-
-        // Time
-        const timeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        timeText.setAttribute('x', (cardX + cardWidth - 8).toString());
-        timeText.setAttribute('y', (cardY + 15).toString());
-        timeText.setAttribute('font-family', 'Share Tech Mono');
-        timeText.setAttribute('font-size', '8');
-        timeText.setAttribute('fill', 'var(--text-dim)');
-        timeText.setAttribute('text-anchor', 'end');
-        timeText.textContent = evtTime;
-        card.appendChild(timeText);
-
-        // Description (2 lines max, ~30 chars each)
-        const line1 = truncatedDesc.substring(0, 30);
-        const line2 = truncatedDesc.length > 30 ? truncatedDesc.substring(30, 60) : '';
-
-        const desc1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        desc1.setAttribute('x', (cardX + 8).toString());
-        desc1.setAttribute('y', (cardY + 32).toString());
-        desc1.setAttribute('font-family', 'Share Tech Mono');
-        desc1.setAttribute('font-size', '9');
-        desc1.setAttribute('fill', 'var(--text-primary)');
-        desc1.textContent = line1;
-        card.appendChild(desc1);
-
-        if (line2) {
-          const desc2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          desc2.setAttribute('x', (cardX + 8).toString());
-          desc2.setAttribute('y', (cardY + 44).toString());
-          desc2.setAttribute('font-family', 'Share Tech Mono');
-          desc2.setAttribute('font-size', '9');
-          desc2.setAttribute('fill', 'var(--text-primary)');
-          desc2.textContent = line2;
-          card.appendChild(desc2);
-        }
-
-        // "Click to expand" hint
-        const hint = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        hint.setAttribute('x', (cardX + 8).toString());
-        hint.setAttribute('y', (cardY + 62).toString());
-        hint.setAttribute('font-family', 'Share Tech Mono');
-        hint.setAttribute('font-size', '7');
-        hint.setAttribute('fill', 'var(--cyan)');
-        hint.setAttribute('opacity', '0.6');
-        hint.textContent = 'click for details';
-        card.appendChild(hint);
-
-        // Click handler to show modal
-        card.addEventListener('click', () => {
-          showEventDetailModal(evtRecord, evtTypeConfig);
-        });
-
-        container.appendChild(card);
+      card.addEventListener('click', () => {
+        showEventDetail(record, action_type, color);
       });
+
+      container.insertBefore(card, container.firstChild);
     }
 
-    // Event detail modal function
-    function showEventDetailModal(record, typeConfig) {
-      // Create or reuse modal overlay
+    function showEventDetail(record, action_type, color) {
+      // Create modal overlay
       let modal = document.getElementById("event-detail-modal");
       if (!modal) {
         modal = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -1110,7 +1037,7 @@
       overlay.addEventListener("click", () => { modal.innerHTML = ""; });
       modal.appendChild(overlay);
 
-      // Detail panel (centered)
+      // Detail panel
       const panel = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
       // Background rect
@@ -1145,7 +1072,7 @@
       badgeRect.setAttribute("width", "120");
       badgeRect.setAttribute("height", "30");
       badgeRect.setAttribute("rx", "4");
-      badgeRect.setAttribute("fill", typeConfig.color);
+      badgeRect.setAttribute("fill", color);
       badgeRect.setAttribute("opacity", "0.2");
       panel.appendChild(badgeRect);
 
@@ -1154,10 +1081,10 @@
       badgeText.setAttribute("y", "192");
       badgeText.setAttribute("font-family", "Orbitron");
       badgeText.setAttribute("font-size", "14");
-      badgeText.setAttribute("fill", typeConfig.color);
+      badgeText.setAttribute("fill", color);
       badgeText.setAttribute("font-weight", "bold");
       badgeText.setAttribute("text-anchor", "middle");
-      badgeText.textContent = typeConfig.label;
+      badgeText.textContent = action_type.toUpperCase();
       panel.appendChild(badgeText);
 
       // Timestamp
@@ -1192,7 +1119,6 @@
       descText.textContent = "Description:";
       panel.appendChild(descText);
 
-      // Description value (word wrap)
       const descLines = wrapText(description, 70);
       descLines.forEach((line, i) => {
         const lineText = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -1217,7 +1143,6 @@
       contextTitle.textContent = "Context:";
       panel.appendChild(contextTitle);
 
-      // Parse and display context
       let ctx = {};
       try {
         ctx = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
@@ -1249,15 +1174,12 @@
         });
 
         ctxY += (valueLines.length * 14) + 8;
-
-        // Stop if we're running out of space
         if (ctxY > 700) break;
       }
 
       modal.appendChild(panel);
     }
 
-    // Helper function to wrap text
     function wrapText(text, maxChars) {
       const words = text.split(' ');
       const lines = [];
@@ -1276,17 +1198,16 @@
       return lines.length > 0 ? lines : [''];
     }
 
-    // Seed activity stream from REST API
     async function seedActivityStream() {
       try {
         const r = await fetch(`http://${window.location.hostname}:8878/events/recent`);
         if (!r.ok) return;
         const events = await r.json();
 
-        // Add all events to state
         for (const ev of events) {
           appendToEventStream(ev);
         }
+        console.log('[ActivityStream] Seeded with', events.length, 'events');
       } catch(e) {
         console.warn('[ActivityStream] Failed to seed:', e);
       }
@@ -1326,7 +1247,6 @@
             eventSource.close();
           }
 
-          // Reconnect after 5 seconds
           setTimeout(connectSSE, 5000);
         };
       } catch (err) {
@@ -1373,7 +1293,6 @@
         return;
       }
 
-      // Handle action_type based events
       if (!record || !record.action_type) {
         appendToEventStream(record);
         return;
@@ -1392,15 +1311,11 @@
         case "sre_alert":
           if (!ctx.resolved) DashboardState.metrics.alerts.active++;
           break;
-        case "trello_update":
-          // Will be handled by pollTrello() — no action needed here
-          break;
       }
 
-      // Always recompute health score and re-render command bar
       DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
       renderCommandBar();
-      renderFlywheel();
+      renderPipeline();
       appendToEventStream(record);
     }
 
@@ -1412,7 +1327,6 @@
         const r = await fetch("http://" + window.location.hostname + ":8878/data");
         const d = await r.json();
 
-        // Update agent state
         if (d.agents) {
           for (const agent of d.agents) {
             DashboardState.agents[agent.id] = {
@@ -1426,19 +1340,16 @@
           }
         }
 
-        // Update stats
         if (d.stats) {
           DashboardState.stats = d.stats;
         }
 
-        // Store handoffs
         DashboardState.handoffs = d.handoffs || [];
 
-        // Recompute health score and render
         DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
         renderCommandBar();
         renderAgentGrid();
-        renderHandoffLines();
+        renderSpawnLines();
 
         DashboardState.lastUpdate = Date.now();
       } catch(e) {
@@ -1446,9 +1357,6 @@
       }
     }
 
-    // ============================================================================
-    // CI POLLING
-    // ============================================================================
     async function pollCI() {
       try {
         const r = await fetch("http://" + window.location.hostname + ":8878/ci");
@@ -1465,7 +1373,6 @@
         DashboardState.metrics.ci.lastRuns = allRuns.slice(0,10).map(r => r.status);
         DashboardState.metrics.ci.repos = d.repos;
 
-        // Recompute health score and render
         DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
         renderCommandBar();
 
@@ -1475,31 +1382,24 @@
       }
     }
 
-    // ============================================================================
-    // TRELLO POLLING
-    // ============================================================================
     async function pollTrello() {
       try {
         const r = await fetch("http://" + window.location.hostname + ":8878/trello");
         const d = await r.json();
 
-        // Sum across all boards
         const p = {backlog:0, design:0, code:0, review:0, done:0};
         for (const board of Object.values(d.boards || {})) {
           p.backlog += board["Backlog"] || 0;
           p.design += board["Design"] || 0;
-          // Code stage: multiple names across boards
           p.code += board["Code/Test"] || board["Code"] || board["🚧 In Progress"] || 0;
-          // Review stage: multiple names
           p.review += board["Review"] || board["👀 Awaiting Approval"] || 0;
           p.done += board["Done"] || 0;
         }
 
         DashboardState.metrics.pipeline = p;
-        // Store per-board breakdown for tooltip
         DashboardState.metrics.pipelineByBoard = d.boards;
         renderCommandBar();
-        renderFlywheel();
+        renderPipeline();
 
         console.log('[Trello] Updated:', p);
       } catch(e) {
@@ -1507,29 +1407,24 @@
       }
     }
 
-    // ============================================================================
-    // TOOLS POLLING
-    // ============================================================================
     async function pollTools() {
       try {
         const r = await fetch("http://" + window.location.hostname + ":8878/tools");
         const calls = await r.json();
 
-        // Group by agent, keep last 3 per agent
         const byAgent = {};
         for (const call of calls) {
           if (!byAgent[call.agent]) byAgent[call.agent] = [];
           byAgent[call.agent].push(call);
         }
 
-        // Keep only last 3 per agent
         for (const agent in byAgent) {
           byAgent[agent] = byAgent[agent].slice(-3);
         }
 
         DashboardState.toolCalls = byAgent;
         renderAgentGrid();
-        renderToolSidebar();
+        renderToolStream();
 
         console.log('[tools]', calls.length, 'calls');
       } catch(e) {
@@ -1538,371 +1433,52 @@
     }
 
     // ============================================================================
-    // FLYWHEEL PIPELINE VISUALIZATION
+    // MASTER RENDER FUNCTION
     // ============================================================================
-
-    /**
-     * Detect bottlenecks in the pipeline.
-     * A stage is a bottleneck if its count > 2× the count of the NEXT stage AND count > 2
-     */
-    function detectBottlenecks(pipeline) {
-      const stages = ["backlog", "design", "code", "review", "done"];
-      const bottlenecks = new Set();
-
-      for (let i = 0; i < stages.length - 1; i++) {
-        const curr = pipeline[stages[i]] || 0;
-        const next = pipeline[stages[i + 1]] || 0;
-        if (curr > 2 && curr > next * 2) {
-          bottlenecks.add(stages[i]);
-        }
-      }
-
-      return bottlenecks;
-    }
-
-    /**
-     * Build the flywheel SVG structure (called once on init)
-     */
-    function buildFlywheel() {
-      const zone = document.getElementById('flywheel-zone');
-      if (!zone) return;
-
-      const stages = [
-        { key: 'backlog', label: 'BACKLOG', y: 150 },
-        { key: 'design', label: 'DESIGN', y: 270 },
-        { key: 'code', label: 'CODE / TEST', y: 390 },
-        { key: 'review', label: 'REVIEW', y: 510 },
-        { key: 'done', label: 'DONE', y: 630 }
-      ];
-
-      const centerX = 1180; // Center of flywheel zone (960 + 440/2)
-      const nodeWidth = 280;
-      const nodeHeight = 70;
-
-      stages.forEach((stage, i) => {
-        // Create node group
-        const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        nodeGroup.setAttribute('id', `fw-node-${stage.key}`);
-        nodeGroup.setAttribute('class', 'fw-node');
-
-        // Background rectangle with gradient
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', centerX - nodeWidth / 2);
-        rect.setAttribute('y', stage.y);
-        rect.setAttribute('width', nodeWidth);
-        rect.setAttribute('height', nodeHeight);
-        rect.setAttribute('rx', '10');
-        rect.setAttribute('fill', 'var(--bg-secondary)');
-        rect.setAttribute('stroke', 'var(--cyan)');
-        rect.setAttribute('stroke-width', '1.5');
-        rect.setAttribute('filter', 'url(#glow)');
-        rect.setAttribute('id', `fw-rect-${stage.key}`);
-        rect.style.transition = 'stroke 0.3s ease, filter 0.3s ease';
-        nodeGroup.appendChild(rect);
-
-        // Label text
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('x', centerX);
-        label.setAttribute('y', stage.y + 25);
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('fill', 'var(--text-dim)');
-        label.setAttribute('font-size', '11');
-        label.setAttribute('class', 'heading');
-        label.textContent = stage.label;
-        nodeGroup.appendChild(label);
-
-        // Count text
-        const count = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        count.setAttribute('id', `fw-count-${stage.key}`);
-        count.setAttribute('x', centerX);
-        count.setAttribute('y', stage.y + 55);
-        count.setAttribute('text-anchor', 'middle');
-        count.setAttribute('fill', 'var(--cyan)');
-        count.setAttribute('font-size', '28');
-        count.setAttribute('class', 'data');
-        count.textContent = '0';
-        count.style.transition = 'fill 0.3s ease';
-        nodeGroup.appendChild(count);
-
-        // Bottleneck badge (hidden by default)
-        const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        badge.setAttribute('id', `fw-badge-${stage.key}`);
-        badge.setAttribute('x', centerX);
-        badge.setAttribute('y', stage.y + 18);
-        badge.setAttribute('text-anchor', 'middle');
-        badge.setAttribute('fill', 'var(--amber)');
-        badge.setAttribute('font-size', '9');
-        badge.setAttribute('opacity', '0');
-        badge.textContent = '⚠ BOTTLENECK';
-        badge.style.transition = 'opacity 0.3s ease';
-        nodeGroup.appendChild(badge);
-
-        zone.appendChild(nodeGroup);
-
-        // Create connecting line and particles (except for the last stage)
-        if (i < stages.length - 1) {
-          const nextStage = stages[i + 1];
-          const y1 = stage.y + nodeHeight;
-          const y2 = nextStage.y;
-
-          // Animated dashed line
-          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          line.setAttribute('id', `fw-line-${stage.key}-${nextStage.key}`);
-          line.setAttribute('x1', centerX);
-          line.setAttribute('y1', y1);
-          line.setAttribute('x2', centerX);
-          line.setAttribute('y2', y2);
-          line.setAttribute('stroke', 'var(--cyan)');
-          line.setAttribute('stroke-width', '1.5');
-          line.setAttribute('stroke-dasharray', '6,4');
-          line.setAttribute('opacity', '0.6');
-          line.style.transition = 'stroke 0.3s ease';
-
-          const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-          animate.setAttribute('attributeName', 'stroke-dashoffset');
-          animate.setAttribute('from', '0');
-          animate.setAttribute('to', '-20');
-          animate.setAttribute('dur', '1.5s');
-          animate.setAttribute('repeatCount', 'indefinite');
-          line.appendChild(animate);
-
-          zone.appendChild(line);
-
-          // Flow particles (3 circles with staggered animation)
-          for (let p = 0; p < 3; p++) {
-            const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            particle.setAttribute('id', `fw-particle-${stage.key}-${nextStage.key}-${p}`);
-            particle.setAttribute('cx', centerX);
-            particle.setAttribute('cy', y1);
-            particle.setAttribute('r', '2.5');
-            particle.setAttribute('fill', 'var(--cyan)');
-            particle.setAttribute('opacity', '0.8');
-            particle.style.transition = 'fill 0.3s ease';
-
-            // Staggered animation (each particle starts 0.67s apart)
-            const animY = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-            animY.setAttribute('attributeName', 'cy');
-            animY.setAttribute('from', y1);
-            animY.setAttribute('to', y2);
-            animY.setAttribute('dur', '2s');
-            animY.setAttribute('begin', `${p * 0.67}s`);
-            animY.setAttribute('repeatCount', 'indefinite');
-            particle.appendChild(animY);
-
-            // Fade in/out
-            const animOpacity = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-            animOpacity.setAttribute('attributeName', 'opacity');
-            animOpacity.setAttribute('values', '0;0.8;0.8;0');
-            animOpacity.setAttribute('keyTimes', '0;0.1;0.9;1');
-            animOpacity.setAttribute('dur', '2s');
-            animOpacity.setAttribute('begin', `${p * 0.67}s`);
-            animOpacity.setAttribute('repeatCount', 'indefinite');
-            particle.appendChild(animOpacity);
-
-            zone.appendChild(particle);
-          }
-        }
-      });
-
-      console.log('[Flywheel] Built pipeline visualization');
-    }
-
-    /**
-     * Render/update the flywheel with current pipeline data
-     */
-    function renderFlywheel() {
-      const pipeline = DashboardState.metrics.pipeline;
-      const bottlenecks = detectBottlenecks(pipeline);
-      const stages = ["backlog", "design", "code", "review", "done"];
-
-      stages.forEach((stage, i) => {
-        const count = pipeline[stage] || 0;
-        const isBottleneck = bottlenecks.has(stage);
-        const isEmpty = count === 0;
-
-        // Update count
-        const countEl = document.getElementById(`fw-count-${stage}`);
-        if (countEl) {
-          countEl.textContent = count;
-
-          // Color based on state
-          if (stage === 'done') {
-            countEl.setAttribute('fill', 'var(--green)');
-          } else if (isBottleneck) {
-            countEl.setAttribute('fill', 'var(--amber)');
-          } else if (isEmpty) {
-            countEl.setAttribute('fill', 'var(--text-dim)');
-          } else {
-            countEl.setAttribute('fill', 'var(--cyan)');
-          }
-        }
-
-        // Update node border and glow
-        const rectEl = document.getElementById(`fw-rect-${stage}`);
-        if (rectEl) {
-          if (stage === 'done') {
-            rectEl.setAttribute('stroke', 'var(--green)');
-            rectEl.style.filter = 'drop-shadow(0 0 6px var(--green))';
-          } else if (isBottleneck) {
-            rectEl.setAttribute('stroke', 'var(--amber)');
-            rectEl.style.filter = 'drop-shadow(0 0 8px var(--amber))';
-          } else if (isEmpty) {
-            rectEl.setAttribute('stroke', 'var(--cyan-dim)');
-            rectEl.style.filter = 'none';
-          } else {
-            rectEl.setAttribute('stroke', 'var(--cyan)');
-            rectEl.style.filter = 'drop-shadow(0 0 4px var(--cyan))';
-          }
-        }
-
-        // Update bottleneck badge
-        const badgeEl = document.getElementById(`fw-badge-${stage}`);
-        if (badgeEl) {
-          badgeEl.setAttribute('opacity', isBottleneck ? '1' : '0');
-        }
-
-        // Update connecting lines and particles
-        if (i < stages.length - 1) {
-          const nextStage = stages[i + 1];
-          const lineColor = isBottleneck ? 'var(--amber)' : 'var(--cyan)';
-
-          const lineEl = document.getElementById(`fw-line-${stage}-${nextStage}`);
-          if (lineEl) {
-            lineEl.setAttribute('stroke', lineColor);
-          }
-
-          // Update particle colors
-          for (let p = 0; p < 3; p++) {
-            const particleEl = document.getElementById(`fw-particle-${stage}-${nextStage}-${p}`);
-            if (particleEl) {
-              particleEl.setAttribute('fill', lineColor);
-            }
-          }
-        }
-      });
-    }
-
-    // ============================================================================
-    // HANDOFF LINES RENDERING
-    // ============================================================================
-    function renderHandoffLines() {
-      const layer = document.getElementById("handoff-lines-layer");
-      if (!layer) return;
-      // Clear existing lines
-      while (layer.firstChild) layer.removeChild(layer.firstChild);
-
-      const activeHandoffs = (DashboardState.handoffs || []).filter(h => h.active);
-      if (activeHandoffs.length === 0) return;
-
-      // Build position map from tile transforms
-      const pos = {};
-      document.querySelectorAll(".agent-tile[data-agent]").forEach(tile => {
-        const id = tile.getAttribute("data-agent");
-        const t = tile.getAttribute("transform") || "";
-        const m = t.match(/translate\(([^,]+),\s*([^)]+)\)/);
-        if (m) {
-          pos[id] = { x: parseFloat(m[1]) + 30, y: parseFloat(m[2]) + 35 };
-        }
-      });
-
-      activeHandoffs.forEach(h => {
-        const a = pos[h.from], b = pos[h.to];
-        if (!a || !b) return;
-
-        const mx = (a.x + b.x) / 2;
-        const my = Math.min(a.y, b.y) - 40;
-        const pathD = `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`;
-
-        // Dashed animated path
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", pathD);
-        path.setAttribute("stroke", "#00D4FF");
-        path.setAttribute("stroke-width", "1.5");
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke-dasharray", "6,4");
-        path.setAttribute("opacity", "0.6");
-        const dashAnim = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-        dashAnim.setAttribute("attributeName", "stroke-dashoffset");
-        dashAnim.setAttribute("from", "0");
-        dashAnim.setAttribute("to", "-20");
-        dashAnim.setAttribute("dur", "1s");
-        dashAnim.setAttribute("repeatCount", "indefinite");
-        path.appendChild(dashAnim);
-        layer.appendChild(path);
-
-        // Traveling dot
-        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        dot.setAttribute("r", "3");
-        dot.setAttribute("fill", "#00D4FF");
-        dot.setAttribute("opacity", "0.9");
-        const motionAnim = document.createElementNS("http://www.w3.org/2000/svg", "animateMotion");
-        motionAnim.setAttribute("dur", "1.5s");
-        motionAnim.setAttribute("repeatCount", "indefinite");
-        motionAnim.setAttribute("path", pathD);
-        dot.appendChild(motionAnim);
-        layer.appendChild(dot);
-
-        // Pulse glow on source tile
-        const srcTile = document.getElementById(`tile-${h.from}`);
-        if (srcTile) srcTile.classList.add("glow-hot");
-      });
+    function render() {
+      renderCommandBar();
+      renderPipeline();
+      renderAgentGrid();
+      renderSpawnLines();
+      renderToolStream();
     }
 
     // ============================================================================
     // INITIALIZATION
     // ============================================================================
     async function initDashboard() {
-      console.log('[Dashboard] Initializing ZeusOps Observability Dashboard v2');
+      console.log('[Dashboard] Initializing...');
 
-      // Set initial connection state
-      updateConnectionIndicator();
+      // Build SVG structure
+      buildPipeline();
+      buildAgentGrid();
+      buildActivityStream();
+      buildToolStream();
+      buildCommandBar();
 
-      // Build flywheel visualization structure
-      buildFlywheel();
+      // Seed data — await all polls before first render
+      await Promise.allSettled([pollAgentData(), pollCI(), pollTrello()]);
 
-      // Initial agent grid render with default states
-      renderAgentGrid();
-      renderToolStream();
+      // Force renders after data loaded
+      render();
 
-      // Await initial data polls so renders fire before SSE attempt
-      await Promise.allSettled([pollAgentData(), pollCI(), pollTrello(), pollTools()]);
+      // Seed activity stream
+      await seedActivityStream();
 
-      // Explicit renders after data is loaded
-      renderAgentGrid();
-      renderFlywheel();
-      renderCommandBar();
-
-      // Trello cache may not be ready on first start — retry after 3s if pipeline still 0
-      if (DashboardState.metrics.pipeline.backlog === 0 && DashboardState.metrics.pipeline.design === 0) {
-        setTimeout(async () => {
-          await pollTrello();
-          await pollCI();
-          renderFlywheel();
-          renderCommandBar();
-        }, 3000);
-      }
-
-      // Seed activity stream from recent events
-      seedActivityStream();
-
-      // Start SSE connection
+      // Start SSE
       connectSSE();
 
-      // Start polling
+      // Polling intervals
       setInterval(pollAgentData, 5000);
       setInterval(pollTools, 8000);
       setInterval(pollCI, 30000);
-      setInterval(pollTrello, 300000); // 5 minutes
+      setInterval(pollTrello, 300000);
 
-      console.log('[Dashboard] Ready');
+      console.log('[Dashboard] Initialization complete');
     }
 
-    // Start dashboard when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initDashboard);
-    } else {
-      initDashboard();
-    }
+    // Start the dashboard
+    initDashboard();
   </script>
 </body>
 </html>
