@@ -373,7 +373,7 @@ const AGENT_COLOR = {
   releaser:'#00FF88',coder:'#00F0FF',tester:'#F1C40F',reviewer:'#FF69B4',
   researcher:'#7B68EE','incident-manager':'#FF2244',
   'workflow-architect':'#00CED1','devops-automator':'#98FF98',
-  security:'#FF4DFF',
+  security:'#FF4DFF','tiger-team':'#FF4400',
   main:'#FF6600',zeus:'#FF4500',mctravis:'#FF8C00',obr:'#FF7F50',
 };
 
@@ -858,9 +858,10 @@ const NODE_POS = {
   architect:           {x:300, y:255},
   pm:                  {x:900, y:255},
   coder:               {x:200, y:370},
-  reviewer:            {x:430, y:370},
-  tester:              {x:660, y:370},
-  releaser:            {x:980, y:370},
+  reviewer:            {x:390, y:370},
+  tester:              {x:590, y:370},
+  'tiger-team':        {x:790, y:370},
+  releaser:            {x:990, y:370},
   sre:                 {x:260, y:505},
   'incident-manager':  {x:560, y:505},
   'devops-automator':  {x:880, y:505},
@@ -877,6 +878,7 @@ const STREAM_SIDE = {
   coder:              'left',
   reviewer:           'left',
   tester:             'right',
+  'tiger-team':       'right',
   releaser:           'right',
   sre:                'left',
   'incident-manager': 'left',
@@ -890,7 +892,7 @@ const STREAM_SIDE = {
 const AGENT_TIER = {
   manager:'COMMAND',
   architect:'ENGINEERING',pm:'ENGINEERING',coder:'ENGINEERING',
-  reviewer:'ENGINEERING',tester:'ENGINEERING',releaser:'ENGINEERING',
+  reviewer:'ENGINEERING',tester:'ENGINEERING','tiger-team':'ENGINEERING',releaser:'ENGINEERING',
   sre:'OPS','incident-manager':'OPS','devops-automator':'OPS',
   researcher:'INTEL',security:'INTEL','workflow-architect':'INTEL',
 };
@@ -907,7 +909,7 @@ const EDGES = [
   ['manager','sre'],['manager','devops-automator'],['manager','security'],
   ['architect','coder'],['architect','researcher'],['architect','workflow-architect'],
   ['architect','reviewer'],['architect','security'],
-  ['coder','tester'],['coder','reviewer'],
+  ['coder','tester'],['coder','reviewer'],['coder','tiger-team'],
   ['pm','researcher'],
   ['sre','incident-manager'],['sre','researcher'],['sre','devops-automator'],['sre','security'],
   ['incident-manager','devops-automator'],

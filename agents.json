@@ -1,16 +1,87 @@
 {
-  "_comment": "Per-agent config for ZeusOps dashboard. Add new agents here — position auto-calculated if omitted.",
-  "manager":             { "tier": "COMMAND",     "color": "#FFD700", "r": 46, "stream_side": "left" },
-  "architect":           { "tier": "ENGINEERING", "color": "#9B6BFF", "r": 40, "stream_side": "left" },
-  "pm":                  { "tier": "ENGINEERING", "color": "#00BFFF", "r": 40, "stream_side": "right" },
-  "coder":               { "tier": "ENGINEERING", "color": "#00F0FF", "r": 30, "stream_side": "left" },
-  "reviewer":            { "tier": "ENGINEERING", "color": "#FF69B4", "r": 30, "stream_side": "left" },
-  "tester":              { "tier": "ENGINEERING", "color": "#F1C40F", "r": 30, "stream_side": "right" },
-  "releaser":            { "tier": "ENGINEERING", "color": "#00FF88", "r": 30, "stream_side": "right" },
-  "sre":                 { "tier": "OPS",         "color": "#FF6B35", "r": 36, "stream_side": "left" },
-  "incident-manager":    { "tier": "OPS",         "color": "#FF2244", "r": 32, "stream_side": "left" },
-  "devops-automator":    { "tier": "OPS",         "color": "#98FF98", "r": 36, "stream_side": "right" },
-  "researcher":          { "tier": "INTEL",       "color": "#7B68EE", "r": 30, "stream_side": "left" },
-  "security":            { "tier": "INTEL",       "color": "#FF4DFF", "r": 32, "stream_side": "left" },
-  "workflow-architect":  { "tier": "INTEL",       "color": "#00CED1", "r": 30, "stream_side": "right" }
+    "_comment": "Per-agent config for ZeusOps dashboard. Add new agents here \u2014 position auto-calculated if omitted.",
+    "manager": {
+        "tier": "COMMAND",
+        "color": "#FFD700",
+        "r": 46,
+        "stream_side": "left"
+    },
+    "architect": {
+        "tier": "ENGINEERING",
+        "color": "#9B6BFF",
+        "r": 40,
+        "stream_side": "left"
+    },
+    "pm": {
+        "tier": "ENGINEERING",
+        "color": "#00BFFF",
+        "r": 40,
+        "stream_side": "right"
+    },
+    "coder": {
+        "tier": "ENGINEERING",
+        "color": "#00F0FF",
+        "r": 30,
+        "stream_side": "left"
+    },
+    "reviewer": {
+        "tier": "ENGINEERING",
+        "color": "#FF69B4",
+        "r": 30,
+        "stream_side": "left"
+    },
+    "tester": {
+        "tier": "ENGINEERING",
+        "color": "#F1C40F",
+        "r": 30,
+        "stream_side": "right"
+    },
+    "releaser": {
+        "tier": "ENGINEERING",
+        "color": "#00FF88",
+        "r": 30,
+        "stream_side": "right"
+    },
+    "sre": {
+        "tier": "OPS",
+        "color": "#FF6B35",
+        "r": 36,
+        "stream_side": "left"
+    },
+    "incident-manager": {
+        "tier": "OPS",
+        "color": "#FF2244",
+        "r": 32,
+        "stream_side": "left"
+    },
+    "devops-automator": {
+        "tier": "OPS",
+        "color": "#98FF98",
+        "r": 36,
+        "stream_side": "right"
+    },
+    "researcher": {
+        "tier": "INTEL",
+        "color": "#7B68EE",
+        "r": 30,
+        "stream_side": "left"
+    },
+    "security": {
+        "tier": "INTEL",
+        "color": "#FF4DFF",
+        "r": 32,
+        "stream_side": "left"
+    },
+    "workflow-architect": {
+        "tier": "INTEL",
+        "color": "#00CED1",
+        "r": 30,
+        "stream_side": "right"
+    },
+    "tiger-team": {
+        "tier": "ENGINEERING",
+        "color": "#FF4400",
+        "r": 30,
+        "stream_side": "right"
+    }
 }
