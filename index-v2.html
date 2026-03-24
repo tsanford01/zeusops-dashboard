@@ -69,6 +69,11 @@
       0% { r: 20; opacity: 0.8; }
       100% { r: 28; opacity: 0; }
     }
+
+    /* Smooth transitions for command bar updates */
+    #commandBar text, #commandBar circle, #commandBar rect {
+      transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
+    }
   </style>
 </head>
 <body>
@@ -147,20 +152,14 @@
       <g id="prVelocity">
         <line x1="840" y1="10" x2="840" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
         <text x="580" y="25" class="heading" fill="var(--text-dim)" font-size="10">PR VELOCITY</text>
-        <text x="580" y="48" fill="var(--green)" font-size="14" class="data">↑12 opened</text>
-        <text x="700" y="48" fill="var(--cyan)" font-size="14" class="data">←8 merged</text>
+        <!-- Dynamic content populated by renderCommandBar() -->
       </g>
 
       <!-- Panel 4: Pipeline Flow (840-1120) -->
       <g id="pipelineSummary">
         <line x1="1120" y1="10" x2="1120" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
         <text x="860" y="25" class="heading" fill="var(--text-dim)" font-size="10">PIPELINE</text>
-
-        <!-- Mini funnel bars -->
-        <rect x="860" y="35" width="60" height="6" fill="var(--cyan)" opacity="0.6"/>
-        <rect x="865" y="43" width="50" height="6" fill="var(--cyan)" opacity="0.5"/>
-        <rect x="870" y="51" width="40" height="6" fill="var(--cyan)" opacity="0.4"/>
-        <rect x="875" y="59" width="30" height="6" fill="var(--green)" opacity="0.7"/>
+        <!-- Dynamic bars populated by renderCommandBar() -->
       </g>
 
       <!-- Panel 5: Alert Zone (1120-1400) -->
@@ -405,6 +404,213 @@
     };
 
     // ============================================================================
+    // HEALTH SCORE COMPUTATION
+    // ============================================================================
+    function computeHealthScore(state) {
+      const agents = Object.values(state.agents);
+      const total = agents.length || 1;
+      const active = agents.filter(a => a.status === "active").length;
+      const agentScore = active / total;
+
+      const runs = state.metrics.ci.lastRuns.slice(-10);
+      const ciScore = runs.length ? runs.filter(r => r === "success").length / runs.length : 1;
+
+      const jobs = state.metrics.jobs;
+      const jobScore = jobs.completed24h > 0 ? jobs.successRate : 1;
+
+      const alerts = state.metrics.alerts.active;
+      const alertScore = alerts === 0 ? 1 : Math.max(0, 1 - (alerts * 0.25));
+
+      return Math.round((agentScore * 0.20 + ciScore * 0.30 + jobScore * 0.25 + alertScore * 0.25) * 100);
+    }
+
+    // ============================================================================
+    // COMMAND BAR RENDERING
+    // ============================================================================
+    function renderCommandBar() {
+      const state = DashboardState;
+      const health = state.metrics.healthScore;
+
+      // Panel 1: System Health
+      const healthText = document.querySelector('#systemPulse text.data');
+      const healthRing = document.querySelector('#systemPulse circle[r="18"]');
+      const healthPulse = document.querySelector('#systemPulse circle[stroke-width="3"]');
+
+      if (healthText) healthText.textContent = health;
+
+      // Update health color based on score
+      let healthColor = 'var(--green)';
+      if (health < 60) healthColor = 'var(--red)';
+      else if (health < 80) healthColor = 'var(--amber)';
+
+      if (healthText) healthText.setAttribute('fill', healthColor);
+      if (healthRing) healthRing.setAttribute('stroke', healthColor);
+      if (healthPulse) healthPulse.setAttribute('stroke', healthColor);
+
+      // Panel 2: CI Status
+      const ciRuns = state.metrics.ci.lastRuns.slice(-10);
+      const ciSegments = document.querySelectorAll('#ciSegments rect');
+
+      ciSegments.forEach((seg, i) => {
+        if (i < ciRuns.length) {
+          const status = ciRuns[ciRuns.length - 1 - i]; // Reverse order (newest first)
+          let color = 'var(--text-dim)';
+          let opacity = '0.2';
+
+          if (status === 'success') {
+            color = 'var(--green)';
+            opacity = '0.8';
+          } else if (status === 'failure') {
+            color = 'var(--red)';
+            opacity = '0.8';
+          }
+
+          seg.setAttribute('fill', color);
+          seg.setAttribute('opacity', opacity);
+        } else {
+          seg.setAttribute('fill', 'var(--text-dim)');
+          seg.setAttribute('opacity', '0.2');
+        }
+      });
+
+      // Add pass rate text if not exists
+      let ciPassRateText = document.getElementById('ciPassRate');
+      if (!ciPassRateText && ciRuns.length > 0) {
+        ciPassRateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        ciPassRateText.setAttribute('id', 'ciPassRate');
+        ciPassRateText.setAttribute('x', '410');
+        ciPassRateText.setAttribute('y', '70');
+        ciPassRateText.setAttribute('text-anchor', 'middle');
+        ciPassRateText.setAttribute('fill', 'var(--text-dim)');
+        ciPassRateText.setAttribute('font-size', '9');
+        ciPassRateText.classList.add('data');
+        document.getElementById('ciStatus').appendChild(ciPassRateText);
+      }
+
+      if (ciPassRateText && ciRuns.length > 0) {
+        const passCount = ciRuns.filter(r => r === 'success').length;
+        const passRate = Math.round((passCount / ciRuns.length) * 100);
+        ciPassRateText.textContent = `${passRate}% (24h)`;
+      }
+
+      // Panel 3: PR Velocity
+      const prOpened = state.metrics.pr.opened24h;
+      const prMerged = state.metrics.pr.merged24h;
+      const mergeRate = prOpened > 0 ? Math.round((prMerged / prOpened) * 100) : 0;
+
+      let prOpenedText = document.getElementById('prOpenedText');
+      let prMergedText = document.getElementById('prMergedText');
+      let prMergeRateText = document.getElementById('prMergeRate');
+
+      if (!prOpenedText) {
+        // Create PR velocity texts
+        const prVelocity = document.getElementById('prVelocity');
+
+        prOpenedText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        prOpenedText.setAttribute('id', 'prOpenedText');
+        prOpenedText.setAttribute('x', '580');
+        prOpenedText.setAttribute('y', '45');
+        prOpenedText.setAttribute('fill', 'var(--green)');
+        prOpenedText.setAttribute('font-size', '14');
+        prOpenedText.classList.add('data');
+        prVelocity.appendChild(prOpenedText);
+
+        prMergedText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        prMergedText.setAttribute('id', 'prMergedText');
+        prMergedText.setAttribute('x', '700');
+        prMergedText.setAttribute('y', '45');
+        prMergedText.setAttribute('fill', 'var(--cyan)');
+        prMergedText.setAttribute('font-size', '14');
+        prMergedText.classList.add('data');
+        prVelocity.appendChild(prMergedText);
+
+        prMergeRateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        prMergeRateText.setAttribute('id', 'prMergeRate');
+        prMergeRateText.setAttribute('x', '640');
+        prMergeRateText.setAttribute('y', '65');
+        prMergeRateText.setAttribute('fill', 'var(--text-dim)');
+        prMergeRateText.setAttribute('font-size', '9');
+        prMergeRateText.classList.add('data');
+        prVelocity.appendChild(prMergeRateText);
+      }
+
+      if (prOpenedText) prOpenedText.textContent = `↑${prOpened} opened`;
+      if (prMergedText) prMergedText.textContent = `←${prMerged} merged`;
+      if (prMergeRateText) prMergeRateText.textContent = `${mergeRate}% merge rate`;
+
+      // Panel 4: Pipeline - Mini horizontal bars
+      const pipeline = state.metrics.pipeline;
+      const maxCount = Math.max(pipeline.backlog, pipeline.design, pipeline.code, pipeline.review, pipeline.done, 1);
+
+      // Clear existing pipeline bars and recreate
+      const pipelineSummary = document.getElementById('pipelineSummary');
+      const existingBars = pipelineSummary.querySelectorAll('.pipeline-bar, .pipeline-label');
+      existingBars.forEach(el => el.remove());
+
+      const stages = [
+        { key: 'backlog', label: 'BL', x: 860 },
+        { key: 'design', label: 'DS', x: 910 },
+        { key: 'code', label: 'CD', x: 960 },
+        { key: 'review', label: 'RV', x: 1010 },
+        { key: 'done', label: 'DN', x: 1060 }
+      ];
+
+      stages.forEach((stage, i) => {
+        const count = pipeline[stage.key] || 0;
+        const height = Math.max(4, (count / maxCount) * 30);
+        const y = 60 - height;
+
+        // Check if bottleneck (>2x next stage)
+        const nextStage = stages[i + 1];
+        const nextCount = nextStage ? (pipeline[nextStage.key] || 0) : count;
+        const isBottleneck = count > nextCount * 2;
+
+        const color = isBottleneck ? 'var(--amber)' : 'var(--cyan)';
+
+        // Bar
+        const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bar.setAttribute('class', 'pipeline-bar');
+        bar.setAttribute('x', stage.x);
+        bar.setAttribute('y', y);
+        bar.setAttribute('width', '36');
+        bar.setAttribute('height', height);
+        bar.setAttribute('fill', color);
+        bar.setAttribute('opacity', '0.7');
+        bar.style.transition = 'all 0.3s ease';
+        pipelineSummary.appendChild(bar);
+
+        // Label
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('class', 'pipeline-label');
+        label.setAttribute('x', stage.x + 18);
+        label.setAttribute('y', '72');
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('fill', 'var(--text-dim)');
+        label.setAttribute('font-size', '8');
+        label.textContent = count;
+        pipelineSummary.appendChild(label);
+      });
+
+      // Panel 5: Alerts
+      const alertCount = state.metrics.alerts.active;
+      const alertText = document.getElementById('alertCount');
+
+      if (alertText) {
+        if (alertCount === 0) {
+          alertText.textContent = '0 CLEAR';
+          alertText.setAttribute('fill', 'var(--text-dim)');
+        } else {
+          alertText.textContent = `${alertCount} ALERT${alertCount > 1 ? 'S' : ''}`;
+          alertText.setAttribute('fill', 'var(--red)');
+          alertText.classList.add('pulse');
+        }
+      }
+
+      // Update connection indicator
+      updateConnectionIndicator();
+    }
+
+    // ============================================================================
     // CONNECTION STATUS INDICATOR
     // ============================================================================
     function updateConnectionIndicator() {
@@ -415,10 +621,12 @@
         dot.setAttribute('fill', 'var(--green)');
         text.setAttribute('fill', 'var(--green)');
         text.textContent = 'LIVE';
+        dot.classList.remove('pulse');
       } else {
         dot.setAttribute('fill', 'var(--red)');
         text.setAttribute('fill', 'var(--red)');
         text.textContent = 'OFFLINE';
+        dot.classList.add('pulse');
       }
     }
 
@@ -449,6 +657,7 @@
           console.log('[SSE] Connected');
           DashboardState.connected = true;
           updateConnectionIndicator();
+          renderCommandBar();
         };
 
         eventSource.onmessage = (e) => {
@@ -478,10 +687,35 @@
       }
     }
 
-    function handleSSEEvent(event) {
-      // TODO: wire up in OBS-3 through OBS-6
-      console.log('[SSE]', event);
-      appendToEventStream(event);
+    function handleSSEEvent(data) {
+      const record = data.record || data;
+      if (!record || !record.action_type) {
+        appendToEventStream(record);
+        return;
+      }
+
+      const ctx = typeof record.context === "string"
+        ? JSON.parse(record.context || "{}")
+        : (record.context || {});
+
+      switch(record.action_type) {
+        case "pr_event":
+          if (ctx.action === "opened") DashboardState.metrics.pr.opened24h++;
+          if (ctx.action === "merged") DashboardState.metrics.pr.merged24h++;
+          break;
+        case "escalation":
+        case "sre_alert":
+          if (!ctx.resolved) DashboardState.metrics.alerts.active++;
+          break;
+        case "trello_update":
+          // Will be handled by pollTrello() — no action needed here
+          break;
+      }
+
+      // Always recompute health score and re-render command bar
+      DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
+      renderCommandBar();
+      appendToEventStream(record);
     }
 
     // ============================================================================
@@ -491,11 +725,89 @@
       try {
         const r = await fetch("http://localhost:8880/data");
         const d = await r.json();
-        // TODO: wire up in OBS-5
-        console.log('[data]', d.stats);
+
+        // Update agent state
+        if (d.agents) {
+          d.agents.forEach(agent => {
+            DashboardState.agents[agent.id] = {
+              status: agent.status || 'offline',
+              lastSeen: agent.last_seen,
+              currentJob: agent.current_job,
+              successRate: agent.success_rate || 0,
+              contextPct: agent.context_pct || 0
+            };
+          });
+        }
+
+        // Update job metrics
+        if (d.stats) {
+          DashboardState.metrics.jobs.completed24h = d.stats.completedJobs || 0;
+          DashboardState.metrics.jobs.successRate = d.stats.successRate || 0;
+        }
+
+        // Recompute health score
+        DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
+        renderCommandBar();
+
         DashboardState.lastUpdate = Date.now();
       } catch(e) {
         console.warn('[data] poll failed', e);
+      }
+    }
+
+    // ============================================================================
+    // CI POLLING
+    // ============================================================================
+    async function pollCI() {
+      try {
+        const r = await fetch("http://localhost:8880/ci");
+        const d = await r.json();
+        const allRuns = [];
+
+        for (const repo of Object.values(d.repos || {})) {
+          for (const run of (repo.recentRuns || [])) {
+            allRuns.push({status: run.status, ts: run.created_at});
+          }
+        }
+
+        allRuns.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+        DashboardState.metrics.ci.lastRuns = allRuns.slice(0,10).map(r => r.status);
+        DashboardState.metrics.ci.repos = d.repos;
+
+        // Recompute health score and render
+        DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
+        renderCommandBar();
+
+        console.log('[CI] Updated:', allRuns.length, 'runs');
+      } catch(e) {
+        console.warn('[CI] poll failed', e);
+      }
+    }
+
+    // ============================================================================
+    // TRELLO POLLING
+    // ============================================================================
+    async function pollTrello() {
+      try {
+        const r = await fetch("http://localhost:8880/trello");
+        const d = await r.json();
+
+        // Sum across all boards
+        const p = {backlog:0, design:0, code:0, review:0, done:0};
+        for (const board of Object.values(d.boards || {})) {
+          p.backlog += board.Backlog || 0;
+          p.design += board.Design || 0;
+          p.code += board["Code/Test"] || board.Code || 0;
+          p.review += board.Review || 0;
+          p.done += board.Done || 0;
+        }
+
+        DashboardState.metrics.pipeline = p;
+        renderCommandBar();
+
+        console.log('[Trello] Updated:', p);
+      } catch(e) {
+        console.warn('[Trello] poll failed', e);
       }
     }
 
@@ -522,16 +834,19 @@
       // Set initial connection state
       updateConnectionIndicator();
 
+      // Initial data poll before SSE connection
+      pollCI();
+      pollTrello();
+      pollAgentData();
+
       // Start SSE connection
       connectSSE();
 
       // Start polling
       setInterval(pollAgentData, 5000);
       setInterval(pollTools, 8000);
-
-      // Initial poll
-      pollAgentData();
-      pollTools();
+      setInterval(pollCI, 30000);
+      setInterval(pollTrello, 300000); // 5 minutes
 
       console.log('[Dashboard] Ready');
     }
