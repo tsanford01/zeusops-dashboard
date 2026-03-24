@@ -1,0 +1,23 @@
+[Unit]
+Description=ZeusOps Observability Dashboard (grid-server-v2)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/travis/projects/zeusops-dashboard-v2
+ExecStart=/bin/bash -c '\
+  export PB_URL="http://localhost:8090" && \
+  export PB_ADMIN_EMAIL=$(gopass show -o deconstraint/zeusops/pocketbase/admin-email) && \
+  export PB_ADMIN_PASS=$(gopass show -o deconstraint/zeusops/pocketbase/admin-password) && \
+  export GITHUB_TOKEN=$(gopass show -o deconstraint/github/mc-full-access) && \
+  export TRELLO_API_KEY=$(gopass show -o deconstraint/trello/api-key) && \
+  export TRELLO_TOKEN=$(gopass show -o deconstraint/trello/api-token) && \
+  export GRID_V2_PORT=8878 && \
+  exec python3 /home/travis/projects/zeusops-dashboard-v2/grid-server-v2.py'
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/grid-server-v2.log
+StandardError=append:/tmp/grid-server-v2.log
+
+[Install]
+WantedBy=default.target
