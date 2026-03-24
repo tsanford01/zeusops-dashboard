@@ -74,6 +74,23 @@
     #commandBar text, #commandBar circle, #commandBar rect {
       transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
     }
+
+    /* Agent tile glow intensity classes */
+    .glow-hot {
+      filter: drop-shadow(0 0 8px #00D4FF) drop-shadow(0 0 16px rgba(0,212,255,0.6));
+    }
+    .glow-warm {
+      filter: drop-shadow(0 0 4px rgba(0,212,255,0.3));
+    }
+    .glow-dim {
+      filter: none;
+      opacity: 0.5;
+    }
+
+    /* Agent tile smooth transitions */
+    .agent-tile use, .agent-tile circle, .agent-tile text, .agent-tile rect, .agent-tile line {
+      transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+    }
   </style>
 </head>
 <body>
@@ -183,103 +200,148 @@
       <!-- 4x4 grid of agent tiles (15 agents) -->
       <g id="agentTiles">
         <!-- Row 1 -->
-        <g class="agent-tile" transform="translate(50, 130)">
+        <g id="tile-manager" class="agent-tile" data-agent="manager" transform="translate(50, 130)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MANAGER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MANAGER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(190, 130)">
+        <g id="tile-architect" class="agent-tile" data-agent="architect" transform="translate(190, 130)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">ARCHITECT</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">ARCHITECT</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(330, 130)">
+        <g id="tile-researcher" class="agent-tile" data-agent="researcher" transform="translate(330, 130)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RESEARCHER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RESEARCHER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(470, 130)">
+        <g id="tile-coder" class="agent-tile" data-agent="coder" transform="translate(470, 130)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">CODER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">CODER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(610, 130)">
+        <g id="tile-tester" class="agent-tile" data-agent="tester" transform="translate(610, 130)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">TESTER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">TESTER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
 
         <!-- Row 2 -->
-        <g class="agent-tile" transform="translate(50, 250)">
+        <g id="tile-reviewer" class="agent-tile" data-agent="reviewer" transform="translate(50, 250)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">REVIEWER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">REVIEWER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(190, 250)">
+        <g id="tile-releaser" class="agent-tile" data-agent="releaser" transform="translate(190, 250)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RELEASER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RELEASER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(330, 250)">
+        <g id="tile-pm" class="agent-tile" data-agent="pm" transform="translate(330, 250)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">PM</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">PM</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(470, 250)">
+        <g id="tile-sre" class="agent-tile" data-agent="sre" transform="translate(470, 250)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SRE</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SRE</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(610, 250)">
+        <g id="tile-incident-manager" class="agent-tile" data-agent="incident-manager" transform="translate(610, 250)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">INCIDENT</text>
-          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">MANAGER</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">INCIDENT</text>
+          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">MANAGER</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
 
         <!-- Row 3 -->
-        <g class="agent-tile" transform="translate(50, 370)">
+        <g id="tile-workflow-architect" class="agent-tile" data-agent="workflow-architect" transform="translate(50, 370)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">WORKFLOW</text>
-          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">ARCHITECT</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">WORKFLOW</text>
+          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">ARCHITECT</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(190, 370)">
+        <g id="tile-devops-automator" class="agent-tile" data-agent="devops-automator" transform="translate(190, 370)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">DEVOPS</text>
-          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">AUTOMATOR</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">DEVOPS</text>
+          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">AUTOMATOR</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(330, 370)">
+        <g id="tile-security" class="agent-tile" data-agent="security" transform="translate(330, 370)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SECURITY</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SECURITY</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(470, 370)">
+        <g id="tile-tiger-team" class="agent-tile" data-agent="tiger-team" transform="translate(470, 370)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">TIGER</text>
-          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">TEAM</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">TIGER</text>
+          <text class="agent-name2" x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">TEAM</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g class="agent-tile" transform="translate(610, 370)">
+        <g id="tile-main" class="agent-tile" data-agent="main" transform="translate(610, 370)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
-          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MAIN</text>
-          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
+          <circle class="status-dot" cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MAIN</text>
+          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
+          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
       </g>
     </g>
@@ -351,6 +413,8 @@
     // ============================================================================
     const DashboardState = {
       agents: {},        // agent_id → {status, lastSeen, currentJob, successRate, contextPct}
+      agentStats: {},    // agent_id → {done7d, failed7d, lastResult, lastTask, runningJob}
+      toolCalls: {},     // agent_id → [recent tool calls]
       metrics: {
         healthScore: 0,
         ci: { passRate1h: 0, lastRuns: [], repos: {} },
@@ -592,6 +656,109 @@
     }
 
     // ============================================================================
+    // AGENT GRID RENDERING
+    // ============================================================================
+    function renderAgentGrid() {
+      // Iterate through all agent tiles
+      const tiles = document.querySelectorAll('.agent-tile[data-agent]');
+
+      tiles.forEach(tile => {
+        const agentId = tile.getAttribute('data-agent');
+        const agent = DashboardState.agents[agentId];
+        const stats = DashboardState.agentStats[agentId];
+        const tools = DashboardState.toolCalls[agentId] || [];
+
+        // Get tile elements
+        const hexagon = tile.querySelector('use');
+        const statusDot = tile.querySelector('.status-dot');
+        const statusText = tile.querySelector('.agent-status');
+        const taskText = tile.querySelector('.agent-task');
+        const contextBar = tile.querySelector('.context-bar');
+        const perfBadge = tile.querySelector('.perf-badge');
+
+        // Default to offline if no agent data
+        if (!agent) {
+          tile.classList.remove('glow-hot', 'glow-warm');
+          tile.classList.add('glow-dim');
+          if (statusDot) statusDot.setAttribute('fill', 'var(--red)');
+          if (statusText) {
+            statusText.textContent = 'OFFLINE';
+            statusText.setAttribute('fill', 'var(--red)');
+          }
+          if (taskText) taskText.textContent = '';
+          if (contextBar) contextBar.setAttribute('opacity', '0');
+          if (perfBadge) perfBadge.setAttribute('fill', 'var(--green)'); // Assume healthy if no data
+          return;
+        }
+
+        // 1. Update glow intensity based on status
+        tile.classList.remove('glow-hot', 'glow-warm', 'glow-dim');
+        if (agent.status === 'active') {
+          tile.classList.add('glow-hot');
+        } else if (agent.status === 'idle') {
+          tile.classList.add('glow-warm');
+        } else {
+          tile.classList.add('glow-dim');
+        }
+
+        // 2. Update status dot color
+        let statusColor = 'var(--red)';
+        let statusLabel = 'OFFLINE';
+        if (agent.status === 'active') {
+          statusColor = 'var(--green)';
+          statusLabel = 'ACTIVE';
+        } else if (agent.status === 'idle') {
+          statusColor = 'var(--amber)';
+          statusLabel = 'IDLE';
+        }
+        if (statusDot) statusDot.setAttribute('fill', statusColor);
+        if (statusText) {
+          statusText.textContent = statusLabel;
+          statusText.setAttribute('fill', statusColor);
+        }
+
+        // 3. Update performance badge
+        if (stats && perfBadge) {
+          const totalJobs = (stats.done7d || 0) + (stats.failed7d || 0);
+          const successRate = totalJobs > 0 ? stats.done7d / totalJobs : 1.0;
+
+          let badgeColor = 'var(--green)';
+          if (successRate < 0.7) badgeColor = 'var(--red)';
+          else if (successRate < 0.9) badgeColor = 'var(--amber)';
+
+          perfBadge.setAttribute('fill', badgeColor);
+        } else if (perfBadge) {
+          perfBadge.setAttribute('fill', 'var(--green)'); // Default to green if no data
+        }
+
+        // 4. Update current task
+        if (taskText && stats && stats.runningJob) {
+          let task = stats.runningJob.task_summary || '';
+          if (task.length > 22) task = task.substring(0, 22) + '...';
+          taskText.textContent = task;
+        } else if (taskText) {
+          taskText.textContent = '';
+        }
+
+        // 5. Update context bar
+        if (contextBar && agent.contextPct > 5) {
+          const pct = Math.min(100, agent.contextPct);
+          const barWidth = (pct / 100) * 50; // Max width 50px (roughly the width of hexagon)
+
+          let barColor = 'var(--cyan)';
+          if (pct >= 90) barColor = 'var(--red)';
+          else if (pct >= 70) barColor = 'var(--amber)';
+
+          contextBar.setAttribute('x2', (5 + barWidth).toString());
+          contextBar.setAttribute('stroke', barColor);
+          contextBar.setAttribute('opacity', '0.8');
+        } else if (contextBar) {
+          contextBar.setAttribute('opacity', '0');
+        }
+      });
+    }
+
+    // ============================================================================
     // EVENT STREAM HANDLING
     // ============================================================================
     function appendToEventStream(event) {
@@ -650,6 +817,43 @@
 
     function handleSSEEvent(data) {
       const record = data.record || data;
+      const collection = data.collection;
+
+      // Handle agent_jobs SSE events
+      if (collection === "agent_jobs" && record.agent_name) {
+        const agentId = record.agent_name;
+        if (!DashboardState.agentStats[agentId]) {
+          DashboardState.agentStats[agentId] = {
+            done7d: 0,
+            failed7d: 0,
+            lastResult: null,
+            lastTask: null,
+            runningJob: null
+          };
+        }
+        const stats = DashboardState.agentStats[agentId];
+
+        if (record.status === "running") {
+          stats.runningJob = record;
+          stats.lastTask = record.task_summary;
+        } else if (record.status === "done") {
+          stats.done7d++;
+          stats.lastResult = "done";
+          stats.runningJob = null;
+          stats.lastTask = record.task_summary;
+        } else if (record.status === "failed") {
+          stats.failed7d++;
+          stats.lastResult = "failed";
+          stats.runningJob = null;
+          stats.lastTask = record.task_summary;
+        }
+
+        renderAgentGrid();
+        appendToEventStream(record);
+        return;
+      }
+
+      // Handle action_type based events
       if (!record || !record.action_type) {
         appendToEventStream(record);
         return;
@@ -685,31 +889,32 @@
     // ============================================================================
     async function pollAgentData() {
       try {
-        const r = await fetch("http://" + window.location.hostname + ":8880/data");
+        const r = await fetch("http://" + window.location.hostname + ":8878/data");
         const d = await r.json();
 
         // Update agent state
         if (d.agents) {
-          d.agents.forEach(agent => {
+          for (const agent of d.agents) {
             DashboardState.agents[agent.id] = {
               status: agent.status || 'offline',
-              lastSeen: agent.last_seen,
-              currentJob: agent.current_job,
-              successRate: agent.success_rate || 0,
-              contextPct: agent.context_pct || 0
+              lastActive: agent.lastActive,
+              contextPct: agent.contextPct || 0,
+              totalTokens: agent.totalTokens || 0,
+              model: agent.model,
+              sessionCount: agent.sessionCount || 0
             };
-          });
+          }
         }
 
-        // Update job metrics
+        // Update stats
         if (d.stats) {
-          DashboardState.metrics.jobs.completed24h = d.stats.completedJobs || 0;
-          DashboardState.metrics.jobs.successRate = d.stats.successRate || 0;
+          DashboardState.stats = d.stats;
         }
 
-        // Recompute health score
+        // Recompute health score and render
         DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
         renderCommandBar();
+        renderAgentGrid();
 
         DashboardState.lastUpdate = Date.now();
       } catch(e) {
@@ -779,9 +984,24 @@
     // ============================================================================
     async function pollTools() {
       try {
-        const r = await fetch("http://" + window.location.hostname + ":8880/tools");
+        const r = await fetch("http://" + window.location.hostname + ":8878/tools");
         const calls = await r.json();
-        // TODO: wire up in OBS-5
+
+        // Group by agent, keep last 3 per agent
+        const byAgent = {};
+        for (const call of calls) {
+          if (!byAgent[call.agent]) byAgent[call.agent] = [];
+          byAgent[call.agent].push(call);
+        }
+
+        // Keep only last 3 per agent
+        for (const agent in byAgent) {
+          byAgent[agent] = byAgent[agent].slice(-3);
+        }
+
+        DashboardState.toolCalls = byAgent;
+        renderAgentGrid();
+
         console.log('[tools]', calls.length, 'calls');
       } catch(e) {
         console.warn('[tools] poll failed', e);
@@ -1044,6 +1264,9 @@
 
       // Build flywheel visualization structure
       buildFlywheel();
+
+      // Initial agent grid render with default states
+      renderAgentGrid();
 
       // Initial data poll before SSE connection
       pollCI();
