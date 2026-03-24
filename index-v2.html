@@ -358,52 +358,18 @@
     </g>
 
     <!-- ZONE D: ACTIVITY STREAM (0, 780, 1400, 120) -->
-    <g id="activityStream">
-      <rect x="0" y="780" width="1400" height="120" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
-      <text x="20" y="805" class="heading" fill="var(--cyan)" font-size="14">ACTIVITY STREAM</text>
+    <g id="activity-stream-zone">
+      <rect x="0" y="780" width="1400" height="120" fill="var(--bg-secondary)"/>
+      <line x1="0" y1="780" x2="1400" y2="780" stroke="var(--cyan)" stroke-width="1" opacity="0.2"/>
+      <text x="20" y="800" font-family="Orbitron" font-size="10" fill="var(--text-dim)">ACTIVITY STREAM</text>
 
-      <!-- Horizontal scrolling event cards -->
-      <g id="eventCards">
-        <!-- Event 1 -->
-        <g class="event-card">
-          <rect x="30" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
-          <text x="40" y="838" fill="var(--text-dim)" font-size="9">14:32</text>
-          <text x="40" y="852" fill="var(--amber)" font-size="11" font-weight="bold">dispatch</text>
-          <text x="40" y="868" fill="var(--text-primary)" font-size="10">manager</text>
-        </g>
+      <!-- Clippath to hide cards beyond viewport -->
+      <clipPath id="stream-clip">
+        <rect x="0" y="810" width="1400" height="80"/>
+      </clipPath>
 
-        <!-- Event 2 -->
-        <g class="event-card">
-          <rect x="270" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
-          <text x="280" y="838" fill="var(--text-dim)" font-size="9">14:31</text>
-          <text x="280" y="852" fill="var(--green)" font-size="11" font-weight="bold">ci_check</text>
-          <text x="280" y="868" fill="var(--text-primary)" font-size="10">success</text>
-        </g>
-
-        <!-- Event 3 -->
-        <g class="event-card">
-          <rect x="510" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
-          <text x="520" y="838" fill="var(--text-dim)" font-size="9">14:30</text>
-          <text x="520" y="852" fill="var(--cyan)" font-size="11" font-weight="bold">pr_event</text>
-          <text x="520" y="868" fill="var(--text-primary)" font-size="10">merged</text>
-        </g>
-
-        <!-- Event 4 -->
-        <g class="event-card">
-          <rect x="750" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
-          <text x="760" y="838" fill="var(--text-dim)" font-size="9">14:28</text>
-          <text x="760" y="852" fill="var(--text-dim)" font-size="11" font-weight="bold">heartbeat</text>
-          <text x="760" y="868" fill="var(--text-primary)" font-size="10">system</text>
-        </g>
-
-        <!-- Event 5 -->
-        <g class="event-card">
-          <rect x="990" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
-          <text x="1000" y="838" fill="var(--text-dim)" font-size="9">14:25</text>
-          <text x="1000" y="852" fill="var(--red)" font-size="11" font-weight="bold">escalation</text>
-          <text x="1000" y="868" fill="var(--text-primary)" font-size="10">alert</text>
-        </g>
-      </g>
+      <!-- Event cards container (scrollable) -->
+      <g id="eventCards" clip-path="url(#stream-clip)"></g>
     </g>
   </svg>
 
@@ -761,6 +727,24 @@
     // ============================================================================
     // EVENT STREAM HANDLING
     // ============================================================================
+    let streamPaused = false;
+    let eventCardCount = 0;
+
+    // Event type configuration
+    const EVENT_TYPES = {
+      dispatch: { color: '#00D4FF', label: 'DISPATCH' },
+      agent_checkpoint: { color: '#00FF88', label: 'CHECKPOINT' },
+      ci_check: { color: '#00FF88', label: 'CI ✓' }, // Will be overridden based on context
+      pr_event: { color: '#7B68EE', label: 'PR' },
+      trello_update: { color: '#00D4FF', label: 'TRELLO' },
+      deploy: { color: '#00FF88', label: 'DEPLOY' },
+      heartbeat: { color: '#4A7A8A', label: 'HEARTBEAT' },
+      escalation: { color: '#FF0040', label: 'ESCALATION' },
+      sre_alert: { color: '#FFB000', label: 'SRE ALERT' },
+      tool_call: { color: '#4A7A8A', label: 'TOOL' },
+      system: { color: '#4A7A8A', label: 'SYSTEM' }
+    };
+
     function appendToEventStream(event) {
       // Add to ring buffer
       DashboardState.events.push(event);
@@ -768,8 +752,257 @@
         DashboardState.events.shift();
       }
 
-      // TODO: OBS-6 - Update visual event cards
-      console.log('[EVENT]', event);
+      if (!event) return;
+
+      const record = event.record || event;
+      const actionType = record.action_type || 'system';
+      const description = record.description || record.task_summary || 'Event';
+      const created = record.created || new Date().toISOString();
+
+      // Parse context
+      let context = {};
+      try {
+        context = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
+      } catch (e) {
+        context = {};
+      }
+
+      // Determine event type config
+      let typeConfig = EVENT_TYPES[actionType] || EVENT_TYPES.system;
+
+      // Special handling for ci_check
+      if (actionType === 'ci_check') {
+        if (context.result === 'failure' || context.result === 'failed') {
+          typeConfig = { color: '#FF0040', label: 'CI ✗' };
+        } else {
+          typeConfig = { color: '#00FF88', label: 'CI ✓' };
+        }
+      }
+
+      // Determine if critical (for glow effect)
+      const isCritical = actionType === 'escalation' || actionType === 'sre_alert';
+
+      // Extract time
+      const time = new Date(created).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+
+      // Truncate description to fit in card
+      const maxLength = 28;
+      const truncatedDesc = description.length > maxLength
+        ? description.substring(0, maxLength - 3) + '...'
+        : description;
+
+      // Create card
+      createEventCard(typeConfig, time, truncatedDesc, isCritical);
+    }
+
+    function createEventCard(typeConfig, time, description, isCritical) {
+      if (streamPaused) return;
+
+      const container = document.getElementById('eventCards');
+      if (!container) return;
+
+      // Card dimensions
+      const cardWidth = 160;
+      const cardHeight = 70;
+      const cardGap = 8;
+      const cardY = 815;
+      const totalCardWidth = cardWidth + cardGap;
+
+      // Create card group
+      const cardId = `event-card-${eventCardCount++}`;
+      const card = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      card.setAttribute('id', cardId);
+      card.setAttribute('class', 'event-card');
+      card.setAttribute('transform', `translate(-${totalCardWidth}, 0)`); // Start off-screen left
+
+      if (isCritical) {
+        card.style.filter = 'drop-shadow(0 0 6px rgba(255,0,64,0.5))';
+      }
+
+      // Background rect
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '8');
+      rect.setAttribute('y', cardY.toString());
+      rect.setAttribute('width', cardWidth.toString());
+      rect.setAttribute('height', cardHeight.toString());
+      rect.setAttribute('rx', '4');
+      rect.setAttribute('fill', 'var(--bg-panel)');
+      rect.setAttribute('stroke', 'var(--border)');
+      rect.setAttribute('stroke-width', '1');
+      card.appendChild(rect);
+
+      // Left border (colored by event type)
+      const leftBorder = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      leftBorder.setAttribute('x', '8');
+      leftBorder.setAttribute('y', cardY.toString());
+      leftBorder.setAttribute('width', '3');
+      leftBorder.setAttribute('height', cardHeight.toString());
+      leftBorder.setAttribute('rx', '4');
+      leftBorder.setAttribute('fill', typeConfig.color);
+      card.appendChild(leftBorder);
+
+      // Type badge
+      const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      badge.setAttribute('x', '16');
+      badge.setAttribute('y', (cardY + 16).toString());
+      badge.setAttribute('font-family', 'Share Tech Mono');
+      badge.setAttribute('font-size', '9');
+      badge.setAttribute('fill', typeConfig.color);
+      badge.textContent = typeConfig.label;
+      card.appendChild(badge);
+
+      // Time
+      const timeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      timeText.setAttribute('x', (cardWidth - 32).toString());
+      timeText.setAttribute('y', (cardY + 16).toString());
+      timeText.setAttribute('font-family', 'Share Tech Mono');
+      timeText.setAttribute('font-size', '9');
+      timeText.setAttribute('fill', 'var(--text-dim)');
+      timeText.setAttribute('text-anchor', 'end');
+      timeText.textContent = time;
+      card.appendChild(timeText);
+
+      // Description (multi-line, max 2 lines)
+      const words = description.split(' ');
+      let line1 = '';
+      let line2 = '';
+      let currentLine = 1;
+
+      for (const word of words) {
+        if (currentLine === 1) {
+          const testLine = line1 ? `${line1} ${word}` : word;
+          if (testLine.length <= 18) {
+            line1 = testLine;
+          } else {
+            currentLine = 2;
+            line2 = word;
+          }
+        } else if (currentLine === 2) {
+          const testLine = line2 ? `${line2} ${word}` : word;
+          if (testLine.length <= 18) {
+            line2 = testLine;
+          } else {
+            break; // Truncate
+          }
+        }
+      }
+
+      const desc1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      desc1.setAttribute('x', '16');
+      desc1.setAttribute('y', (cardY + 34).toString());
+      desc1.setAttribute('font-family', 'Share Tech Mono');
+      desc1.setAttribute('font-size', '10');
+      desc1.setAttribute('fill', 'var(--text-primary)');
+      desc1.textContent = line1;
+      card.appendChild(desc1);
+
+      if (line2) {
+        const desc2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        desc2.setAttribute('x', '16');
+        desc2.setAttribute('y', (cardY + 48).toString());
+        desc2.setAttribute('font-family', 'Share Tech Mono');
+        desc2.setAttribute('font-size', '10');
+        desc2.setAttribute('fill', 'var(--text-primary)');
+        desc2.textContent = line2;
+        card.appendChild(desc2);
+      }
+
+      // Insert at beginning of container (newest on left)
+      container.insertBefore(card, container.firstChild);
+
+      // Animate in: slide from x=-totalCardWidth to x=0
+      const startX = -totalCardWidth;
+      const endX = 8;
+      let currentX = startX;
+      const duration = 400; // ms
+      const startTime = Date.now();
+
+      function animateIn() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        currentX = startX + (endX - startX) * progress;
+        card.setAttribute('transform', `translate(${currentX}, 0)`);
+
+        if (progress < 1) {
+          requestAnimationFrame(animateIn);
+        }
+      }
+      requestAnimationFrame(animateIn);
+
+      // Shift all existing cards to the right
+      const allCards = container.querySelectorAll('.event-card');
+      allCards.forEach((existingCard, index) => {
+        if (existingCard.id === cardId) return; // Skip the new card
+
+        const currentTransform = existingCard.getAttribute('transform');
+        const match = currentTransform.match(/translate\(([-\d.]+)/);
+        const currentCardX = match ? parseFloat(match[1]) : 8;
+        const newCardX = currentCardX + totalCardWidth;
+
+        // Animate shift
+        let shiftX = currentCardX;
+        const shiftDuration = 400;
+        const shiftStartTime = Date.now();
+
+        function animateShift() {
+          const elapsed = Date.now() - shiftStartTime;
+          const progress = Math.min(elapsed / shiftDuration, 1);
+          shiftX = currentCardX + (newCardX - currentCardX) * progress;
+          existingCard.setAttribute('transform', `translate(${shiftX}, 0)`);
+
+          if (progress < 1) {
+            requestAnimationFrame(animateShift);
+          } else {
+            // Remove cards beyond viewport (x > 1400)
+            if (shiftX > 1400) {
+              existingCard.remove();
+            }
+          }
+        }
+        requestAnimationFrame(animateShift);
+      });
+
+      // Limit to 50 cards in DOM
+      const cardCount = container.querySelectorAll('.event-card').length;
+      if (cardCount > 50) {
+        const cardsToRemove = Array.from(container.querySelectorAll('.event-card')).slice(50);
+        cardsToRemove.forEach(c => c.remove());
+      }
+    }
+
+    // Pause scrolling on hover
+    document.addEventListener('DOMContentLoaded', () => {
+      const streamZone = document.getElementById('activity-stream-zone');
+      if (streamZone) {
+        streamZone.addEventListener('mouseenter', () => {
+          streamPaused = true;
+        });
+        streamZone.addEventListener('mouseleave', () => {
+          streamPaused = false;
+        });
+      }
+    });
+
+    // Seed activity stream from REST API
+    async function seedActivityStream() {
+      try {
+        const r = await fetch(`http://${window.location.hostname}:8880/events/recent`);
+        if (!r.ok) return;
+        const events = await r.json();
+
+        // Render oldest first so newest ends up on left
+        for (const ev of events.reverse()) {
+          appendToEventStream(ev);
+          // Small delay between cards for visual effect
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch(e) {
+        console.warn('[ActivityStream] Failed to seed:', e);
+      }
     }
 
     // ============================================================================
@@ -1272,6 +1505,9 @@
       pollCI();
       pollTrello();
       pollAgentData();
+
+      // Seed activity stream from recent events
+      seedActivityStream();
 
       // Start SSE connection
       connectSSE();

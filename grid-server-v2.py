@@ -1052,6 +1052,32 @@ class GridHandler(BaseHTTPRequestHandler):
             except BrokenPipeError:
                 pass
 
+        elif path == "/events/recent":
+            # Fetch last 20 manager_log records from PocketBase
+            try:
+                token = get_pb_token()
+                url = f"{PB_URL}/api/collections/manager_log/records?sort=-created&perPage=20"
+                req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json.loads(resp.read())
+                items = data.get("items", [])
+                body = json.dumps(items).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as e:
+                log(f"[/events/recent] Error: {e}")
+                body = json.dumps([]).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+
         elif path == "/events/stream":
             # SSE endpoint
             try:
@@ -1167,7 +1193,7 @@ def main():
 
     server = QuietHTTPServer(("0.0.0.0", SERVER_PORT), GridHandler)
     log(f"ZeusOps Grid Server v2 → http://localhost:{SERVER_PORT}")
-    log(f"Endpoints: /data /agents /tools /check-pid /ci /trello /events/stream")
+    log(f"Endpoints: /data /agents /tools /check-pid /ci /trello /events/recent /events/stream")
 
     try:
         server.serve_forever()
