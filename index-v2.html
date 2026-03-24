@@ -1872,6 +1872,16 @@
       renderFlywheel();
       renderCommandBar();
 
+      // Trello cache may not be ready on first start — retry after 3s if pipeline still 0
+      if (DashboardState.metrics.pipeline.backlog === 0 && DashboardState.metrics.pipeline.design === 0) {
+        setTimeout(async () => {
+          await pollTrello();
+          await pollCI();
+          renderFlywheel();
+          renderCommandBar();
+        }, 3000);
+      }
+
       // Seed activity stream from recent events
       seedActivityStream();
 
