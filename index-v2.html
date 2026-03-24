@@ -1633,11 +1633,12 @@
 
       // Build SVG structure
       buildPipeline();
-      renderLabelFilter();
       buildAgentGrid();
       buildActivityStream();
       buildToolStream();
       buildCommandBar();
+      // Label filter after DOM is built
+      try { renderLabelFilter(); } catch(e) { console.warn('[labelFilter]', e.message); }
 
       // Seed data — await all polls before first render
       await Promise.allSettled([pollAgentData(), pollCI(), pollTrello()]);
