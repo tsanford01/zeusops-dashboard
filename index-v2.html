@@ -401,7 +401,13 @@
       },
       events: [],        // ring buffer, max 100
       connected: false,
-      lastUpdate: null
+      lastUpdate: null,
+      labelFilter: {
+        enabled: false,
+        selectedIds: [],
+        availableLabels: []
+      },
+      trelloCards: {}
     };
 
     // ============================================================================
@@ -1219,7 +1225,11 @@
         if (!r.ok) return;
         const events = await r.json();
 
-        for (const ev of events) {
+        // Seed with non-CI events first (more interesting), then most recent CI
+        const nonCI = events.filter(e => e.action_type !== 'ci_check');
+        const ciOnly = events.filter(e => e.action_type === 'ci_check').slice(0, 3);
+        const toShow = [...nonCI, ...ciOnly].sort((a,b) => new Date(a.created) - new Date(b.created));
+        for (const ev of toShow) {
           appendToEventStream(ev);
         }
         console.log('[ActivityStream] Seeded with', events.length, 'events');
