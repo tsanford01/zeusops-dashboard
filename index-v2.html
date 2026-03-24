@@ -166,18 +166,18 @@
       font-style: italic;
     }
 
-    /* Tool Stream Horizontal Scroll */
+    /* Tool Stream Vertical Scroll */
     .tool-scroll {
       width: 100%;
       height: 100%;
-      overflow-x: auto;
-      overflow-y: hidden;
-      white-space: nowrap;
-      padding: 10px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      white-space: normal;
+      padding: 6px 8px;
     }
 
     .tool-scroll::-webkit-scrollbar {
-      height: 6px;
+      width: 4px;
     }
 
     .tool-scroll::-webkit-scrollbar-track {
@@ -190,14 +190,14 @@
     }
 
     .tool-card {
-      display: inline-block;
-      width: 200px;
-      height: 85px;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
       background: var(--bg-panel);
       border-left: 2px solid var(--cyan);
       border-radius: 4px;
       padding: 8px;
-      margin-right: 8px;
+      margin-bottom: 4px;
       vertical-align: top;
     }
 
@@ -355,25 +355,26 @@
     </g>
 
     <!-- Activity Stream Zone (x=900, y=70, w=500, h=720) -->
+    <!-- Activity Stream (x=900, y=70, w=250) -->
     <g id="activity-zone">
-      <rect x="900" y="70" width="500" height="720" fill="var(--bg-panel)" />
+      <rect x="900" y="70" width="250" height="720" fill="var(--bg-panel)" />
       <line x1="900" y1="70" x2="900" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
+      <line x1="1150" y1="70" x2="1150" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
       <text x="910" y="90" font-family="Orbitron" font-size="10" fill="var(--cyan)">ACTIVITY</text>
 
-      <!-- Scrollable container using foreignObject -->
-      <foreignObject x="900" y="100" width="500" height="690">
+      <foreignObject x="900" y="100" width="250" height="690">
         <div xmlns="http://www.w3.org/1999/xhtml" class="activity-scroll" id="activity-scroll">
           <!-- Event cards will be inserted here -->
         </div>
       </foreignObject>
     </g>
 
-    <!-- Tool Stream Zone (x=0, y=790, w=1400, h=110) -->
+    <!-- Tool Stream Panel (x=1150, y=70, w=250) — vertical double column -->
     <g id="tool-stream-zone">
-      <line x1="0" y1="790" x2="1400" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
-      <text x="10" y="808" font-family="Orbitron" font-size="9" fill="var(--cyan)">TOOL STREAM</text>
+      <rect x="1150" y="70" width="250" height="720" fill="var(--bg-secondary)" />
+      <text x="1160" y="90" font-family="Orbitron" font-size="10" fill="var(--cyan)">TOOL STREAM</text>
 
-      <foreignObject x="0" y="820" width="1400" height="80">
+      <foreignObject x="1150" y="100" width="250" height="690">
         <div xmlns="http://www.w3.org/1999/xhtml" class="tool-scroll" id="tool-scroll">
           <div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 10px;">NO RECENT TOOL ACTIVITY</div>
         </div>
