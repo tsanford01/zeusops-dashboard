@@ -192,15 +192,28 @@
       </g>
     </g>
 
-    <!-- ZONE B: AGENT GRID (0, 80, 770, 700) -->
-    <g id="agentGrid">
-      <rect x="0" y="80" width="770" height="700" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
-      <text x="20" y="105" class="heading" fill="var(--cyan)" font-size="14">AGENT GRID</text>
+    <!-- ZONE B: TOOL STREAM SIDEBAR (0, 80, 120, 820) -->
+    <g id="toolStream">
+      <rect x="0" y="80" width="120" height="820" fill="var(--bg-panel)" stroke="none"/>
+      <line x1="120" y1="80" x2="120" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.3"/>
+      <text x="10" y="100" class="heading" fill="var(--cyan)" font-size="9">TOOLS</text>
 
-      <!-- 4x4 grid of agent tiles (15 agents) -->
+      <!-- Tool entries container -->
+      <g id="toolEntries"></g>
+
+      <!-- Connection lines to agent tiles -->
+      <g id="toolAgentConnections"></g>
+    </g>
+
+    <!-- ZONE C: AGENT GRID (120, 80, 560, 820) -->
+    <g id="agentGrid">
+      <rect x="120" y="80" width="560" height="820" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
+      <text x="140" y="105" class="heading" fill="var(--cyan)" font-size="14">AGENT GRID</text>
+
+      <!-- 3x5 grid of agent tiles (15 agents) -->
       <g id="agentTiles">
         <!-- Row 1 -->
-        <g id="tile-manager" class="agent-tile" data-agent="manager" transform="translate(50, 130)">
+        <g id="tile-manager" class="agent-tile" data-agent="manager" transform="translate(190, 150)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -209,7 +222,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-architect" class="agent-tile" data-agent="architect" transform="translate(190, 130)">
+        <g id="tile-architect" class="agent-tile" data-agent="architect" transform="translate(350, 150)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -218,7 +231,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-researcher" class="agent-tile" data-agent="researcher" transform="translate(330, 130)">
+        <g id="tile-researcher" class="agent-tile" data-agent="researcher" transform="translate(510, 150)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -227,7 +240,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-coder" class="agent-tile" data-agent="coder" transform="translate(470, 130)">
+        <g id="tile-coder" class="agent-tile" data-agent="coder" transform="translate(190, 290)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -236,7 +249,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-tester" class="agent-tile" data-agent="tester" transform="translate(610, 130)">
+        <g id="tile-tester" class="agent-tile" data-agent="tester" transform="translate(350, 290)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -247,7 +260,7 @@
         </g>
 
         <!-- Row 2 -->
-        <g id="tile-reviewer" class="agent-tile" data-agent="reviewer" transform="translate(50, 250)">
+        <g id="tile-reviewer" class="agent-tile" data-agent="reviewer" transform="translate(510, 290)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -256,7 +269,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-releaser" class="agent-tile" data-agent="releaser" transform="translate(190, 250)">
+        <g id="tile-releaser" class="agent-tile" data-agent="releaser" transform="translate(190, 430)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -265,7 +278,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-pm" class="agent-tile" data-agent="pm" transform="translate(330, 250)">
+        <g id="tile-pm" class="agent-tile" data-agent="pm" transform="translate(350, 430)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -274,7 +287,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-sre" class="agent-tile" data-agent="sre" transform="translate(470, 250)">
+        <g id="tile-sre" class="agent-tile" data-agent="sre" transform="translate(510, 430)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -283,7 +296,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-incident-manager" class="agent-tile" data-agent="incident-manager" transform="translate(610, 250)">
+        <g id="tile-incident-manager" class="agent-tile" data-agent="incident-manager" transform="translate(190, 570)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -295,7 +308,7 @@
         </g>
 
         <!-- Row 3 -->
-        <g id="tile-workflow-architect" class="agent-tile" data-agent="workflow-architect" transform="translate(50, 370)">
+        <g id="tile-workflow-architect" class="agent-tile" data-agent="workflow-architect" transform="translate(350, 570)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -305,7 +318,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-devops-automator" class="agent-tile" data-agent="devops-automator" transform="translate(190, 370)">
+        <g id="tile-devops-automator" class="agent-tile" data-agent="devops-automator" transform="translate(510, 570)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -315,7 +328,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-security" class="agent-tile" data-agent="security" transform="translate(330, 370)">
+        <g id="tile-security" class="agent-tile" data-agent="security" transform="translate(190, 710)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -324,7 +337,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-tiger-team" class="agent-tile" data-agent="tiger-team" transform="translate(470, 370)">
+        <g id="tile-tiger-team" class="agent-tile" data-agent="tiger-team" transform="translate(350, 710)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -334,7 +347,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-main" class="agent-tile" data-agent="main" transform="translate(610, 370)">
+        <g id="tile-main" class="agent-tile" data-agent="main" transform="translate(510, 710)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -346,30 +359,26 @@
       </g>
     </g>
 
-    <!-- ZONE C: FLYWHEEL (770, 80, 630, 700) -->
+    <!-- ZONE D: ACTIVITY STREAM (680, 80, 280, 820) -->
+    <g id="activity-stream-zone">
+      <rect x="680" y="80" width="280" height="820" fill="var(--bg-panel)"/>
+      <line x1="680" y1="80" x2="680" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.3"/>
+      <line x1="960" y1="80" x2="960" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.3"/>
+      <text x="690" y="100" font-family="Orbitron" font-size="9" fill="var(--cyan)">ACTIVITY</text>
+
+      <!-- Vertical event cards container -->
+      <g id="eventCards"></g>
+    </g>
+
+    <!-- ZONE E: FLYWHEEL (960, 80, 440, 820) -->
     <g id="flywheel">
-      <rect x="770" y="80" width="630" height="700" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
-      <text x="790" y="105" class="heading" fill="var(--cyan)" font-size="14">PIPELINE FLOW</text>
+      <rect x="960" y="80" width="440" height="820" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
+      <text x="980" y="105" class="heading" fill="var(--cyan)" font-size="14">PIPELINE FLOW</text>
       <!-- Decorative underline -->
-      <line x1="790" y1="110" x2="920" y2="110" stroke="var(--cyan)" stroke-width="1" opacity="0.5"/>
+      <line x1="980" y1="110" x2="1110" y2="110" stroke="var(--cyan)" stroke-width="1" opacity="0.5"/>
 
       <!-- Vertical pipeline visualization (dynamically built) -->
       <g id="flywheel-zone"></g>
-    </g>
-
-    <!-- ZONE D: ACTIVITY STREAM (0, 780, 1400, 120) -->
-    <g id="activity-stream-zone">
-      <rect x="0" y="780" width="1400" height="120" fill="var(--bg-secondary)"/>
-      <line x1="0" y1="780" x2="1400" y2="780" stroke="var(--cyan)" stroke-width="1" opacity="0.2"/>
-      <text x="20" y="800" font-family="Orbitron" font-size="10" fill="var(--text-dim)">ACTIVITY STREAM</text>
-
-      <!-- Clippath to hide cards beyond viewport -->
-      <clipPath id="stream-clip">
-        <rect x="0" y="810" width="1400" height="80"/>
-      </clipPath>
-
-      <!-- Event cards container (scrollable) -->
-      <g id="eventCards" clip-path="url(#stream-clip)"></g>
     </g>
   </svg>
 
@@ -725,9 +734,148 @@
     }
 
     // ============================================================================
+    // TOOL STREAM SIDEBAR
+    // ============================================================================
+    function renderToolStream() {
+      const toolEntries = document.getElementById('toolEntries');
+      const connections = document.getElementById('toolAgentConnections');
+      if (!toolEntries || !connections) return;
+
+      // Clear existing content
+      toolEntries.innerHTML = '';
+      connections.innerHTML = '';
+
+      // Flatten all tool calls across agents, sort by timestamp (newest first)
+      const allTools = [];
+      for (const agent in DashboardState.toolCalls) {
+        const tools = DashboardState.toolCalls[agent] || [];
+        tools.forEach(tool => {
+          allTools.push({ ...tool, agent });
+        });
+      }
+      allTools.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
+      // Take last 8
+      const recentTools = allTools.slice(0, 8);
+
+      if (recentTools.length === 0) {
+        // Show "NO ACTIVITY" message
+        const noActivity = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        noActivity.setAttribute('x', '60');
+        noActivity.setAttribute('y', '450');
+        noActivity.setAttribute('text-anchor', 'middle');
+        noActivity.setAttribute('fill', 'var(--text-dim)');
+        noActivity.setAttribute('font-size', '8');
+        noActivity.textContent = 'NO ACTIVITY';
+        toolEntries.appendChild(noActivity);
+        return;
+      }
+
+      // Render each tool entry
+      recentTools.forEach((tool, i) => {
+        const y = 120 + (i * 90);
+
+        // Entry group
+        const entry = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        entry.setAttribute('class', 'tool-entry');
+
+        // Agent name (dim, 8px)
+        const agentName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        agentName.setAttribute('x', '10');
+        agentName.setAttribute('y', y.toString());
+        agentName.setAttribute('fill', 'var(--text-dim)');
+        agentName.setAttribute('font-size', '8');
+        agentName.textContent = (tool.agent || '').toUpperCase();
+        entry.appendChild(agentName);
+
+        // Tool name (cyan, 9px, bold)
+        const toolName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        toolName.setAttribute('x', '10');
+        toolName.setAttribute('y', (y + 12).toString());
+        toolName.setAttribute('fill', 'var(--cyan)');
+        toolName.setAttribute('font-size', '9');
+        toolName.setAttribute('font-weight', 'bold');
+        toolName.textContent = (tool.tool_name || 'TOOL').toUpperCase();
+        entry.appendChild(toolName);
+
+        // Summary text (white, 8px, 2 lines max, ~18 chars each)
+        const summary = tool.summary || tool.description || '';
+        const line1 = summary.substring(0, 18);
+        const line2 = summary.length > 18 ? summary.substring(18, 36) + (summary.length > 36 ? '...' : '') : '';
+
+        const summaryLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        summaryLine1.setAttribute('x', '10');
+        summaryLine1.setAttribute('y', (y + 28).toString());
+        summaryLine1.setAttribute('fill', 'var(--text-primary)');
+        summaryLine1.setAttribute('font-size', '8');
+        summaryLine1.textContent = line1;
+        entry.appendChild(summaryLine1);
+
+        if (line2) {
+          const summaryLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          summaryLine2.setAttribute('x', '10');
+          summaryLine2.setAttribute('y', (y + 38).toString());
+          summaryLine2.setAttribute('fill', 'var(--text-primary)');
+          summaryLine2.setAttribute('font-size', '8');
+          summaryLine2.textContent = line2;
+          entry.appendChild(summaryLine2);
+        }
+
+        // Timestamp (dim, 7px)
+        const timestamp = tool.timestamp ? new Date(tool.timestamp).toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }) : '';
+        const timestampEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        timestampEl.setAttribute('x', '10');
+        timestampEl.setAttribute('y', (y + 52).toString());
+        timestampEl.setAttribute('fill', 'var(--text-dim)');
+        timestampEl.setAttribute('font-size', '7');
+        timestampEl.textContent = timestamp;
+        entry.appendChild(timestampEl);
+
+        // Separator line
+        const separator = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        separator.setAttribute('x1', '10');
+        separator.setAttribute('y1', (y + 60).toString());
+        separator.setAttribute('x2', '110');
+        separator.setAttribute('y2', (y + 60).toString());
+        separator.setAttribute('stroke', 'var(--cyan-dim)');
+        separator.setAttribute('stroke-width', '0.5');
+        separator.setAttribute('opacity', '0.3');
+        entry.appendChild(separator);
+
+        toolEntries.appendChild(entry);
+
+        // Draw connection line to agent tile
+        const agentTile = document.getElementById(`tile-${tool.agent}`);
+        if (agentTile) {
+          const transform = agentTile.getAttribute('transform');
+          const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+          if (match) {
+            const tileX = parseFloat(match[1]) + 30; // Center of hexagon (approx)
+            const tileY = parseFloat(match[2]) + 52; // Middle of hexagon
+
+            // Curved connection line from tool entry to agent tile
+            const toolY = y + 30; // Middle of tool entry
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const d = `M 118,${toolY} C 140,${toolY} 140,${tileY} ${tileX},${tileY}`;
+            path.setAttribute('d', d);
+            path.setAttribute('stroke', 'var(--cyan)');
+            path.setAttribute('stroke-width', '0.5');
+            path.setAttribute('opacity', '0.15');
+            path.setAttribute('fill', 'none');
+            connections.appendChild(path);
+          }
+        }
+      });
+    }
+
+    // ============================================================================
     // EVENT STREAM HANDLING
     // ============================================================================
-    let streamPaused = false;
     let eventCardCount = 0;
 
     // Event type configuration
@@ -795,197 +943,351 @@
         ? description.substring(0, maxLength - 3) + '...'
         : description;
 
-      // Create card
-      createEventCard(typeConfig, time, truncatedDesc, isCritical);
+      // Create card (pass full event record for modal)
+      createEventCard(typeConfig, time, truncatedDesc, isCritical, record);
     }
 
-    function createEventCard(typeConfig, time, description, isCritical) {
-      if (streamPaused) return;
-
+    function createEventCard(typeConfig, time, description, isCritical, eventRecord) {
       const container = document.getElementById('eventCards');
       if (!container) return;
 
-      // Card dimensions
-      const cardWidth = 160;
-      const cardHeight = 70;
-      const cardGap = 8;
-      const cardY = 815;
-      const totalCardWidth = cardWidth + cardGap;
+      // Clear container and rebuild from DashboardState.events (last 10)
+      container.innerHTML = '';
 
-      // Create card group
-      const cardId = `event-card-${eventCardCount++}`;
-      const card = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      card.setAttribute('id', cardId);
-      card.setAttribute('class', 'event-card');
-      card.setAttribute('transform', `translate(-${totalCardWidth}, 0)`); // Start off-screen left
+      const recentEvents = DashboardState.events.slice(-10).reverse(); // newest first
 
-      if (isCritical) {
-        card.style.filter = 'drop-shadow(0 0 6px rgba(255,0,64,0.5))';
-      }
+      recentEvents.forEach((evt, index) => {
+        const evtRecord = evt.record || evt;
+        const actionType = evtRecord.action_type || 'system';
+        const evtDescription = evtRecord.description || evtRecord.task_summary || 'Event';
+        const created = evtRecord.created || new Date().toISOString();
 
-      // Background rect
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', '8');
-      rect.setAttribute('y', cardY.toString());
-      rect.setAttribute('width', cardWidth.toString());
-      rect.setAttribute('height', cardHeight.toString());
-      rect.setAttribute('rx', '4');
-      rect.setAttribute('fill', 'var(--bg-panel)');
-      rect.setAttribute('stroke', 'var(--border)');
-      rect.setAttribute('stroke-width', '1');
-      card.appendChild(rect);
+        // Parse context
+        let context = {};
+        try {
+          context = typeof evtRecord.context === "string" ? JSON.parse(evtRecord.context || "{}") : (evtRecord.context || {});
+        } catch (e) {
+          context = {};
+        }
 
-      // Left border (colored by event type)
-      const leftBorder = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      leftBorder.setAttribute('x', '8');
-      leftBorder.setAttribute('y', cardY.toString());
-      leftBorder.setAttribute('width', '3');
-      leftBorder.setAttribute('height', cardHeight.toString());
-      leftBorder.setAttribute('rx', '4');
-      leftBorder.setAttribute('fill', typeConfig.color);
-      card.appendChild(leftBorder);
+        // Determine event type config
+        let evtTypeConfig = EVENT_TYPES[actionType] || EVENT_TYPES.system;
 
-      // Type badge
-      const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      badge.setAttribute('x', '16');
-      badge.setAttribute('y', (cardY + 16).toString());
-      badge.setAttribute('font-family', 'Share Tech Mono');
-      badge.setAttribute('font-size', '9');
-      badge.setAttribute('fill', typeConfig.color);
-      badge.textContent = typeConfig.label;
-      card.appendChild(badge);
-
-      // Time
-      const timeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      timeText.setAttribute('x', (cardWidth - 32).toString());
-      timeText.setAttribute('y', (cardY + 16).toString());
-      timeText.setAttribute('font-family', 'Share Tech Mono');
-      timeText.setAttribute('font-size', '9');
-      timeText.setAttribute('fill', 'var(--text-dim)');
-      timeText.setAttribute('text-anchor', 'end');
-      timeText.textContent = time;
-      card.appendChild(timeText);
-
-      // Description (multi-line, max 2 lines)
-      const words = description.split(' ');
-      let line1 = '';
-      let line2 = '';
-      let currentLine = 1;
-
-      for (const word of words) {
-        if (currentLine === 1) {
-          const testLine = line1 ? `${line1} ${word}` : word;
-          if (testLine.length <= 18) {
-            line1 = testLine;
+        // Special handling for ci_check
+        if (actionType === 'ci_check') {
+          if (context.result === 'failure' || context.result === 'failed') {
+            evtTypeConfig = { color: '#FF0040', label: 'CI ✗' };
           } else {
-            currentLine = 2;
-            line2 = word;
-          }
-        } else if (currentLine === 2) {
-          const testLine = line2 ? `${line2} ${word}` : word;
-          if (testLine.length <= 18) {
-            line2 = testLine;
-          } else {
-            break; // Truncate
+            evtTypeConfig = { color: '#00FF88', label: 'CI ✓' };
           }
         }
-      }
 
-      const desc1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      desc1.setAttribute('x', '16');
-      desc1.setAttribute('y', (cardY + 34).toString());
-      desc1.setAttribute('font-family', 'Share Tech Mono');
-      desc1.setAttribute('font-size', '10');
-      desc1.setAttribute('fill', 'var(--text-primary)');
-      desc1.textContent = line1;
-      card.appendChild(desc1);
+        // Determine if critical
+        const evtIsCritical = actionType === 'escalation' || actionType === 'sre_alert';
 
-      if (line2) {
-        const desc2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        desc2.setAttribute('x', '16');
-        desc2.setAttribute('y', (cardY + 48).toString());
-        desc2.setAttribute('font-family', 'Share Tech Mono');
-        desc2.setAttribute('font-size', '10');
-        desc2.setAttribute('fill', 'var(--text-primary)');
-        desc2.textContent = line2;
-        card.appendChild(desc2);
-      }
+        // Extract time
+        const evtTime = new Date(created).toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
 
-      // Insert at beginning of container (newest on left)
-      container.insertBefore(card, container.firstChild);
+        // Truncate description to 2 lines max (~30 chars per line)
+        const maxLength = 60;
+        const truncatedDesc = evtDescription.length > maxLength
+          ? evtDescription.substring(0, maxLength - 3) + '...'
+          : evtDescription;
 
-      // Animate in: slide from x=-totalCardWidth to x=0
-      const startX = -totalCardWidth;
-      const endX = 8;
-      let currentX = startX;
-      const duration = 400; // ms
-      const startTime = Date.now();
+        // Card dimensions and position
+        const cardX = 690;
+        const cardY = 110 + (index * 80);
+        const cardWidth = 260;
+        const cardHeight = 72;
 
-      function animateIn() {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        currentX = startX + (endX - startX) * progress;
-        card.setAttribute('transform', `translate(${currentX}, 0)`);
+        // Card group
+        const card = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        card.setAttribute('class', 'event-card');
+        card.setAttribute('data-event-id', evtRecord.id || index);
+        card.style.cursor = 'pointer';
 
-        if (progress < 1) {
-          requestAnimationFrame(animateIn);
+        if (evtIsCritical) {
+          card.style.filter = 'drop-shadow(0 0 6px rgba(255,0,64,0.5))';
         }
-      }
-      requestAnimationFrame(animateIn);
 
-      // Shift all existing cards to the right
-      const allCards = container.querySelectorAll('.event-card');
-      allCards.forEach((existingCard, index) => {
-        if (existingCard.id === cardId) return; // Skip the new card
+        // Background rect
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', cardX.toString());
+        rect.setAttribute('y', cardY.toString());
+        rect.setAttribute('width', cardWidth.toString());
+        rect.setAttribute('height', cardHeight.toString());
+        rect.setAttribute('rx', '4');
+        rect.setAttribute('fill', 'var(--bg-panel)');
+        rect.setAttribute('stroke', 'var(--border)');
+        rect.setAttribute('stroke-width', '1');
+        card.appendChild(rect);
 
-        const currentTransform = existingCard.getAttribute('transform');
-        const match = currentTransform.match(/translate\(([-\d.]+)/);
-        const currentCardX = match ? parseFloat(match[1]) : 8;
-        const newCardX = currentCardX + totalCardWidth;
+        // Left border (colored by event type)
+        const leftBorder = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        leftBorder.setAttribute('x', cardX.toString());
+        leftBorder.setAttribute('y', cardY.toString());
+        leftBorder.setAttribute('width', '3');
+        leftBorder.setAttribute('height', cardHeight.toString());
+        leftBorder.setAttribute('rx', '4');
+        leftBorder.setAttribute('fill', evtTypeConfig.color);
+        card.appendChild(leftBorder);
 
-        // Animate shift
-        let shiftX = currentCardX;
-        const shiftDuration = 400;
-        const shiftStartTime = Date.now();
+        // Type badge
+        const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badge.setAttribute('x', (cardX + 8).toString());
+        badge.setAttribute('y', (cardY + 15).toString());
+        badge.setAttribute('font-family', 'Share Tech Mono');
+        badge.setAttribute('font-size', '9');
+        badge.setAttribute('fill', evtTypeConfig.color);
+        badge.setAttribute('font-weight', 'bold');
+        badge.textContent = evtTypeConfig.label;
+        card.appendChild(badge);
 
-        function animateShift() {
-          const elapsed = Date.now() - shiftStartTime;
-          const progress = Math.min(elapsed / shiftDuration, 1);
-          shiftX = currentCardX + (newCardX - currentCardX) * progress;
-          existingCard.setAttribute('transform', `translate(${shiftX}, 0)`);
+        // Time
+        const timeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        timeText.setAttribute('x', (cardX + cardWidth - 8).toString());
+        timeText.setAttribute('y', (cardY + 15).toString());
+        timeText.setAttribute('font-family', 'Share Tech Mono');
+        timeText.setAttribute('font-size', '8');
+        timeText.setAttribute('fill', 'var(--text-dim)');
+        timeText.setAttribute('text-anchor', 'end');
+        timeText.textContent = evtTime;
+        card.appendChild(timeText);
 
-          if (progress < 1) {
-            requestAnimationFrame(animateShift);
-          } else {
-            // Remove cards beyond viewport (x > 1400)
-            if (shiftX > 1400) {
-              existingCard.remove();
-            }
-          }
+        // Description (2 lines max, ~30 chars each)
+        const line1 = truncatedDesc.substring(0, 30);
+        const line2 = truncatedDesc.length > 30 ? truncatedDesc.substring(30, 60) : '';
+
+        const desc1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        desc1.setAttribute('x', (cardX + 8).toString());
+        desc1.setAttribute('y', (cardY + 32).toString());
+        desc1.setAttribute('font-family', 'Share Tech Mono');
+        desc1.setAttribute('font-size', '9');
+        desc1.setAttribute('fill', 'var(--text-primary)');
+        desc1.textContent = line1;
+        card.appendChild(desc1);
+
+        if (line2) {
+          const desc2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          desc2.setAttribute('x', (cardX + 8).toString());
+          desc2.setAttribute('y', (cardY + 44).toString());
+          desc2.setAttribute('font-family', 'Share Tech Mono');
+          desc2.setAttribute('font-size', '9');
+          desc2.setAttribute('fill', 'var(--text-primary)');
+          desc2.textContent = line2;
+          card.appendChild(desc2);
         }
-        requestAnimationFrame(animateShift);
+
+        // "Click to expand" hint
+        const hint = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        hint.setAttribute('x', (cardX + 8).toString());
+        hint.setAttribute('y', (cardY + 62).toString());
+        hint.setAttribute('font-family', 'Share Tech Mono');
+        hint.setAttribute('font-size', '7');
+        hint.setAttribute('fill', 'var(--cyan)');
+        hint.setAttribute('opacity', '0.6');
+        hint.textContent = 'click for details';
+        card.appendChild(hint);
+
+        // Click handler to show modal
+        card.addEventListener('click', () => {
+          showEventDetailModal(evtRecord, evtTypeConfig);
+        });
+
+        container.appendChild(card);
       });
-
-      // Limit to 50 cards in DOM
-      const cardCount = container.querySelectorAll('.event-card').length;
-      if (cardCount > 50) {
-        const cardsToRemove = Array.from(container.querySelectorAll('.event-card')).slice(50);
-        cardsToRemove.forEach(c => c.remove());
-      }
     }
 
-    // Pause scrolling on hover
-    document.addEventListener('DOMContentLoaded', () => {
-      const streamZone = document.getElementById('activity-stream-zone');
-      if (streamZone) {
-        streamZone.addEventListener('mouseenter', () => {
-          streamPaused = true;
-        });
-        streamZone.addEventListener('mouseleave', () => {
-          streamPaused = false;
-        });
+    // Event detail modal function
+    function showEventDetailModal(record, typeConfig) {
+      // Create or reuse modal overlay
+      let modal = document.getElementById("event-detail-modal");
+      if (!modal) {
+        modal = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        modal.setAttribute("id", "event-detail-modal");
+        document.getElementById("dashboard").appendChild(modal);
       }
-    });
+      modal.innerHTML = "";
+
+      // Dark overlay
+      const overlay = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      overlay.setAttribute("x", "0");
+      overlay.setAttribute("y", "0");
+      overlay.setAttribute("width", "1400");
+      overlay.setAttribute("height", "900");
+      overlay.setAttribute("fill", "rgba(0,0,0,0.85)");
+      overlay.addEventListener("click", () => { modal.innerHTML = ""; });
+      modal.appendChild(overlay);
+
+      // Detail panel (centered)
+      const panel = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      // Background rect
+      const panelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      panelBg.setAttribute("x", "300");
+      panelBg.setAttribute("y", "150");
+      panelBg.setAttribute("width", "800");
+      panelBg.setAttribute("height", "600");
+      panelBg.setAttribute("rx", "8");
+      panelBg.setAttribute("fill", "var(--bg-panel)");
+      panelBg.setAttribute("stroke", "var(--cyan)");
+      panelBg.setAttribute("stroke-width", "2");
+      panel.appendChild(panelBg);
+
+      // Close button
+      const closeBtn = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      closeBtn.setAttribute("x", "1070");
+      closeBtn.setAttribute("y", "180");
+      closeBtn.setAttribute("font-family", "Orbitron");
+      closeBtn.setAttribute("font-size", "20");
+      closeBtn.setAttribute("fill", "var(--red)");
+      closeBtn.setAttribute("font-weight", "bold");
+      closeBtn.textContent = "✕";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.addEventListener("click", () => { modal.innerHTML = ""; });
+      panel.appendChild(closeBtn);
+
+      // Event type badge
+      const badgeRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      badgeRect.setAttribute("x", "320");
+      badgeRect.setAttribute("y", "170");
+      badgeRect.setAttribute("width", "120");
+      badgeRect.setAttribute("height", "30");
+      badgeRect.setAttribute("rx", "4");
+      badgeRect.setAttribute("fill", typeConfig.color);
+      badgeRect.setAttribute("opacity", "0.2");
+      panel.appendChild(badgeRect);
+
+      const badgeText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      badgeText.setAttribute("x", "380");
+      badgeText.setAttribute("y", "192");
+      badgeText.setAttribute("font-family", "Orbitron");
+      badgeText.setAttribute("font-size", "14");
+      badgeText.setAttribute("fill", typeConfig.color);
+      badgeText.setAttribute("font-weight", "bold");
+      badgeText.setAttribute("text-anchor", "middle");
+      badgeText.textContent = typeConfig.label;
+      panel.appendChild(badgeText);
+
+      // Timestamp
+      const timestamp = record.created ? new Date(record.created).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }) : '';
+      const timestampText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      timestampText.setAttribute("x", "1060");
+      timestampText.setAttribute("y", "192");
+      timestampText.setAttribute("font-family", "Share Tech Mono");
+      timestampText.setAttribute("font-size", "11");
+      timestampText.setAttribute("fill", "var(--text-dim)");
+      timestampText.setAttribute("text-anchor", "end");
+      timestampText.textContent = timestamp;
+      panel.appendChild(timestampText);
+
+      // Description
+      const description = record.description || record.task_summary || 'No description';
+      const descText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      descText.setAttribute("x", "320");
+      descText.setAttribute("y", "230");
+      descText.setAttribute("font-family", "Share Tech Mono");
+      descText.setAttribute("font-size", "13");
+      descText.setAttribute("fill", "var(--text-primary)");
+      descText.setAttribute("font-weight", "bold");
+      descText.textContent = "Description:";
+      panel.appendChild(descText);
+
+      // Description value (word wrap)
+      const descLines = wrapText(description, 70);
+      descLines.forEach((line, i) => {
+        const lineText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        lineText.setAttribute("x", "320");
+        lineText.setAttribute("y", (250 + i * 16).toString());
+        lineText.setAttribute("font-family", "Share Tech Mono");
+        lineText.setAttribute("font-size", "12");
+        lineText.setAttribute("fill", "var(--text-primary)");
+        lineText.textContent = line;
+        panel.appendChild(lineText);
+      });
+
+      // Context section
+      const contextY = 250 + (descLines.length * 16) + 30;
+      const contextTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      contextTitle.setAttribute("x", "320");
+      contextTitle.setAttribute("y", contextY.toString());
+      contextTitle.setAttribute("font-family", "Share Tech Mono");
+      contextTitle.setAttribute("font-size", "13");
+      contextTitle.setAttribute("fill", "var(--text-primary)");
+      contextTitle.setAttribute("font-weight", "bold");
+      contextTitle.textContent = "Context:";
+      panel.appendChild(contextTitle);
+
+      // Parse and display context
+      let ctx = {};
+      try {
+        ctx = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
+      } catch (e) {
+        ctx = { error: "Failed to parse context" };
+      }
+
+      let ctxY = contextY + 20;
+      for (const [key, value] of Object.entries(ctx)) {
+        const keyText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        keyText.setAttribute("x", "340");
+        keyText.setAttribute("y", ctxY.toString());
+        keyText.setAttribute("font-family", "Share Tech Mono");
+        keyText.setAttribute("font-size", "11");
+        keyText.setAttribute("fill", "var(--cyan)");
+        keyText.textContent = `${key}:`;
+        panel.appendChild(keyText);
+
+        const valueLines = wrapText(String(value), 60);
+        valueLines.forEach((line, i) => {
+          const valueText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          valueText.setAttribute("x", "450");
+          valueText.setAttribute("y", (ctxY + i * 14).toString());
+          valueText.setAttribute("font-family", "Share Tech Mono");
+          valueText.setAttribute("font-size", "11");
+          valueText.setAttribute("fill", "var(--text-primary)");
+          valueText.textContent = line;
+          panel.appendChild(valueText);
+        });
+
+        ctxY += (valueLines.length * 14) + 8;
+
+        // Stop if we're running out of space
+        if (ctxY > 700) break;
+      }
+
+      modal.appendChild(panel);
+    }
+
+    // Helper function to wrap text
+    function wrapText(text, maxChars) {
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      for (const word of words) {
+        if ((currentLine + word).length <= maxChars) {
+          currentLine += (currentLine ? ' ' : '') + word;
+        } else {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+
+      return lines.length > 0 ? lines : [''];
+    }
 
     // Seed activity stream from REST API
     async function seedActivityStream() {
@@ -994,11 +1296,9 @@
         if (!r.ok) return;
         const events = await r.json();
 
-        // Render oldest first so newest ends up on left
-        for (const ev of events.reverse()) {
+        // Add all events to state
+        for (const ev of events) {
           appendToEventStream(ev);
-          // Small delay between cards for visual effect
-          await new Promise(resolve => setTimeout(resolve, 100));
         }
       } catch(e) {
         console.warn('[ActivityStream] Failed to seed:', e);
@@ -1012,7 +1312,7 @@
 
     function connectSSE() {
       try {
-        eventSource = new EventSource("http://" + window.location.hostname + ":8880/events/stream");
+        eventSource = new EventSource("http://" + window.location.hostname + ":8878/events/stream");
 
         eventSource.onopen = () => {
           console.log('[SSE] Connected');
@@ -1189,20 +1489,24 @@
     // ============================================================================
     async function pollTrello() {
       try {
-        const r = await fetch("http://" + window.location.hostname + ":8880/trello");
+        const r = await fetch("http://" + window.location.hostname + ":8878/trello");
         const d = await r.json();
 
         // Sum across all boards
         const p = {backlog:0, design:0, code:0, review:0, done:0};
         for (const board of Object.values(d.boards || {})) {
-          p.backlog += board.Backlog || 0;
-          p.design += board.Design || 0;
-          p.code += board["Code/Test"] || board.Code || 0;
-          p.review += board.Review || 0;
-          p.done += board.Done || 0;
+          p.backlog += board["Backlog"] || 0;
+          p.design += board["Design"] || 0;
+          // Code stage: multiple names across boards
+          p.code += board["Code/Test"] || board["Code"] || board["🚧 In Progress"] || 0;
+          // Review stage: multiple names
+          p.review += board["Review"] || board["👀 Awaiting Approval"] || 0;
+          p.done += board["Done"] || 0;
         }
 
         DashboardState.metrics.pipeline = p;
+        // Store per-board breakdown for tooltip
+        DashboardState.metrics.pipelineByBoard = d.boards;
         renderCommandBar();
         renderFlywheel();
 
@@ -1234,6 +1538,7 @@
 
         DashboardState.toolCalls = byAgent;
         renderAgentGrid();
+        renderToolStream();
 
         console.log('[tools]', calls.length, 'calls');
       } catch(e) {
@@ -1279,7 +1584,7 @@
         { key: 'done', label: 'DONE', y: 630 }
       ];
 
-      const centerX = 1085; // Center of flywheel zone
+      const centerX = 1180; // Center of flywheel zone (960 + 440/2)
       const nodeWidth = 280;
       const nodeHeight = 70;
 
@@ -1500,11 +1805,13 @@
 
       // Initial agent grid render with default states
       renderAgentGrid();
+      renderToolStream();
 
       // Initial data poll before SSE connection
       pollCI();
       pollTrello();
       pollAgentData();
+      pollTools();
 
       // Seed activity stream from recent events
       seedActivityStream();
