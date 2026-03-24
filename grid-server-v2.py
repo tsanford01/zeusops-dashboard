@@ -751,19 +751,23 @@ def ci_poll_loop():
 # ── Trello Poller ─────────────────────────────────────────────────────────────
 
 def fetch_trello_board(board_id: str) -> dict:
-    """Fetch lists and card counts from Trello board."""
+    """Fetch lists, card counts, and card label data from Trello board."""
     if not TRELLO_API_KEY or not TRELLO_TOKEN:
         return {}
 
     try:
-        url = f"https://api.trello.com/1/boards/{board_id}/lists?cards=open&key={TRELLO_API_KEY}&token={TRELLO_TOKEN}"
+        # Fetch lists with cards and their labels
+        url = (f"https://api.trello.com/1/boards/{board_id}/lists"
+               f"?cards=open&card_fields=name,idLabels,labels"
+               f"&key={TRELLO_API_KEY}&token={TRELLO_TOKEN}")
         req = urllib.request.Request(url)
 
         with urllib.request.urlopen(req, timeout=15) as resp:
             lists = json.loads(resp.read().decode("utf-8"))
 
-            # Count cards per list
             counts = {}
+            all_cards = []  # [{id, name, list, listName, labels:[{id,name,color}]}]
+
             for lst in lists:
                 list_name = lst.get("name", "Unknown")
                 cards = lst.get("cards", [])
@@ -775,16 +779,26 @@ def fetch_trello_board(board_id: str) -> dict:
                     canonical = "Backlog"
                 elif "design" in name_lower or "plan" in name_lower:
                     canonical = "Design"
-                elif "code" in name_lower or "dev" in name_lower or "test" in name_lower:
+                elif "code" in name_lower or "dev" in name_lower or "test" in name_lower or "in progress" in name_lower:
                     canonical = "Code/Test"
-                elif "review" in name_lower or "qa" in name_lower:
+                elif "review" in name_lower or "qa" in name_lower or "awaiting" in name_lower:
                     canonical = "Review"
                 elif "done" in name_lower or "complete" in name_lower:
                     canonical = "Done"
 
                 counts[canonical] = len(cards)
 
-            return counts
+                for card in cards:
+                    all_cards.append({
+                        "id": card.get("id"),
+                        "name": card.get("name", ""),
+                        "list": canonical,
+                        "listName": list_name,
+                        "labels": [{"id": l.get("id"), "name": l.get("name",""), "color": l.get("color","")}
+                                   for l in card.get("labels", [])]
+                    })
+
+            return {"counts": counts, "cards": all_cards}
     except Exception as e:
         log(f"Trello API error for board {board_id}: {e}")
         return {}
@@ -821,11 +835,15 @@ def trello_poll_loop():
             trello_data = {"boards": {}, "lastUpdated": int(time.time())}
 
             for board_name, board_id in TRELLO_BOARDS.items():
-                counts = fetch_trello_board(board_id)
-                if not counts:
+                result = fetch_trello_board(board_id)
+                if not result:
                     continue
 
+                counts = result.get("counts", result)  # backward compat
+                cards = result.get("cards", [])
+
                 trello_data["boards"][board_name] = counts
+                trello_data.setdefault("cards", {})[board_name] = cards
 
                 # Compare with last known counts
                 if board_name in last_counts:
@@ -1043,6 +1061,27 @@ class GridHandler(BaseHTTPRequestHandler):
         elif path == "/trello":
             with _trello_lock:
                 body = json.dumps(_trello_cache, default=str).encode("utf-8")
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(body)
+            except BrokenPipeError:
+                pass
+
+        elif path == "/trello/labels":
+            # Return all unique labels across all boards
+            seen = {}
+            with _trello_lock:
+                for board_name, cards in _trello_cache.get("cards", {}).items():
+                    for card in cards:
+                        for label in card.get("labels", []):
+                            lid = label.get("id")
+                            if lid and lid not in seen:
+                                seen[lid] = {"id": lid, "name": label.get("name",""), "color": label.get("color",""), "board": board_name}
+            body = json.dumps(list(seen.values()), default=str).encode("utf-8")
             try:
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")

@@ -298,7 +298,18 @@
     <g id="pipeline-zone">
       <rect x="0" y="70" width="200" height="720" fill="var(--bg-secondary)" />
       <line x1="200" y1="70" x2="200" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
-      <text x="100" y="90" text-anchor="middle" font-family="Orbitron" font-size="10" fill="var(--cyan)">PIPELINE</text>
+      <text x="100" y="88" text-anchor="middle" font-family="Orbitron" font-size="10" fill="var(--cyan)">PIPELINE</text>
+      <!-- Label filter panel -->
+      <foreignObject x="4" y="92" width="192" height="200" id="label-filter-fo">
+        <div xmlns="http://www.w3.org/1999/xhtml" id="label-filter-panel" style="
+          background:rgba(13,13,26,0.95);
+          border:1px solid rgba(0,212,255,0.2);
+          border-radius:4px;
+          padding:6px 8px;
+          font-size:8px;
+          overflow:hidden;
+        "></div>
+      </foreignObject>
       <!-- Pipeline nodes will be created dynamically -->
     </g>
 
@@ -1391,15 +1402,28 @@
         const r = await fetch("http://" + window.location.hostname + ":8878/trello");
         const d = await r.json();
 
-        const p = {backlog:0, design:0, code:0, review:0, done:0};
-        for (const board of Object.values(d.boards || {})) {
-          p.backlog += board["Backlog"] || 0;
-          p.design += board["Design"] || 0;
-          p.code += board["Code/Test"] || board["Code"] || board["🚧 In Progress"] || 0;
-          p.review += board["Review"] || board["👀 Awaiting Approval"] || 0;
-          p.done += board["Done"] || 0;
+        // Store all cards with label data for filtering
+        DashboardState.trelloCards = d.cards || {};  // {boardName: [{id,name,list,labels}]}
+
+        // Load available labels if not yet loaded
+        if (DashboardState.labelFilter.availableLabels.length === 0) {
+          try {
+            const lr = await fetch("http://" + window.location.hostname + ":8878/trello/labels");
+            const labels = await lr.json();
+            DashboardState.labelFilter.availableLabels = labels;
+            // Restore persisted filter from localStorage
+            const saved = localStorage.getItem('zeusops-label-filter');
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              DashboardState.labelFilter.enabled = parsed.enabled || false;
+              DashboardState.labelFilter.selectedIds = parsed.selectedIds || [];
+            }
+            renderLabelFilter();
+          } catch(e) { console.warn('[labels] failed', e); }
         }
 
+        // Compute pipeline counts — apply label filter if enabled
+        const p = computePipelineCounts(d);
         DashboardState.metrics.pipeline = p;
         DashboardState.metrics.pipelineByBoard = d.boards;
         renderCommandBar();
@@ -1409,6 +1433,160 @@
       } catch(e) {
         console.warn('[Trello] poll failed', e);
       }
+    }
+
+    function computePipelineCounts(d) {
+      const filter = DashboardState.labelFilter;
+      const p = {backlog:0, design:0, code:0, review:0, done:0};
+
+      // If filter disabled or no selection — use raw counts
+      if (!filter.enabled || filter.selectedIds.length === 0) {
+        for (const board of Object.values(d.boards || {})) {
+          p.backlog += board["Backlog"] || 0;
+          p.design  += board["Design"] || 0;
+          p.code    += board["Code/Test"] || board["Code"] || board["🚧 In Progress"] || 0;
+          p.review  += board["Review"] || board["👀 Awaiting Approval"] || 0;
+          p.done    += board["Done"] || 0;
+        }
+        return p;
+      }
+
+      // Filter enabled — count only cards with matching labels
+      const selectedSet = new Set(filter.selectedIds);
+      const allCards = DashboardState.trelloCards || {};
+
+      for (const boardCards of Object.values(allCards)) {
+        for (const card of boardCards) {
+          const cardLabelIds = (card.labels || []).map(l => l.id);
+          const matches = cardLabelIds.some(id => selectedSet.has(id));
+          if (!matches) continue;
+          switch(card.list) {
+            case "Backlog":   p.backlog++; break;
+            case "Design":    p.design++;  break;
+            case "Code/Test": p.code++;    break;
+            case "Review":    p.review++;  break;
+            case "Done":      p.done++;    break;
+          }
+        }
+      }
+      return p;
+    }
+
+    function renderLabelFilter() {
+      const container = document.getElementById('label-filter-panel');
+      if (!container) return;
+      const filter = DashboardState.labelFilter;
+      const labels = filter.availableLabels;
+
+      container.innerHTML = '';
+
+      // Filter toggle header
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;cursor:pointer;';
+      const activeCount = filter.selectedIds.length;
+      header.innerHTML = `
+        <span style="font-family:Orbitron,monospace;font-size:8px;color:var(--cyan);">FILTER</span>
+        <span style="font-family:Share Tech Mono,monospace;font-size:8px;color:${filter.enabled && activeCount > 0 ? 'var(--amber)' : 'var(--text-dim)'};">
+          ${filter.enabled && activeCount > 0 ? activeCount + ' active' : 'ALL'}
+        </span>`;
+      header.onclick = () => {
+        const body = document.getElementById('label-filter-body');
+        if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
+      };
+      container.appendChild(header);
+
+      // Filter body (collapsible)
+      const body = document.createElement('div');
+      body.id = 'label-filter-body';
+      body.style.cssText = 'display:none;';
+
+      // Enable toggle
+      const enableRow = document.createElement('div');
+      enableRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;';
+      enableRow.innerHTML = `
+        <div style="width:10px;height:10px;border:1px solid var(--cyan);background:${filter.enabled ? 'var(--cyan)' : 'transparent'};border-radius:2px;"></div>
+        <span style="font-family:Share Tech Mono,monospace;font-size:8px;color:var(--text-primary);">Enable filter</span>`;
+      enableRow.onclick = () => {
+        filter.enabled = !filter.enabled;
+        saveFilter();
+        const p = computePipelineCounts({boards: DashboardState.metrics.pipelineByBoard || {}, cards: DashboardState.trelloCards || {}});
+        DashboardState.metrics.pipeline = p;
+        renderLabelFilter();
+        renderPipeline();
+        renderCommandBar();
+      };
+      body.appendChild(enableRow);
+
+      // Separator
+      const sep = document.createElement('div');
+      sep.style.cssText = 'border-top:1px solid var(--border);margin:4px 0;';
+      body.appendChild(sep);
+
+      // Label checkboxes
+      if (labels.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-family:Share Tech Mono,monospace;font-size:7px;color:var(--text-dim);';
+        empty.textContent = 'Loading labels...';
+        body.appendChild(empty);
+      }
+
+      // Color map for TRON-ish display
+      const colorMap = {red:'#FF0040', green:'#00FF88', blue:'#5BA4CF', orange:'#FFB000',
+                        yellow:'#F5DD29', purple:'#9B59B6', pink:'#FF78CB', sky:'#29CCE5',
+                        lime:'#51E898', black:'#4A7A8A', green_light:'#00FF88', red_light:'#FF6B6B'};
+
+      for (const label of labels) {
+        if (!label.name) continue;
+        const isSelected = filter.selectedIds.includes(label.id);
+        const dotColor = colorMap[label.color] || 'var(--cyan)';
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;padding:2px 0;';
+        row.innerHTML = `
+          <div style="width:10px;height:10px;border:1px solid ${dotColor};background:${isSelected ? dotColor : 'transparent'};border-radius:2px;flex-shrink:0;"></div>
+          <div style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></div>
+          <span style="font-family:Share Tech Mono,monospace;font-size:8px;color:${isSelected ? 'var(--text-primary)' : 'var(--text-dim)'};">${label.name}</span>`;
+        row.onclick = () => {
+          if (filter.selectedIds.includes(label.id)) {
+            filter.selectedIds = filter.selectedIds.filter(id => id !== label.id);
+          } else {
+            filter.selectedIds.push(label.id);
+          }
+          saveFilter();
+          const p = computePipelineCounts({boards: DashboardState.metrics.pipelineByBoard || {}, cards: DashboardState.trelloCards || {}});
+          DashboardState.metrics.pipeline = p;
+          renderLabelFilter();
+          renderPipeline();
+          renderCommandBar();
+        };
+        body.appendChild(row);
+      }
+
+      // Clear button
+      if (filter.selectedIds.length > 0) {
+        const clear = document.createElement('div');
+        clear.style.cssText = 'margin-top:6px;font-family:Share Tech Mono,monospace;font-size:7px;color:var(--text-dim);cursor:pointer;text-decoration:underline;';
+        clear.textContent = 'Clear all';
+        clear.onclick = () => {
+          filter.selectedIds = [];
+          saveFilter();
+          const p = computePipelineCounts({boards: DashboardState.metrics.pipelineByBoard || {}, cards: DashboardState.trelloCards || {}});
+          DashboardState.metrics.pipeline = p;
+          renderLabelFilter();
+          renderPipeline();
+          renderCommandBar();
+        };
+        body.appendChild(clear);
+      }
+
+      container.appendChild(body);
+    }
+
+    function saveFilter() {
+      localStorage.setItem('zeusops-label-filter', JSON.stringify({
+        enabled: DashboardState.labelFilter.enabled,
+        selectedIds: DashboardState.labelFilter.selectedIds
+      }));
     }
 
     async function pollTools() {
@@ -1455,6 +1633,7 @@
 
       // Build SVG structure
       buildPipeline();
+      renderLabelFilter();
       buildAgentGrid();
       buildActivityStream();
       buildToolStream();
