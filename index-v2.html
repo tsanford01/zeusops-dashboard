@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeusOps | Operations Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0A0A12;
+      --bg-secondary: #0D0D1A;
+      --bg-panel: #0F0F1F;
+      --cyan: #00D4FF;
+      --cyan-dim: #004D5C;
+      --amber: #FFB000;
+      --red: #FF0040;
+      --green: #00FF88;
+      --text-primary: #E0F4FF;
+      --text-dim: #4A7A8A;
+      --border: #1A2A3A;
+      --glow-cyan: 0 0 8px #00D4FF, 0 0 16px rgba(0,212,255,0.3);
+      --glow-amber: 0 0 8px #FFB000, 0 0 16px rgba(255,176,0,0.3);
+      --glow-red: 0 0 8px #FF0040, 0 0 16px rgba(255,0,64,0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg-primary);
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--text-primary);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #dashboard {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .heading {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+    }
+
+    .data {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .pulse {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% { r: 20; opacity: 0.8; }
+      100% { r: 28; opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <svg id="dashboard" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <!-- TRON-style gradients and filters -->
+      <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:var(--cyan);stop-opacity:0.6" />
+        <stop offset="100%" style="stop-color:var(--cyan);stop-opacity:0.1" />
+      </linearGradient>
+
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+
+      <!-- Hexagon path for agent tiles -->
+      <path id="hexagon" d="M 30,0 L 60,15 L 60,45 L 30,60 L 0,45 L 0,15 Z" />
+    </defs>
+
+    <!-- Background -->
+    <rect width="1400" height="900" fill="var(--bg-primary)" />
+
+    <!-- Grid lines (subtle) -->
+    <g opacity="0.1">
+      <line x1="0" y1="80" x2="1400" y2="80" stroke="var(--cyan)" stroke-width="1"/>
+      <line x1="0" y1="780" x2="1400" y2="780" stroke="var(--cyan)" stroke-width="1"/>
+      <line x1="770" y1="80" x2="770" y2="780" stroke="var(--cyan)" stroke-width="1"/>
+    </g>
+
+    <!-- ZONE A: COMMAND BAR (0, 0, 1400, 80) -->
+    <g id="commandBar">
+      <rect x="0" y="0" width="1400" height="80" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
+
+      <!-- Panel 1: System Pulse (0-280) -->
+      <g id="systemPulse">
+        <line x1="280" y1="10" x2="280" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
+
+        <!-- Pulsing ring -->
+        <circle cx="80" cy="40" r="22" fill="none" stroke="var(--cyan)" stroke-width="2" opacity="0.3"/>
+        <circle cx="80" cy="40" r="20" fill="none" stroke="var(--cyan)" stroke-width="3" filter="url(#glow)">
+          <animate attributeName="r" values="20;28;20" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="80" cy="40" r="18" fill="var(--bg-panel)" stroke="var(--cyan)" stroke-width="2"/>
+
+        <text x="80" y="48" text-anchor="middle" class="data" fill="var(--cyan)" font-size="20">87</text>
+        <text x="140" y="35" class="heading" fill="var(--text-dim)" font-size="10">SYSTEM</text>
+        <text x="140" y="50" class="heading" fill="var(--text-dim)" font-size="10">HEALTH</text>
+      </g>
+
+      <!-- Panel 2: CI Status (280-560) -->
+      <g id="ciStatus">
+        <line x1="560" y1="10" x2="560" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
+        <text x="300" y="25" class="heading" fill="var(--text-dim)" font-size="10">CI STATUS</text>
+
+        <!-- 10 status segments -->
+        <g id="ciSegments">
+          <rect x="300" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="322" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="344" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="366" y="35" width="18" height="28" fill="var(--red)" opacity="0.8"/>
+          <rect x="388" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="410" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="432" y="35" width="18" height="28" fill="var(--red)" opacity="0.8"/>
+          <rect x="454" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="476" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+          <rect x="498" y="35" width="18" height="28" fill="var(--green)" opacity="0.8"/>
+        </g>
+      </g>
+
+      <!-- Panel 3: PR Velocity (560-840) -->
+      <g id="prVelocity">
+        <line x1="840" y1="10" x2="840" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
+        <text x="580" y="25" class="heading" fill="var(--text-dim)" font-size="10">PR VELOCITY</text>
+        <text x="580" y="48" fill="var(--green)" font-size="14" class="data">↑12 opened</text>
+        <text x="700" y="48" fill="var(--cyan)" font-size="14" class="data">←8 merged</text>
+      </g>
+
+      <!-- Panel 4: Pipeline Flow (840-1120) -->
+      <g id="pipelineSummary">
+        <line x1="1120" y1="10" x2="1120" y2="70" stroke="var(--cyan-dim)" stroke-width="1"/>
+        <text x="860" y="25" class="heading" fill="var(--text-dim)" font-size="10">PIPELINE</text>
+
+        <!-- Mini funnel bars -->
+        <rect x="860" y="35" width="60" height="6" fill="var(--cyan)" opacity="0.6"/>
+        <rect x="865" y="43" width="50" height="6" fill="var(--cyan)" opacity="0.5"/>
+        <rect x="870" y="51" width="40" height="6" fill="var(--cyan)" opacity="0.4"/>
+        <rect x="875" y="59" width="30" height="6" fill="var(--green)" opacity="0.7"/>
+      </g>
+
+      <!-- Panel 5: Alert Zone (1120-1400) -->
+      <g id="alertZone">
+        <text x="1140" y="25" class="heading" fill="var(--text-dim)" font-size="10">ALERTS</text>
+        <text x="1140" y="50" class="data" fill="var(--text-dim)" font-size="18" id="alertCount">0 ALERTS</text>
+      </g>
+
+      <!-- Connection Status Indicator (top-right) -->
+      <g id="connectionStatus">
+        <circle cx="1360" cy="20" r="6" id="statusDot" fill="var(--red)" class="pulse"/>
+        <text x="1360" y="45" text-anchor="middle" id="statusText" fill="var(--red)" font-size="9">OFFLINE</text>
+      </g>
+    </g>
+
+    <!-- ZONE B: AGENT GRID (0, 80, 770, 700) -->
+    <g id="agentGrid">
+      <rect x="0" y="80" width="770" height="700" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
+      <text x="20" y="105" class="heading" fill="var(--cyan)" font-size="14">AGENT GRID</text>
+
+      <!-- 4x4 grid of agent tiles (15 agents) -->
+      <g id="agentTiles">
+        <!-- Row 1 -->
+        <g class="agent-tile" transform="translate(50, 130)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MANAGER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(190, 130)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">ARCHITECT</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(330, 130)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RESEARCHER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(470, 130)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">CODER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(610, 130)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">TESTER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+
+        <!-- Row 2 -->
+        <g class="agent-tile" transform="translate(50, 250)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">REVIEWER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(190, 250)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">RELEASER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(330, 250)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">PM</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(470, 250)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SRE</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(610, 250)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">INCIDENT</text>
+          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">MANAGER</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+
+        <!-- Row 3 -->
+        <g class="agent-tile" transform="translate(50, 370)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">WORKFLOW</text>
+          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">ARCHITECT</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(190, 370)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">DEVOPS</text>
+          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">AUTOMATOR</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(330, 370)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">SECURITY</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(470, 370)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="30" text-anchor="middle" fill="var(--text-dim)" font-size="7">TIGER</text>
+          <text x="30" y="40" text-anchor="middle" fill="var(--text-dim)" font-size="7">TEAM</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+        <g class="agent-tile" transform="translate(610, 370)">
+          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
+          <circle cx="30" cy="30" r="3" fill="var(--red)"/>
+          <text x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MAIN</text>
+          <text x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ZONE C: FLYWHEEL (770, 80, 630, 700) -->
+    <g id="flywheel">
+      <rect x="770" y="80" width="630" height="700" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
+      <text x="790" y="105" class="heading" fill="var(--cyan)" font-size="14">PIPELINE FLOW</text>
+
+      <!-- Vertical pipeline chain -->
+      <g id="pipelineNodes">
+        <!-- BACKLOG -->
+        <rect x="900" y="150" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
+        <text x="990" y="175" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">BACKLOG</text>
+        <text x="990" y="200" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
+
+        <!-- Arrow -->
+        <line x1="990" y1="220" x2="990" y2="260" stroke="var(--cyan-dim)" stroke-width="2"/>
+        <polygon points="990,260 985,250 995,250" fill="var(--cyan-dim)"/>
+
+        <!-- DESIGN -->
+        <rect x="900" y="270" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
+        <text x="990" y="295" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">DESIGN</text>
+        <text x="990" y="320" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
+
+        <!-- Arrow -->
+        <line x1="990" y1="340" x2="990" y2="380" stroke="var(--cyan-dim)" stroke-width="2"/>
+        <polygon points="990,380 985,370 995,370" fill="var(--cyan-dim)"/>
+
+        <!-- CODE -->
+        <rect x="900" y="390" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
+        <text x="990" y="415" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">CODE</text>
+        <text x="990" y="440" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
+
+        <!-- Arrow -->
+        <line x1="990" y1="460" x2="990" y2="500" stroke="var(--cyan-dim)" stroke-width="2"/>
+        <polygon points="990,500 985,490 995,490" fill="var(--cyan-dim)"/>
+
+        <!-- REVIEW -->
+        <rect x="900" y="510" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
+        <text x="990" y="535" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">REVIEW</text>
+        <text x="990" y="560" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
+
+        <!-- Arrow -->
+        <line x1="990" y1="580" x2="990" y2="620" stroke="var(--cyan-dim)" stroke-width="2"/>
+        <polygon points="990,620 985,610 995,610" fill="var(--cyan-dim)"/>
+
+        <!-- DONE -->
+        <rect x="900" y="630" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--green)" stroke-width="2"/>
+        <text x="990" y="655" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">DONE</text>
+        <text x="990" y="680" text-anchor="middle" class="data" fill="var(--green)" font-size="24">0</text>
+      </g>
+    </g>
+
+    <!-- ZONE D: ACTIVITY STREAM (0, 780, 1400, 120) -->
+    <g id="activityStream">
+      <rect x="0" y="780" width="1400" height="120" fill="var(--bg-secondary)" stroke="var(--border)" stroke-width="2"/>
+      <text x="20" y="805" class="heading" fill="var(--cyan)" font-size="14">ACTIVITY STREAM</text>
+
+      <!-- Horizontal scrolling event cards -->
+      <g id="eventCards">
+        <!-- Event 1 -->
+        <g class="event-card">
+          <rect x="30" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
+          <text x="40" y="838" fill="var(--text-dim)" font-size="9">14:32</text>
+          <text x="40" y="852" fill="var(--amber)" font-size="11" font-weight="bold">dispatch</text>
+          <text x="40" y="868" fill="var(--text-primary)" font-size="10">manager</text>
+        </g>
+
+        <!-- Event 2 -->
+        <g class="event-card">
+          <rect x="270" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
+          <text x="280" y="838" fill="var(--text-dim)" font-size="9">14:31</text>
+          <text x="280" y="852" fill="var(--green)" font-size="11" font-weight="bold">ci_check</text>
+          <text x="280" y="868" fill="var(--text-primary)" font-size="10">success</text>
+        </g>
+
+        <!-- Event 3 -->
+        <g class="event-card">
+          <rect x="510" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
+          <text x="520" y="838" fill="var(--text-dim)" font-size="9">14:30</text>
+          <text x="520" y="852" fill="var(--cyan)" font-size="11" font-weight="bold">pr_event</text>
+          <text x="520" y="868" fill="var(--text-primary)" font-size="10">merged</text>
+        </g>
+
+        <!-- Event 4 -->
+        <g class="event-card">
+          <rect x="750" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
+          <text x="760" y="838" fill="var(--text-dim)" font-size="9">14:28</text>
+          <text x="760" y="852" fill="var(--text-dim)" font-size="11" font-weight="bold">heartbeat</text>
+          <text x="760" y="868" fill="var(--text-primary)" font-size="10">system</text>
+        </g>
+
+        <!-- Event 5 -->
+        <g class="event-card">
+          <rect x="990" y="820" width="220" height="60" rx="4" fill="var(--bg-panel)" stroke="var(--cyan-dim)" stroke-width="1"/>
+          <text x="1000" y="838" fill="var(--text-dim)" font-size="9">14:25</text>
+          <text x="1000" y="852" fill="var(--red)" font-size="11" font-weight="bold">escalation</text>
+          <text x="1000" y="868" fill="var(--text-primary)" font-size="10">alert</text>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <script>
+    // ============================================================================
+    // DASHBOARD STATE STORE
+    // ============================================================================
+    const DashboardState = {
+      agents: {},        // agent_id → {status, lastSeen, currentJob, successRate, contextPct}
+      metrics: {
+        healthScore: 0,
+        ci: { passRate1h: 0, lastRuns: [], repos: {} },
+        pr: { opened24h: 0, merged24h: 0 },
+        pipeline: { backlog: 0, design: 0, code: 0, review: 0, done: 0 },
+        jobs: { completed24h: 0, successRate: 0 },
+        alerts: { active: 0, escalations: [] }
+      },
+      events: [],        // ring buffer, max 100
+      connected: false,
+      lastUpdate: null
+    };
+
+    // ============================================================================
+    // CONNECTION STATUS INDICATOR
+    // ============================================================================
+    function updateConnectionIndicator() {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+
+      if (DashboardState.connected) {
+        dot.setAttribute('fill', 'var(--green)');
+        text.setAttribute('fill', 'var(--green)');
+        text.textContent = 'LIVE';
+      } else {
+        dot.setAttribute('fill', 'var(--red)');
+        text.setAttribute('fill', 'var(--red)');
+        text.textContent = 'OFFLINE';
+      }
+    }
+
+    // ============================================================================
+    // EVENT STREAM HANDLING
+    // ============================================================================
+    function appendToEventStream(event) {
+      // Add to ring buffer
+      DashboardState.events.push(event);
+      if (DashboardState.events.length > 100) {
+        DashboardState.events.shift();
+      }
+
+      // TODO: OBS-6 - Update visual event cards
+      console.log('[EVENT]', event);
+    }
+
+    // ============================================================================
+    // SSE CONNECTION
+    // ============================================================================
+    let eventSource = null;
+
+    function connectSSE() {
+      try {
+        eventSource = new EventSource("http://localhost:8880/events/stream");
+
+        eventSource.onopen = () => {
+          console.log('[SSE] Connected');
+          DashboardState.connected = true;
+          updateConnectionIndicator();
+        };
+
+        eventSource.onmessage = (e) => {
+          try {
+            const event = JSON.parse(e.data);
+            handleSSEEvent(event);
+          } catch (err) {
+            console.warn('[SSE] Failed to parse event:', err);
+          }
+        };
+
+        eventSource.onerror = (err) => {
+          console.warn('[SSE] Connection error:', err);
+          DashboardState.connected = false;
+          updateConnectionIndicator();
+
+          if (eventSource) {
+            eventSource.close();
+          }
+
+          // Reconnect after 5 seconds
+          setTimeout(connectSSE, 5000);
+        };
+      } catch (err) {
+        console.error('[SSE] Failed to connect:', err);
+        setTimeout(connectSSE, 5000);
+      }
+    }
+
+    function handleSSEEvent(event) {
+      // TODO: wire up in OBS-3 through OBS-6
+      console.log('[SSE]', event);
+      appendToEventStream(event);
+    }
+
+    // ============================================================================
+    // DATA POLLING
+    // ============================================================================
+    async function pollAgentData() {
+      try {
+        const r = await fetch("http://localhost:8880/data");
+        const d = await r.json();
+        // TODO: wire up in OBS-5
+        console.log('[data]', d.stats);
+        DashboardState.lastUpdate = Date.now();
+      } catch(e) {
+        console.warn('[data] poll failed', e);
+      }
+    }
+
+    // ============================================================================
+    // TOOLS POLLING
+    // ============================================================================
+    async function pollTools() {
+      try {
+        const r = await fetch("http://localhost:8880/tools");
+        const calls = await r.json();
+        // TODO: wire up in OBS-5
+        console.log('[tools]', calls.length, 'calls');
+      } catch(e) {
+        console.warn('[tools] poll failed', e);
+      }
+    }
+
+    // ============================================================================
+    // INITIALIZATION
+    // ============================================================================
+    function initDashboard() {
+      console.log('[Dashboard] Initializing ZeusOps Observability Dashboard v2');
+
+      // Set initial connection state
+      updateConnectionIndicator();
+
+      // Start SSE connection
+      connectSSE();
+
+      // Start polling
+      setInterval(pollAgentData, 5000);
+      setInterval(pollTools, 8000);
+
+      // Initial poll
+      pollAgentData();
+      pollTools();
+
+      console.log('[Dashboard] Ready');
+    }
+
+    // Start dashboard when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initDashboard);
+    } else {
+      initDashboard();
+    }
+  </script>
+</body>
+</html>
