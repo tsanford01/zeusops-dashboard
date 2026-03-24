@@ -114,6 +114,9 @@
       <path id="hexagon" d="M 30,0 L 60,15 L 60,45 L 30,60 L 0,45 L 0,15 Z" />
     </defs>
 
+    <!-- Handoff lines layer -->
+    <g id="handoff-lines-layer"></g>
+
     <!-- Background -->
     <rect width="1400" height="900" fill="var(--bg-primary)" />
 
@@ -415,6 +418,7 @@
       agents: {},        // agent_id → {status, lastSeen, currentJob, successRate, contextPct}
       agentStats: {},    // agent_id → {done7d, failed7d, lastResult, lastTask, runningJob}
       toolCalls: {},     // agent_id → [recent tool calls]
+      handoffs: [],      // active handoffs between agents
       metrics: {
         healthScore: 0,
         ci: { passRate1h: 0, lastRuns: [], repos: {} },
@@ -1427,10 +1431,14 @@
           DashboardState.stats = d.stats;
         }
 
+        // Store handoffs
+        DashboardState.handoffs = d.handoffs || [];
+
         // Recompute health score and render
         DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
         renderCommandBar();
         renderAgentGrid();
+        renderHandoffLines();
 
         DashboardState.lastUpdate = Date.now();
       } catch(e) {
@@ -1771,6 +1779,72 @@
             }
           }
         }
+      });
+    }
+
+    // ============================================================================
+    // HANDOFF LINES RENDERING
+    // ============================================================================
+    function renderHandoffLines() {
+      const layer = document.getElementById("handoff-lines-layer");
+      if (!layer) return;
+      // Clear existing lines
+      while (layer.firstChild) layer.removeChild(layer.firstChild);
+
+      const activeHandoffs = (DashboardState.handoffs || []).filter(h => h.active);
+      if (activeHandoffs.length === 0) return;
+
+      // Build position map from tile transforms
+      const pos = {};
+      document.querySelectorAll(".agent-tile[data-agent]").forEach(tile => {
+        const id = tile.getAttribute("data-agent");
+        const t = tile.getAttribute("transform") || "";
+        const m = t.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        if (m) {
+          pos[id] = { x: parseFloat(m[1]) + 30, y: parseFloat(m[2]) + 35 };
+        }
+      });
+
+      activeHandoffs.forEach(h => {
+        const a = pos[h.from], b = pos[h.to];
+        if (!a || !b) return;
+
+        const mx = (a.x + b.x) / 2;
+        const my = Math.min(a.y, b.y) - 40;
+        const pathD = `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`;
+
+        // Dashed animated path
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathD);
+        path.setAttribute("stroke", "#00D4FF");
+        path.setAttribute("stroke-width", "1.5");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke-dasharray", "6,4");
+        path.setAttribute("opacity", "0.6");
+        const dashAnim = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+        dashAnim.setAttribute("attributeName", "stroke-dashoffset");
+        dashAnim.setAttribute("from", "0");
+        dashAnim.setAttribute("to", "-20");
+        dashAnim.setAttribute("dur", "1s");
+        dashAnim.setAttribute("repeatCount", "indefinite");
+        path.appendChild(dashAnim);
+        layer.appendChild(path);
+
+        // Traveling dot
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("r", "3");
+        dot.setAttribute("fill", "#00D4FF");
+        dot.setAttribute("opacity", "0.9");
+        const motionAnim = document.createElementNS("http://www.w3.org/2000/svg", "animateMotion");
+        motionAnim.setAttribute("dur", "1.5s");
+        motionAnim.setAttribute("repeatCount", "indefinite");
+        motionAnim.setAttribute("path", pathD);
+        dot.appendChild(motionAnim);
+        layer.appendChild(dot);
+
+        // Pulse glow on source tile
+        const srcTile = document.getElementById(`tile-${h.from}`);
+        if (srcTile) srcTile.classList.add("glow-hot");
       });
     }
 
