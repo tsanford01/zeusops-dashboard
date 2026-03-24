@@ -300,7 +300,7 @@
       <line x1="200" y1="70" x2="200" y2="790" stroke="var(--cyan)" stroke-opacity="0.2" />
       <text x="100" y="88" text-anchor="middle" font-family="Orbitron" font-size="10" fill="var(--cyan)">PIPELINE</text>
       <!-- Label filter panel — positioned below DONE node -->
-      <foreignObject x="4" y="665" width="192" height="140" id="label-filter-fo">
+      <foreignObject x="4" y="665" width="192" height="115" id="label-filter-fo">
         <div xmlns="http://www.w3.org/1999/xhtml" id="label-filter-panel" style="
           background:rgba(13,13,26,0.95);
           border:1px solid rgba(0,212,255,0.2);
@@ -1509,7 +1509,7 @@
       // Filter body (collapsible)
       const body = document.createElement('div');
       body.id = 'label-filter-body';
-      body.style.cssText = 'display:none;';
+      body.style.cssText = 'display:none;max-height:80px;overflow-y:auto;scrollbar-width:thin;';
 
       // Enable toggle
       const enableRow = document.createElement('div');
