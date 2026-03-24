@@ -1095,8 +1095,31 @@ class GridHandler(BaseHTTPRequestHandler):
                         _sse_clients.remove(client_queue)
 
         else:
-            self.send_response(404)
-            self.end_headers()
+            # Static file serving — serve from the working directory
+            serve_path = path.lstrip("/") or "index-v2.html"
+            # Redirect bare / to index-v2.html
+            if path == "/" or path == "":
+                serve_path = "index-v2.html"
+            file_path = os.path.join(os.path.dirname(__file__), serve_path)
+            if os.path.isfile(file_path):
+                ext = os.path.splitext(file_path)[1].lower()
+                mime = {".html": "text/html", ".js": "application/javascript",
+                        ".css": "text/css", ".json": "application/json",
+                        ".png": "image/png", ".ico": "image/x-icon"}.get(ext, "text/plain")
+                try:
+                    with open(file_path, "rb") as f:
+                        body = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", mime)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(body)
+                except BrokenPipeError:
+                    pass
+            else:
+                self.send_response(404)
+                self.end_headers()
 
     def handle_error(self, request, client_address):
         pass  # suppress socket error noise
