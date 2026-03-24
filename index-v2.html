@@ -1308,9 +1308,9 @@
         return;
       }
 
+      // Skip PB handshake/subscription events — only process real collection records
       if (!record || !record.action_type) {
-        appendToEventStream(record);
-        return;
+        return;  // silently ignore — not a manager_log or agent_jobs record
       }
 
       const ctx = typeof record.context === "string"
