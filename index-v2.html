@@ -990,7 +990,7 @@
     // Seed activity stream from REST API
     async function seedActivityStream() {
       try {
-        const r = await fetch(`http://${window.location.hostname}:8880/events/recent`);
+        const r = await fetch(`http://${window.location.hostname}:8878/events/recent`);
         if (!r.ok) return;
         const events = await r.json();
 

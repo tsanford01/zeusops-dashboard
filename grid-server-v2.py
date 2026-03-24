@@ -1055,7 +1055,7 @@ class GridHandler(BaseHTTPRequestHandler):
         elif path == "/events/recent":
             # Fetch last 20 manager_log records from PocketBase
             try:
-                token = get_pb_token()
+                token = pb_auth()
                 url = f"{PB_URL}/api/collections/manager_log/records?sort=-created&perPage=20"
                 req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
                 with urllib.request.urlopen(req, timeout=5) as resp:
