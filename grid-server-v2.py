@@ -196,14 +196,45 @@ def detect_receiver(objects: list) -> str:
             if not isinstance(block, dict) or block.get("type") != "text":
                 continue
             text = block.get("text", "")
-            # Look for "## AgentName —" pattern in subagent task header
+            # Pattern 1: "## AgentName —" header
             m = re.search(r"##\s+([A-Za-z][A-Za-z0-9 \-]+?)(?:\s*[—–|]|\n|$)", text)
             if m:
                 raw = m.group(1).strip().lower()
                 for pattern, agent_id in AGENT_NAME_MAP.items():
                     if pattern in raw:
                         return agent_id
+            # Pattern 2: "You are the X" or "You are X" in subagent context
+            m2 = re.search(r"[Yy]ou are (?:the )?([A-Za-z][A-Za-z0-9 \-]+?)(?:[\.,\n]|$)", text)
+            if m2:
+                raw = m2.group(1).strip().lower()
+                for pattern, agent_id in AGENT_NAME_MAP.items():
+                    if pattern in raw:
+                        return agent_id
+            # Pattern 3: "You are running as ... You are the X" 
+            m3 = re.search(r"\[Subagent Task\][^\n]*\n.*?[Yy]ou are (?:the )?([A-Za-z][A-Za-z0-9 \-]+)", text[:500])
+            if m3:
+                raw = m3.group(1).strip().lower()
+                for pattern, agent_id in AGENT_NAME_MAP.items():
+                    if pattern in raw:
+                        return agent_id
     return "unknown"
+
+
+_receiver_cache: dict = {}  # sessionFile -> agent_id (cached to avoid repeated scans)
+
+def detect_receiver_from_file(session_file: str) -> str:
+    """Read first 20 lines of JSONL and detect receiver. Cached."""
+    global _receiver_cache
+    if session_file in _receiver_cache:
+        return _receiver_cache[session_file]
+    try:
+        objects = read_jsonl_head(session_file, max_lines=20)
+        result = detect_receiver(objects)
+        if result != "unknown":
+            _receiver_cache[session_file] = result  # only cache definitive results
+        return result
+    except Exception:
+        return "unknown"
 
 
 def get_handoff_meta(state_dir: str, parent_agent: str, session_id: str):
@@ -421,9 +452,11 @@ def compute_data() -> dict:
                 receiver = "unknown"
                 started_at = sv.get("updatedAt", now) if isinstance(sv, dict) else now
 
-                # Skip expensive jsonl scanning — receiver shown as unknown
-                # (can be improved later with cached scanning)
-                pass
+                # Resolve receiver from session JSONL (ZeusOps only)
+                if gw_id == "zeusops" and isinstance(sv, dict):
+                    sf = sv.get("sessionFile", "")
+                    if sf and os.path.exists(sf):
+                        receiver = detect_receiver_from_file(sf)
 
                 # Track first-seen time for "new" detection
                 if handoff_id not in _first_seen:
