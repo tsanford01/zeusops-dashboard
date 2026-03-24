@@ -194,15 +194,12 @@
 
     <!-- ZONE B: TOOL STREAM SIDEBAR (0, 80, 120, 820) -->
     <g id="toolStream">
-      <rect x="0" y="80" width="120" height="820" fill="var(--bg-panel)" stroke="none"/>
-      <line x1="120" y1="80" x2="120" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.3"/>
-      <text x="10" y="100" class="heading" fill="var(--cyan)" font-size="9">TOOLS</text>
+      <rect x="0" y="80" width="120" height="820" fill="var(--bg-secondary)" stroke="none"/>
+      <line x1="120" y1="80" x2="120" y2="900" stroke="var(--cyan)" stroke-width="1" opacity="0.2"/>
+      <text x="60" y="100" class="heading" fill="var(--cyan)" font-size="9" text-anchor="middle">TOOLS</text>
 
       <!-- Tool entries container -->
-      <g id="toolEntries"></g>
-
-      <!-- Connection lines to agent tiles -->
-      <g id="toolAgentConnections"></g>
+      <g id="tool-sidebar-entries"></g>
     </g>
 
     <!-- ZONE C: AGENT GRID (120, 80, 560, 820) -->
@@ -213,7 +210,7 @@
       <!-- 3x5 grid of agent tiles (15 agents) -->
       <g id="agentTiles">
         <!-- Row 1 -->
-        <g id="tile-manager" class="agent-tile" data-agent="manager" transform="translate(190, 150)">
+        <g id="tile-manager" class="agent-tile" data-agent="manager" transform="translate(310, 150)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -222,7 +219,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-architect" class="agent-tile" data-agent="architect" transform="translate(350, 150)">
+        <g id="tile-architect" class="agent-tile" data-agent="architect" transform="translate(470, 150)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -231,7 +228,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-researcher" class="agent-tile" data-agent="researcher" transform="translate(510, 150)">
+        <g id="tile-researcher" class="agent-tile" data-agent="researcher" transform="translate(630, 150)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -240,7 +237,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-coder" class="agent-tile" data-agent="coder" transform="translate(190, 290)">
+        <g id="tile-coder" class="agent-tile" data-agent="coder" transform="translate(310, 290)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -249,7 +246,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-tester" class="agent-tile" data-agent="tester" transform="translate(350, 290)">
+        <g id="tile-tester" class="agent-tile" data-agent="tester" transform="translate(470, 290)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -260,7 +257,7 @@
         </g>
 
         <!-- Row 2 -->
-        <g id="tile-reviewer" class="agent-tile" data-agent="reviewer" transform="translate(510, 290)">
+        <g id="tile-reviewer" class="agent-tile" data-agent="reviewer" transform="translate(630, 290)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -269,7 +266,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-releaser" class="agent-tile" data-agent="releaser" transform="translate(190, 430)">
+        <g id="tile-releaser" class="agent-tile" data-agent="releaser" transform="translate(310, 430)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -278,7 +275,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-pm" class="agent-tile" data-agent="pm" transform="translate(350, 430)">
+        <g id="tile-pm" class="agent-tile" data-agent="pm" transform="translate(470, 430)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -287,7 +284,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-sre" class="agent-tile" data-agent="sre" transform="translate(510, 430)">
+        <g id="tile-sre" class="agent-tile" data-agent="sre" transform="translate(630, 430)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -296,7 +293,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-incident-manager" class="agent-tile" data-agent="incident-manager" transform="translate(190, 570)">
+        <g id="tile-incident-manager" class="agent-tile" data-agent="incident-manager" transform="translate(310, 570)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -308,7 +305,7 @@
         </g>
 
         <!-- Row 3 -->
-        <g id="tile-workflow-architect" class="agent-tile" data-agent="workflow-architect" transform="translate(350, 570)">
+        <g id="tile-workflow-architect" class="agent-tile" data-agent="workflow-architect" transform="translate(470, 570)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -318,7 +315,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-devops-automator" class="agent-tile" data-agent="devops-automator" transform="translate(510, 570)">
+        <g id="tile-devops-automator" class="agent-tile" data-agent="devops-automator" transform="translate(630, 570)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -328,7 +325,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-security" class="agent-tile" data-agent="security" transform="translate(190, 710)">
+        <g id="tile-security" class="agent-tile" data-agent="security" transform="translate(310, 710)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -337,7 +334,7 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-tiger-team" class="agent-tile" data-agent="tiger-team" transform="translate(350, 710)">
+        <g id="tile-tiger-team" class="agent-tile" data-agent="tiger-team" transform="translate(470, 710)">
           <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
           <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
           <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
@@ -347,14 +344,42 @@
           <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
           <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
         </g>
-        <g id="tile-main" class="agent-tile" data-agent="main" transform="translate(510, 710)">
-          <use href="#hexagon" fill="var(--bg-secondary)" stroke="var(--cyan-dim)" stroke-width="2"/>
-          <circle class="perf-badge" cx="50" cy="15" r="3" fill="var(--green)"/>
-          <circle class="status-dot" cx="8" cy="52" r="3" fill="var(--red)"/>
-          <text class="agent-name" x="30" y="35" text-anchor="middle" fill="var(--text-dim)" font-size="8">MAIN</text>
-          <text class="agent-status" x="30" y="52" text-anchor="middle" fill="var(--red)" font-size="7">OFFLINE</text>
-          <text class="agent-task" x="30" y="60" text-anchor="middle" fill="var(--text-dim)" font-size="6" font-style="italic" opacity="0.7"></text>
-          <line class="context-bar" x1="5" y1="58" x2="5" y2="58" stroke="var(--cyan)" stroke-width="2" opacity="0"/>
+        <!-- MC Gateway strip (moved to compact status bar below) -->
+
+        <!-- MC GATEWAY COMPACT STRIP -->
+        <g id="mc-gateway-strip" transform="translate(0, 750)">
+          <!-- Separator line -->
+          <line x1="140" y1="0" x2="660" y2="0" stroke="#9B59B6" stroke-width="1" opacity="0.5"/>
+
+          <!-- Label -->
+          <text x="140" y="18" font-family="Orbitron" font-size="8" fill="#9B59B6">MC GATEWAY</text>
+
+          <!-- Status indicators for MC agents -->
+          <g id="mc-indicators" transform="translate(140, 35)">
+            <!-- MC (main) -->
+            <g transform="translate(0, 0)">
+              <circle id="mc-dot-main" cx="0" cy="0" r="4" fill="#FF0040"/>
+              <text id="mc-label-main" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">MC</text>
+            </g>
+
+            <!-- ZEUS⚡ -->
+            <g transform="translate(120, 0)">
+              <circle id="mc-dot-zeus" cx="0" cy="0" r="4" fill="#FF0040"/>
+              <text id="mc-label-zeus" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">ZEUS⚡</text>
+            </g>
+
+            <!-- TRAVIS -->
+            <g transform="translate(240, 0)">
+              <circle id="mc-dot-mctravis" cx="0" cy="0" r="4" fill="#FF0040"/>
+              <text id="mc-label-mctravis" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">TRAVIS</text>
+            </g>
+
+            <!-- OBR -->
+            <g transform="translate(360, 0)">
+              <circle id="mc-dot-obr" cx="0" cy="0" r="4" fill="#FF0040"/>
+              <text id="mc-label-obr" x="0" y="18" text-anchor="middle" font-family="Share Tech Mono" font-size="7" fill="var(--text-dim)">OBR</text>
+            </g>
+          </g>
         </g>
       </g>
     </g>
@@ -731,145 +756,103 @@
           contextBar.setAttribute('opacity', '0');
         }
       });
+
+      // Update MC gateway strip
+      const mcAgents = [
+        {id: "main", label: "MC"},
+        {id: "zeus", label: "ZEUS⚡"},
+        {id: "mctravis", label: "TRAVIS"},
+        {id: "obr", label: "OBR"}
+      ];
+      for (const mc of mcAgents) {
+        const dot = document.getElementById(`mc-dot-${mc.id}`);
+        const agent = DashboardState.agents[mc.id];
+        if (dot && agent) {
+          const color = agent.status === "active" ? "var(--green)" : agent.status === "idle" ? "var(--amber)" : "var(--red)";
+          dot.setAttribute("fill", color);
+        }
+      }
     }
 
     // ============================================================================
     // TOOL STREAM SIDEBAR
     // ============================================================================
-    function renderToolStream() {
-      const toolEntries = document.getElementById('toolEntries');
-      const connections = document.getElementById('toolAgentConnections');
-      if (!toolEntries || !connections) return;
+    function renderToolSidebar() {
+      const container = document.getElementById("tool-sidebar-entries");
+      if (!container) return;
 
-      // Clear existing content
-      toolEntries.innerHTML = '';
-      connections.innerHTML = '';
-
-      // Flatten all tool calls across agents, sort by timestamp (newest first)
-      const allTools = [];
-      for (const agent in DashboardState.toolCalls) {
-        const tools = DashboardState.toolCalls[agent] || [];
-        tools.forEach(tool => {
-          allTools.push({ ...tool, agent });
-        });
+      // Get all tool calls across all agents, sorted newest first
+      const allCalls = [];
+      for (const [agentId, calls] of Object.entries(DashboardState.toolCalls || {})) {
+        for (const call of calls) {
+          allCalls.push({...call, agentId});
+        }
       }
-      allTools.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      allCalls.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      const recent = allCalls.slice(0, 8);
 
-      // Take last 8
-      const recentTools = allTools.slice(0, 8);
+      container.innerHTML = "";
 
-      if (recentTools.length === 0) {
-        // Show "NO ACTIVITY" message
-        const noActivity = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        noActivity.setAttribute('x', '60');
-        noActivity.setAttribute('y', '450');
-        noActivity.setAttribute('text-anchor', 'middle');
-        noActivity.setAttribute('fill', 'var(--text-dim)');
-        noActivity.setAttribute('font-size', '8');
-        noActivity.textContent = 'NO ACTIVITY';
-        toolEntries.appendChild(noActivity);
+      if (recent.length === 0) {
+        const noActivity = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        noActivity.setAttribute("x", "60");
+        noActivity.setAttribute("y", "200");
+        noActivity.setAttribute("text-anchor", "middle");
+        noActivity.setAttribute("fill", "var(--text-dim)");
+        noActivity.setAttribute("font-size", "8");
+        noActivity.setAttribute("font-family", "Share Tech Mono, monospace");
+        noActivity.textContent = "NO ACTIVITY";
+        container.appendChild(noActivity);
         return;
       }
 
-      // Render each tool entry
-      recentTools.forEach((tool, i) => {
-        const y = 120 + (i * 90);
+      recent.forEach((call, i) => {
+        const y = 115 + (i * 90);
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-        // Entry group
-        const entry = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        entry.setAttribute('class', 'tool-entry');
+        // Agent name
+        const agentText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        agentText.setAttribute("x", "8"); agentText.setAttribute("y", String(y));
+        agentText.setAttribute("fill", "var(--text-dim)"); agentText.setAttribute("font-size", "7");
+        agentText.setAttribute("font-family", "Share Tech Mono, monospace");
+        agentText.textContent = call.agentId?.toUpperCase().slice(0,10) || "?";
+        g.appendChild(agentText);
 
-        // Agent name (dim, 8px)
-        const agentName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        agentName.setAttribute('x', '10');
-        agentName.setAttribute('y', y.toString());
-        agentName.setAttribute('fill', 'var(--text-dim)');
-        agentName.setAttribute('font-size', '8');
-        agentName.textContent = (tool.agent || '').toUpperCase();
-        entry.appendChild(agentName);
+        // Tool name
+        const toolText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        toolText.setAttribute("x", "8"); toolText.setAttribute("y", String(y + 12));
+        toolText.setAttribute("fill", "var(--cyan)"); toolText.setAttribute("font-size", "9");
+        toolText.setAttribute("font-weight", "bold");
+        toolText.setAttribute("font-family", "Share Tech Mono, monospace");
+        toolText.textContent = call.tool?.slice(0, 12) || "?";
+        g.appendChild(toolText);
 
-        // Tool name (cyan, 9px, bold)
-        const toolName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        toolName.setAttribute('x', '10');
-        toolName.setAttribute('y', (y + 12).toString());
-        toolName.setAttribute('fill', 'var(--cyan)');
-        toolName.setAttribute('font-size', '9');
-        toolName.setAttribute('font-weight', 'bold');
-        toolName.textContent = (tool.tool_name || 'TOOL').toUpperCase();
-        entry.appendChild(toolName);
+        // Summary line 1
+        const sum1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        sum1.setAttribute("x", "8"); sum1.setAttribute("y", String(y + 24));
+        sum1.setAttribute("fill", "var(--text-primary)"); sum1.setAttribute("font-size", "8");
+        sum1.setAttribute("font-family", "Share Tech Mono, monospace");
+        sum1.textContent = (call.summary || "").slice(0, 14);
+        g.appendChild(sum1);
 
-        // Summary text (white, 8px, 2 lines max, ~18 chars each)
-        const summary = tool.summary || tool.description || '';
-        const line1 = summary.substring(0, 18);
-        const line2 = summary.length > 18 ? summary.substring(18, 36) + (summary.length > 36 ? '...' : '') : '';
-
-        const summaryLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        summaryLine1.setAttribute('x', '10');
-        summaryLine1.setAttribute('y', (y + 28).toString());
-        summaryLine1.setAttribute('fill', 'var(--text-primary)');
-        summaryLine1.setAttribute('font-size', '8');
-        summaryLine1.textContent = line1;
-        entry.appendChild(summaryLine1);
-
-        if (line2) {
-          const summaryLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          summaryLine2.setAttribute('x', '10');
-          summaryLine2.setAttribute('y', (y + 38).toString());
-          summaryLine2.setAttribute('fill', 'var(--text-primary)');
-          summaryLine2.setAttribute('font-size', '8');
-          summaryLine2.textContent = line2;
-          entry.appendChild(summaryLine2);
+        // Summary line 2
+        if ((call.summary || "").length > 14) {
+          const sum2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          sum2.setAttribute("x", "8"); sum2.setAttribute("y", String(y + 34));
+          sum2.setAttribute("fill", "var(--text-primary)"); sum2.setAttribute("font-size", "8");
+          sum2.setAttribute("font-family", "Share Tech Mono, monospace");
+          sum2.textContent = (call.summary || "").slice(14, 28);
+          g.appendChild(sum2);
         }
-
-        // Timestamp (dim, 7px)
-        const timestamp = tool.timestamp ? new Date(tool.timestamp).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        }) : '';
-        const timestampEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        timestampEl.setAttribute('x', '10');
-        timestampEl.setAttribute('y', (y + 52).toString());
-        timestampEl.setAttribute('fill', 'var(--text-dim)');
-        timestampEl.setAttribute('font-size', '7');
-        timestampEl.textContent = timestamp;
-        entry.appendChild(timestampEl);
 
         // Separator line
-        const separator = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        separator.setAttribute('x1', '10');
-        separator.setAttribute('y1', (y + 60).toString());
-        separator.setAttribute('x2', '110');
-        separator.setAttribute('y2', (y + 60).toString());
-        separator.setAttribute('stroke', 'var(--cyan-dim)');
-        separator.setAttribute('stroke-width', '0.5');
-        separator.setAttribute('opacity', '0.3');
-        entry.appendChild(separator);
+        const sep = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        sep.setAttribute("x1", "4"); sep.setAttribute("y1", String(y + 44));
+        sep.setAttribute("x2", "116"); sep.setAttribute("y2", String(y + 44));
+        sep.setAttribute("stroke", "var(--border)"); sep.setAttribute("stroke-width", "0.5");
+        g.appendChild(sep);
 
-        toolEntries.appendChild(entry);
-
-        // Draw connection line to agent tile
-        const agentTile = document.getElementById(`tile-${tool.agent}`);
-        if (agentTile) {
-          const transform = agentTile.getAttribute('transform');
-          const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-          if (match) {
-            const tileX = parseFloat(match[1]) + 30; // Center of hexagon (approx)
-            const tileY = parseFloat(match[2]) + 52; // Middle of hexagon
-
-            // Curved connection line from tool entry to agent tile
-            const toolY = y + 30; // Middle of tool entry
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const d = `M 118,${toolY} C 140,${toolY} 140,${tileY} ${tileX},${tileY}`;
-            path.setAttribute('d', d);
-            path.setAttribute('stroke', 'var(--cyan)');
-            path.setAttribute('stroke-width', '0.5');
-            path.setAttribute('opacity', '0.15');
-            path.setAttribute('fill', 'none');
-            connections.appendChild(path);
-          }
-        }
+        container.appendChild(g);
       });
     }
 
@@ -1538,7 +1521,7 @@
 
         DashboardState.toolCalls = byAgent;
         renderAgentGrid();
-        renderToolStream();
+        renderToolSidebar();
 
         console.log('[tools]', calls.length, 'calls');
       } catch(e) {
