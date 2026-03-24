@@ -288,50 +288,11 @@
     <g id="flywheel">
       <rect x="770" y="80" width="630" height="700" fill="var(--bg-panel)" stroke="var(--border)" stroke-width="1"/>
       <text x="790" y="105" class="heading" fill="var(--cyan)" font-size="14">PIPELINE FLOW</text>
+      <!-- Decorative underline -->
+      <line x1="790" y1="110" x2="920" y2="110" stroke="var(--cyan)" stroke-width="1" opacity="0.5"/>
 
-      <!-- Vertical pipeline chain -->
-      <g id="pipelineNodes">
-        <!-- BACKLOG -->
-        <rect x="900" y="150" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
-        <text x="990" y="175" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">BACKLOG</text>
-        <text x="990" y="200" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
-
-        <!-- Arrow -->
-        <line x1="990" y1="220" x2="990" y2="260" stroke="var(--cyan-dim)" stroke-width="2"/>
-        <polygon points="990,260 985,250 995,250" fill="var(--cyan-dim)"/>
-
-        <!-- DESIGN -->
-        <rect x="900" y="270" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
-        <text x="990" y="295" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">DESIGN</text>
-        <text x="990" y="320" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
-
-        <!-- Arrow -->
-        <line x1="990" y1="340" x2="990" y2="380" stroke="var(--cyan-dim)" stroke-width="2"/>
-        <polygon points="990,380 985,370 995,370" fill="var(--cyan-dim)"/>
-
-        <!-- CODE -->
-        <rect x="900" y="390" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
-        <text x="990" y="415" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">CODE</text>
-        <text x="990" y="440" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
-
-        <!-- Arrow -->
-        <line x1="990" y1="460" x2="990" y2="500" stroke="var(--cyan-dim)" stroke-width="2"/>
-        <polygon points="990,500 985,490 995,490" fill="var(--cyan-dim)"/>
-
-        <!-- REVIEW -->
-        <rect x="900" y="510" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--cyan)" stroke-width="2"/>
-        <text x="990" y="535" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">REVIEW</text>
-        <text x="990" y="560" text-anchor="middle" class="data" fill="var(--cyan)" font-size="24">0</text>
-
-        <!-- Arrow -->
-        <line x1="990" y1="580" x2="990" y2="620" stroke="var(--cyan-dim)" stroke-width="2"/>
-        <polygon points="990,620 985,610 995,610" fill="var(--cyan-dim)"/>
-
-        <!-- DONE -->
-        <rect x="900" y="630" width="180" height="70" rx="10" fill="var(--bg-secondary)" stroke="var(--green)" stroke-width="2"/>
-        <text x="990" y="655" text-anchor="middle" class="heading" fill="var(--text-dim)" font-size="11">DONE</text>
-        <text x="990" y="680" text-anchor="middle" class="data" fill="var(--green)" font-size="24">0</text>
-      </g>
+      <!-- Vertical pipeline visualization (dynamically built) -->
+      <g id="flywheel-zone"></g>
     </g>
 
     <!-- ZONE D: ACTIVITY STREAM (0, 780, 1400, 120) -->
@@ -651,7 +612,7 @@
 
     function connectSSE() {
       try {
-        eventSource = new EventSource("http://localhost:8880/events/stream");
+        eventSource = new EventSource("http://" + window.location.hostname + ":8880/events/stream");
 
         eventSource.onopen = () => {
           console.log('[SSE] Connected');
@@ -715,6 +676,7 @@
       // Always recompute health score and re-render command bar
       DashboardState.metrics.healthScore = computeHealthScore(DashboardState);
       renderCommandBar();
+      renderFlywheel();
       appendToEventStream(record);
     }
 
@@ -723,7 +685,7 @@
     // ============================================================================
     async function pollAgentData() {
       try {
-        const r = await fetch("http://localhost:8880/data");
+        const r = await fetch("http://" + window.location.hostname + ":8880/data");
         const d = await r.json();
 
         // Update agent state
@@ -760,7 +722,7 @@
     // ============================================================================
     async function pollCI() {
       try {
-        const r = await fetch("http://localhost:8880/ci");
+        const r = await fetch("http://" + window.location.hostname + ":8880/ci");
         const d = await r.json();
         const allRuns = [];
 
@@ -789,7 +751,7 @@
     // ============================================================================
     async function pollTrello() {
       try {
-        const r = await fetch("http://localhost:8880/trello");
+        const r = await fetch("http://" + window.location.hostname + ":8880/trello");
         const d = await r.json();
 
         // Sum across all boards
@@ -804,6 +766,7 @@
 
         DashboardState.metrics.pipeline = p;
         renderCommandBar();
+        renderFlywheel();
 
         console.log('[Trello] Updated:', p);
       } catch(e) {
@@ -816,13 +779,258 @@
     // ============================================================================
     async function pollTools() {
       try {
-        const r = await fetch("http://localhost:8880/tools");
+        const r = await fetch("http://" + window.location.hostname + ":8880/tools");
         const calls = await r.json();
         // TODO: wire up in OBS-5
         console.log('[tools]', calls.length, 'calls');
       } catch(e) {
         console.warn('[tools] poll failed', e);
       }
+    }
+
+    // ============================================================================
+    // FLYWHEEL PIPELINE VISUALIZATION
+    // ============================================================================
+
+    /**
+     * Detect bottlenecks in the pipeline.
+     * A stage is a bottleneck if its count > 2× the count of the NEXT stage AND count > 2
+     */
+    function detectBottlenecks(pipeline) {
+      const stages = ["backlog", "design", "code", "review", "done"];
+      const bottlenecks = new Set();
+
+      for (let i = 0; i < stages.length - 1; i++) {
+        const curr = pipeline[stages[i]] || 0;
+        const next = pipeline[stages[i + 1]] || 0;
+        if (curr > 2 && curr > next * 2) {
+          bottlenecks.add(stages[i]);
+        }
+      }
+
+      return bottlenecks;
+    }
+
+    /**
+     * Build the flywheel SVG structure (called once on init)
+     */
+    function buildFlywheel() {
+      const zone = document.getElementById('flywheel-zone');
+      if (!zone) return;
+
+      const stages = [
+        { key: 'backlog', label: 'BACKLOG', y: 150 },
+        { key: 'design', label: 'DESIGN', y: 270 },
+        { key: 'code', label: 'CODE / TEST', y: 390 },
+        { key: 'review', label: 'REVIEW', y: 510 },
+        { key: 'done', label: 'DONE', y: 630 }
+      ];
+
+      const centerX = 1085; // Center of flywheel zone
+      const nodeWidth = 280;
+      const nodeHeight = 70;
+
+      stages.forEach((stage, i) => {
+        // Create node group
+        const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        nodeGroup.setAttribute('id', `fw-node-${stage.key}`);
+        nodeGroup.setAttribute('class', 'fw-node');
+
+        // Background rectangle with gradient
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', centerX - nodeWidth / 2);
+        rect.setAttribute('y', stage.y);
+        rect.setAttribute('width', nodeWidth);
+        rect.setAttribute('height', nodeHeight);
+        rect.setAttribute('rx', '10');
+        rect.setAttribute('fill', 'var(--bg-secondary)');
+        rect.setAttribute('stroke', 'var(--cyan)');
+        rect.setAttribute('stroke-width', '1.5');
+        rect.setAttribute('filter', 'url(#glow)');
+        rect.setAttribute('id', `fw-rect-${stage.key}`);
+        rect.style.transition = 'stroke 0.3s ease, filter 0.3s ease';
+        nodeGroup.appendChild(rect);
+
+        // Label text
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', centerX);
+        label.setAttribute('y', stage.y + 25);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('fill', 'var(--text-dim)');
+        label.setAttribute('font-size', '11');
+        label.setAttribute('class', 'heading');
+        label.textContent = stage.label;
+        nodeGroup.appendChild(label);
+
+        // Count text
+        const count = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        count.setAttribute('id', `fw-count-${stage.key}`);
+        count.setAttribute('x', centerX);
+        count.setAttribute('y', stage.y + 55);
+        count.setAttribute('text-anchor', 'middle');
+        count.setAttribute('fill', 'var(--cyan)');
+        count.setAttribute('font-size', '28');
+        count.setAttribute('class', 'data');
+        count.textContent = '0';
+        count.style.transition = 'fill 0.3s ease';
+        nodeGroup.appendChild(count);
+
+        // Bottleneck badge (hidden by default)
+        const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badge.setAttribute('id', `fw-badge-${stage.key}`);
+        badge.setAttribute('x', centerX);
+        badge.setAttribute('y', stage.y + 18);
+        badge.setAttribute('text-anchor', 'middle');
+        badge.setAttribute('fill', 'var(--amber)');
+        badge.setAttribute('font-size', '9');
+        badge.setAttribute('opacity', '0');
+        badge.textContent = '⚠ BOTTLENECK';
+        badge.style.transition = 'opacity 0.3s ease';
+        nodeGroup.appendChild(badge);
+
+        zone.appendChild(nodeGroup);
+
+        // Create connecting line and particles (except for the last stage)
+        if (i < stages.length - 1) {
+          const nextStage = stages[i + 1];
+          const y1 = stage.y + nodeHeight;
+          const y2 = nextStage.y;
+
+          // Animated dashed line
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('id', `fw-line-${stage.key}-${nextStage.key}`);
+          line.setAttribute('x1', centerX);
+          line.setAttribute('y1', y1);
+          line.setAttribute('x2', centerX);
+          line.setAttribute('y2', y2);
+          line.setAttribute('stroke', 'var(--cyan)');
+          line.setAttribute('stroke-width', '1.5');
+          line.setAttribute('stroke-dasharray', '6,4');
+          line.setAttribute('opacity', '0.6');
+          line.style.transition = 'stroke 0.3s ease';
+
+          const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+          animate.setAttribute('attributeName', 'stroke-dashoffset');
+          animate.setAttribute('from', '0');
+          animate.setAttribute('to', '-20');
+          animate.setAttribute('dur', '1.5s');
+          animate.setAttribute('repeatCount', 'indefinite');
+          line.appendChild(animate);
+
+          zone.appendChild(line);
+
+          // Flow particles (3 circles with staggered animation)
+          for (let p = 0; p < 3; p++) {
+            const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            particle.setAttribute('id', `fw-particle-${stage.key}-${nextStage.key}-${p}`);
+            particle.setAttribute('cx', centerX);
+            particle.setAttribute('cy', y1);
+            particle.setAttribute('r', '2.5');
+            particle.setAttribute('fill', 'var(--cyan)');
+            particle.setAttribute('opacity', '0.8');
+            particle.style.transition = 'fill 0.3s ease';
+
+            // Staggered animation (each particle starts 0.67s apart)
+            const animY = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+            animY.setAttribute('attributeName', 'cy');
+            animY.setAttribute('from', y1);
+            animY.setAttribute('to', y2);
+            animY.setAttribute('dur', '2s');
+            animY.setAttribute('begin', `${p * 0.67}s`);
+            animY.setAttribute('repeatCount', 'indefinite');
+            particle.appendChild(animY);
+
+            // Fade in/out
+            const animOpacity = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+            animOpacity.setAttribute('attributeName', 'opacity');
+            animOpacity.setAttribute('values', '0;0.8;0.8;0');
+            animOpacity.setAttribute('keyTimes', '0;0.1;0.9;1');
+            animOpacity.setAttribute('dur', '2s');
+            animOpacity.setAttribute('begin', `${p * 0.67}s`);
+            animOpacity.setAttribute('repeatCount', 'indefinite');
+            particle.appendChild(animOpacity);
+
+            zone.appendChild(particle);
+          }
+        }
+      });
+
+      console.log('[Flywheel] Built pipeline visualization');
+    }
+
+    /**
+     * Render/update the flywheel with current pipeline data
+     */
+    function renderFlywheel() {
+      const pipeline = DashboardState.metrics.pipeline;
+      const bottlenecks = detectBottlenecks(pipeline);
+      const stages = ["backlog", "design", "code", "review", "done"];
+
+      stages.forEach((stage, i) => {
+        const count = pipeline[stage] || 0;
+        const isBottleneck = bottlenecks.has(stage);
+        const isEmpty = count === 0;
+
+        // Update count
+        const countEl = document.getElementById(`fw-count-${stage}`);
+        if (countEl) {
+          countEl.textContent = count;
+
+          // Color based on state
+          if (stage === 'done') {
+            countEl.setAttribute('fill', 'var(--green)');
+          } else if (isBottleneck) {
+            countEl.setAttribute('fill', 'var(--amber)');
+          } else if (isEmpty) {
+            countEl.setAttribute('fill', 'var(--text-dim)');
+          } else {
+            countEl.setAttribute('fill', 'var(--cyan)');
+          }
+        }
+
+        // Update node border and glow
+        const rectEl = document.getElementById(`fw-rect-${stage}`);
+        if (rectEl) {
+          if (stage === 'done') {
+            rectEl.setAttribute('stroke', 'var(--green)');
+            rectEl.style.filter = 'drop-shadow(0 0 6px var(--green))';
+          } else if (isBottleneck) {
+            rectEl.setAttribute('stroke', 'var(--amber)');
+            rectEl.style.filter = 'drop-shadow(0 0 8px var(--amber))';
+          } else if (isEmpty) {
+            rectEl.setAttribute('stroke', 'var(--cyan-dim)');
+            rectEl.style.filter = 'none';
+          } else {
+            rectEl.setAttribute('stroke', 'var(--cyan)');
+            rectEl.style.filter = 'drop-shadow(0 0 4px var(--cyan))';
+          }
+        }
+
+        // Update bottleneck badge
+        const badgeEl = document.getElementById(`fw-badge-${stage}`);
+        if (badgeEl) {
+          badgeEl.setAttribute('opacity', isBottleneck ? '1' : '0');
+        }
+
+        // Update connecting lines and particles
+        if (i < stages.length - 1) {
+          const nextStage = stages[i + 1];
+          const lineColor = isBottleneck ? 'var(--amber)' : 'var(--cyan)';
+
+          const lineEl = document.getElementById(`fw-line-${stage}-${nextStage}`);
+          if (lineEl) {
+            lineEl.setAttribute('stroke', lineColor);
+          }
+
+          // Update particle colors
+          for (let p = 0; p < 3; p++) {
+            const particleEl = document.getElementById(`fw-particle-${stage}-${nextStage}-${p}`);
+            if (particleEl) {
+              particleEl.setAttribute('fill', lineColor);
+            }
+          }
+        }
+      });
     }
 
     // ============================================================================
@@ -833,6 +1041,9 @@
 
       // Set initial connection state
       updateConnectionIndicator();
+
+      // Build flywheel visualization structure
+      buildFlywheel();
 
       // Initial data poll before SSE connection
       pollCI();
