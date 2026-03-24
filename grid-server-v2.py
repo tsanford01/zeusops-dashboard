@@ -880,7 +880,7 @@ def pb_sse_listener():
 
             log("SSE: Connecting to PocketBase realtime...")
 
-            with urllib.request.urlopen(req, timeout=None) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 log("SSE: Connected to PocketBase")
 
                 # Read SSE stream
