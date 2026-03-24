@@ -1851,7 +1851,7 @@
     // ============================================================================
     // INITIALIZATION
     // ============================================================================
-    function initDashboard() {
+    async function initDashboard() {
       console.log('[Dashboard] Initializing ZeusOps Observability Dashboard v2');
 
       // Set initial connection state
@@ -1864,11 +1864,8 @@
       renderAgentGrid();
       renderToolStream();
 
-      // Initial data poll before SSE connection
-      pollCI();
-      pollTrello();
-      pollAgentData();
-      pollTools();
+      // Await initial data polls so renders fire before SSE attempt
+      await Promise.allSettled([pollAgentData(), pollCI(), pollTrello(), pollTools()]);
 
       // Seed activity stream from recent events
       seedActivityStream();
