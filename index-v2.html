@@ -972,7 +972,7 @@
 
       let ctx = {};
       try {
-        ctx = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
+        ctx = (() => { try { const c = record.context; if (!c) return {}; if (typeof c === "object") return c; return JSON.parse(c); } catch(e) { return {}; } })();
       } catch(e) {
         ctx = {};
       }
@@ -985,7 +985,9 @@
       }
 
       const ts = record.created ? new Date(record.created).toLocaleTimeString('en-US', { hour12: false }) : '';
-      const desc = record.description || record.task_summary || 'No description';
+      const desc = record.description || record.task_summary || 
+        (ctx && Object.keys(ctx).length > 0 ? Object.entries(ctx).slice(0,2).map(([k,v])=>`${k}: ${v}`).join(' | ') : '') ||
+        record.action_type || 'System event';
       const preview = contextPreview(action_type, ctx);
 
       // Check if fresh (< 60s old)
@@ -1108,7 +1110,9 @@
       panel.appendChild(timestampText);
 
       // Description
-      const description = record.description || record.task_summary || 'No description';
+      const description = record.description || record.task_summary || 
+          (ctx && Object.keys(ctx).length > 0 ? Object.entries(ctx).slice(0,2).map(([k,v])=>`${k}: ${v}`).join(' | ') : '') ||
+          record.action_type || 'System event';
       const descText = document.createElementNS("http://www.w3.org/2000/svg", "text");
       descText.setAttribute("x", "320");
       descText.setAttribute("y", "230");
@@ -1145,7 +1149,7 @@
 
       let ctx = {};
       try {
-        ctx = typeof record.context === "string" ? JSON.parse(record.context || "{}") : (record.context || {});
+        ctx = (() => { try { const c = record.context; if (!c) return {}; if (typeof c === "object") return c; return JSON.parse(c); } catch(e) { return {}; } })();
       } catch (e) {
         ctx = { error: "Failed to parse context" };
       }
